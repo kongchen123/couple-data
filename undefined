@@ -4,7 +4,13 @@
   "anniversary": "",
   "birthday1": "",
   "birthday2": "",
-  "me": 1,
   "timeline": [],
-  "wishes": []
+  "wishes": [
+    {
+      "id": "mw8nitxwrh6it",
+      "text": "一起去大理",
+      "done": false,
+      "createdAt": 1794191884052
+    }
+  ]
 }
