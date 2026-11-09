@@ -16,6 +16,15 @@
   ],
   "wishes": [],
   "capsules": [],
-  "voices": [],
+  "voices": [
+    {
+      "id": "mw8sk6kbjc2uz",
+      "by": "巩振",
+      "audio": "voices/mw8sk6kbjc2uz.webm",
+      "duration": 2,
+      "createdAt": 1794200347791,
+      "updatedAt": 1794200347791
+    }
+  ],
   "customDays": []
 }
