@@ -3,7 +3,7 @@
   "name2": "婷婷",
   "anniversary": "2026-01-11",
   "birthday1": "1998-07-08",
-  "birthday2": "1994-09-19",
+  "birthday2": "1994-09-11",
   "timeline": [
     {
       "id": "mw8sje244v9dh",
@@ -79,5 +79,12 @@
       "updatedAt": 1794200347791
     }
   ],
-  "customDays": []
+  "customDays": [
+    {
+      "id": "mw8vc3r6kk7f5",
+      "name": "400天",
+      "date": "2026-11-09",
+      "updatedAt": 1794205007106
+    }
+  ]
 }
