@@ -72,6 +72,16 @@
       "time": "21:33",
       "createdAt": 1794231239887,
       "updatedAt": 1794231239887
+    },
+    {
+      "id": "mw9b2allolqlz",
+      "author": "巩振",
+      "text": "2秒钟的延迟是会有感觉的吗试一下",
+      "photo": "",
+      "date": "2026-11-09",
+      "time": "21:37",
+      "createdAt": 1794231423274,
+      "updatedAt": 1794231423274
     }
   ],
   "wishes": [
@@ -219,5 +229,13 @@
       "deleted": true
     }
   ],
-  "tags": []
+  "tags": [
+    {
+      "id": "tag:看电影",
+      "name": "看电影",
+      "deleted": false,
+      "createdAt": 0,
+      "updatedAt": 0
+    }
+  ]
 }
