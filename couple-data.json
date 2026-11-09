@@ -38,7 +38,8 @@
       "tag": "旅行",
       "done": false,
       "createdAt": 1794202885737,
-      "updatedAt": 1794202885737
+      "updatedAt": 1794202890921,
+      "deleted": true
     }
   ],
   "capsules": [
