@@ -65,7 +65,8 @@
       "text": "哎",
       "unlockAt": "2026-11-01",
       "createdAt": 1794204651333,
-      "updatedAt": 1794204651333
+      "updatedAt": 1794204659769,
+      "deleted": true
     }
   ],
   "voices": [
