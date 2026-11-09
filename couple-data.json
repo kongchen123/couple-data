@@ -45,14 +45,6 @@
       "photo": "photos/mw98jh0i3w3lf.jpg",
       "date": "2026-11-09",
       "updatedAt": 1794227189592
-    },
-    {
-      "id": "mw995fwp7tbea",
-      "author": "巩振",
-      "text": "测试测试",
-      "photo": "",
-      "date": "2026-11-09",
-      "updatedAt": 1794228210890
     }
   ],
   "wishes": [
@@ -153,6 +145,15 @@
       "createdAt": 1794217407832,
       "updatedAt": 1794226941712,
       "deleted": true
+    },
+    {
+      "id": "mw996udmlqwje",
+      "by": "巩振",
+      "audio": "voices/mw996udmlqwje.webm",
+      "mime": "audio/webm;codecs=opus",
+      "duration": 4,
+      "createdAt": 1794228280291,
+      "updatedAt": 1794228280291
     }
   ],
   "customDays": [
