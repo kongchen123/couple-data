@@ -66,6 +66,14 @@
   ],
   "wishes": [
     {
+      "id": "mw9ak0fjo187s",
+      "text": "一起看一部老电影",
+      "tag": "看电影",
+      "done": false,
+      "createdAt": 1794230570287,
+      "updatedAt": 1794230570287
+    },
+    {
       "id": "mw8u2ehw4brfe",
       "text": "1111",
       "tag": "",
@@ -181,5 +189,8 @@
       "updatedAt": 1794205015825,
       "deleted": true
     }
+  ],
+  "tags": [
+    "看电影"
   ]
 }
