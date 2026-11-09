@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>情侣小站 · 单页版</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #fdf3f5; color: #4a3b40; padding-bottom: 70px; }
+header { background: linear-gradient(135deg, #ff8fa8 0%, #f5577f 60%, #e9407a 100%); color: #fff; padding: 24px 16px 20px; border-radius: 0 0 24px 24px; }
+header h1 { font-size: 20px; margin-bottom: 4px; }
+header .sub { font-size: 12px; opacity: .85; }
+header .days { font-size: 40px; font-weight: 800; margin: 8px 0 2px; }
+header .days small { font-size: 14px; font-weight: 500; }
+main { padding: 14px; max-width: 560px; margin: 0 auto; }
+.card { background: #fff; border-radius: 18px; box-shadow: 0 6px 24px rgba(245,87,127,.1); padding: 16px; margin-bottom: 14px; }
+.card h2 { font-size: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.page { display: none; }
+.page.active { display: block; }
+.count-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.count-item { flex: 1 1 45%; background: #fff5f7; border-radius: 12px; padding: 10px 12px; }
+.count-item .label { font-size: 12px; color: #a08a92; }
+.count-item .num { font-size: 16px; font-weight: 700; color: #e9407a; margin-top: 2px; }
+.count-item .date { font-size: 11px; color: #c9b3bb; }
+.quote { font-size: 13px; color: #8a6e78; line-height: 1.7; font-style: italic; }
+.progress-bar { height: 10px; background: #ffe3ea; border-radius: 6px; overflow: hidden; margin-top: 8px; }
+.progress-bar i { display: block; height: 100%; background: linear-gradient(90deg, #ff8fa8, #e9407a); border-radius: 6px; transition: width .3s; }
+.composer textarea { width: 100%; min-height: 80px; border: 1.5px solid #f3dee4; border-radius: 12px; padding: 10px 12px; font-size: 14px; font-family: inherit; resize: vertical; outline: none; background: #fffdfa; }
+.composer textarea:focus { border-color: #ff7e9d; }
+.composer-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+input[type="date"], input[type="text"], input[type="password"] { border: 1.5px solid #f3dee4; border-radius: 10px; padding: 8px 10px; font-size: 13px; color: #4a3b40; background: #fff; outline: none; }
+input:focus { border-color: #ff7e9d; }
+.btn { border: none; border-radius: 12px; padding: 9px 16px; font-size: 14px; font-weight: 700; background: linear-gradient(135deg, #ff8fa8, #f5577f); color: #fff; cursor: pointer; box-shadow: 0 4px 12px rgba(245,87,127,.3); }
+.btn:active { transform: scale(.96); }
+.btn:disabled { opacity: .5; }
+.btn.ghost { background: #fff; color: #e9407a; border: 1.5px solid #ffc9d6; box-shadow: none; }
+.btn.small { padding: 6px 12px; font-size: 12px; }
+.btn.danger { background: #fff; color: #e05070; border: 1.5px solid #ffc9d6; box-shadow: none; padding: 4px 10px; font-size: 12px; }
+.photo-preview { position: relative; margin-top: 10px; display: none; }
+.photo-preview img { max-width: 120px; max-height: 120px; border-radius: 10px; border: 2px solid #ffd6e0; }
+.photo-preview .x { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%; background: #e05070; color: #fff; border: none; font-size: 12px; cursor: pointer; }
+.search-box { display: flex; gap: 8px; margin-bottom: 12px; }
+.search-box input { flex: 1; }
+.group-month { font-size: 13px; font-weight: 700; color: #e9407a; margin: 14px 0 8px; display: flex; align-items: center; gap: 6px; }
+.group-month::after { content: ""; flex: 1; height: 1px; background: #ffd6e0; }
+.tl-item { position: relative; background: #fff5f7; border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; }
+.tl-item .meta { font-size: 11px; color: #c9b3bb; margin-bottom: 4px; }
+.tl-item .meta b { color: #e9407a; }
+.tl-item .text { font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+.tl-item img.photo { max-width: 100%; max-height: 200px; border-radius: 10px; margin-top: 8px; cursor: zoom-in; }
+.tl-item .del { position: absolute; top: 8px; right: 8px; border: none; background: none; color: #d9a3b1; font-size: 15px; cursor: pointer; }
+.empty { text-align: center; color: #c9b3bb; font-size: 13px; padding: 24px 0; line-height: 1.8; }
+.tag-picker, .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.chip { padding: 5px 14px; border-radius: 20px; font-size: 12px; border: 1.5px solid #f3dee4; background: #fff; color: #8a6e78; cursor: pointer; }
+.chip.on { background: #ff8fa8; border-color: #ff8fa8; color: #fff; font-weight: 700; }
+.wish-item { display: flex; align-items: center; gap: 10px; background: #fff5f7; border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; }
+.wish-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: #e9407a; flex-shrink: 0; }
+.wish-item .text { flex: 1; font-size: 14px; line-height: 1.5; word-break: break-word; }
+.wish-item.done .text { text-decoration: line-through; color: #c9b3bb; }
+.wish-tag { font-size: 10px; background: #ffe3ea; color: #e9407a; border-radius: 8px; padding: 2px 8px; flex-shrink: 0; }
+.capsule-item { position: relative; background: #fff5f7; border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; }
+.capsule-item.locked { background: #f3eef5; }
+.capsule-item .meta { font-size: 11px; color: #a08a92; margin-bottom: 6px; display: flex; justify-content: space-between; }
+.capsule-item .text { font-size: 14px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
+.badge { font-size: 10px; border-radius: 8px; padding: 2px 8px; font-weight: 700; }
+.badge.lock { background: #efe3f5; color: #9a6ab8; }
+.badge.open { background: #e2f7e9; color: #3aa864; }
+.rec-panel { text-align: center; padding: 10px 0; }
+.rec-btn { width: 74px; height: 74px; border-radius: 50%; border: none; background: linear-gradient(135deg, #ff8fa8, #f5577f); color: #fff; font-size: 26px; cursor: pointer; box-shadow: 0 6px 18px rgba(245,87,127,.35); }
+.rec-btn.recording { background: #e05070; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+.rec-tip { font-size: 12px; color: #a08a92; margin-top: 8px; }
+.voice-item { display: flex; align-items: center; gap: 10px; background: #fff5f7; border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; }
+.play-btn { width: 38px; height: 38px; border-radius: 50%; border: none; background: #e9407a; color: #fff; font-size: 14px; cursor: pointer; flex-shrink: 0; }
+.wave { display: flex; align-items: center; gap: 2px; height: 20px; }
+.wave .bar { width: 3px; border-radius: 2px; background: #ff9fb5; animation: wave 0.9s ease-in-out infinite; }
+@keyframes wave { 0%,100% { height: 5px; } 50% { height: 18px; } }
+.field { margin-bottom: 10px; }
+.field label { display: block; font-size: 12px; color: #a08a92; margin-bottom: 4px; }
+.field input { width: 100%; }
+.field-row { display: flex; gap: 8px; }
+.field-row .field { flex: 1; }
+.me-toggle { display: flex; gap: 8px; margin-bottom: 12px; }
+.me-toggle .btn { flex: 1; }
+.me-toggle .btn.on { background: linear-gradient(135deg, #ff8fa8, #f5577f); color: #fff; }
+.me-toggle .btn:not(.on) { background: #fff; color: #8a6e78; border: 1.5px solid #f3dee4; box-shadow: none; }
+.day-item { display: flex; align-items: center; gap: 8px; background: #fff5f7; border-radius: 10px; padding: 8px 12px; margin-bottom: 8px; font-size: 13px; }
+.day-item .d { margin-left: auto; color: #a08a92; font-size: 12px; }
+.sync-state { font-size: 12px; color: #a08a92; margin-top: 8px; }
+.toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); background: rgba(74,59,64,.92); color: #fff; font-size: 13px; padding: 9px 18px; border-radius: 20px; z-index: 99; opacity: 0; transition: opacity .25s; pointer-events: none; }
+.toast.show { opacity: 1; }
+nav.tabbar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; display: flex; box-shadow: 0 -4px 16px rgba(245,87,127,.08); padding-bottom: env(safe-area-inset-bottom); }
+nav.tabbar button { flex: 1; border: none; background: none; padding: 9px 0 7px; font-size: 11px; color: #b9a1a9; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 1px; }
+nav.tabbar button .ico { font-size: 19px; }
+nav.tabbar button.on { color: #e9407a; font-weight: 700; }
+#lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.85); display: none; align-items: center; justify-content: center; z-index: 100; cursor: zoom-out; }
+#lightbox img { max-width: 94vw; max-height: 90vh; border-radius: 8px; }
+.tips { font-size: 12px; color: #a08a92; margin-top: 10px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<header>
+  <h1>💖 <span id="hTitle">情侣小站</span></h1>
+  <div class="days"><span id="hDays">—</span><small> 天</small></div>
+  <div class="sub" id="hSince">去「设置」里填上在一起的日子吧</div>
+</header>
+
+<main>
+  <!-- ============ 首页 ============ -->
+  <section class="page active" id="page-home">
+    <div class="card">
+      <h2>🎂 值得期待的日子</h2>
+      <div class="count-row" id="countList"></div>
+    </div>
+    <div class="card">
+      <h2>🌸 今日情话</h2>
+      <div class="quote" id="quote"></div>
+    </div>
+    <div class="card">
+      <h2>💫 心愿进度</h2>
+      <div style="display:flex; justify-content:space-between; font-size:13px;">
+        <span>已完成 <b id="wishDone" style="color:#e9407a">0</b> / <span id="wishTotal">0</span></span>
+        <b id="wishPercent" style="color:#e9407a">0%</b>
+      </div>
+      <div class="progress-bar"><i id="wishBar" style="width:0%"></i></div>
+    </div>
+  </section>
+
+  <!-- ============ 时间线 ============ -->
+  <section class="page" id="page-timeline">
+    <div class="card composer">
+      <h2>📖 记录此刻</h2>
+      <textarea id="tlText" placeholder="记录你们的点点滴滴…"></textarea>
+      <div class="composer-row">
+        <input type="date" id="tlDate">
+        <label class="btn small ghost" style="display:inline-block">📷 照片<input type="file" id="tlPhoto" accept="image/*" hidden></label>
+        <button class="btn small" id="tlAdd" onclick="addTimeline()">发布</button>
+      </div>
+      <div class="photo-preview" id="tlPreview"><img id="tlPreviewImg" alt=""><button class="x" onclick="clearPhoto()">✕</button></div>
+      <p class="tips">照片自动压缩到 600px 并独立上传到 photos/{id}.jpg，JSON 只存路径，彻底解决 1MB 上限</p>
+    </div>
+    <div class="search-box"><input type="text" id="tlSearch" placeholder="🔍 搜索记录内容或作者…"></div>
+    <div id="tlList"></div>
+  </section>
+
+  <!-- ============ 心愿 ============ -->
+  <section class="page" id="page-wishes">
+    <div class="card">
+      <h2>✨ 许个心愿</h2>
+      <div class="composer" style="display:flex; gap:8px;">
+        <input type="text" id="wishText" placeholder="想一起做的事…" style="flex:1">
+        <button class="btn small" onclick="addWish()">加入</button>
+      </div>
+      <div class="tag-picker" id="tagPicker"></div>
+      <p class="tips">可选分类：旅行 / 美食 / 一起做</p>
+    </div>
+    <div class="filter-bar" id="filterBar"></div>
+    <div id="wishList"></div>
+  </section>
+
+  <!-- ============ 时间胶囊 ============ -->
+  <section class="page" id="page-capsule">
+    <div class="card composer">
+      <h2>⏳ 写给未来的信</h2>
+      <textarea id="capText" placeholder="把想说的话封存起来，到期才能拆开…"></textarea>
+      <div class="composer-row">
+        <input type="date" id="capDate">
+        <button class="btn small" onclick="addCapsule()">🔒 封存</button>
+      </div>
+      <p class="tips">默认一年后解锁；未到期的信件内容会以 ♥ 遮蔽，仪式感拉满</p>
+    </div>
+    <div id="capList"></div>
+  </section>
+
+  <!-- ============ 语音留言 ============ -->
+  <section class="page" id="page-voice">
+    <div class="card">
+      <h2>🎙 语音留言</h2>
+      <div class="rec-panel">
+        <button class="rec-btn" id="recBtn" onclick="toggleRecord()">🎤</button>
+        <div class="rec-tip" id="recTip">点击开始录音，最长 30 秒</div>
+      </div>
+      <p class="tips">录音独立上传到 voices/{id}.webm；播放时才从远端拉取，省流量。需 HTTPS 环境授权麦克风</p>
+    </div>
+    <div id="voiceList"></div>
+  </section>
+
+  <!-- ============ 设置 ============ -->
+  <section class="page" id="page-settings">
+    <div class="card">
+      <h2>👥 我们是谁</h2>
+      <div class="me-toggle">
+        <button class="btn on" id="me1" onclick="setWho(1)">我是 <span id="meName1">我</span></button>
+        <button class="btn" id="me2" onclick="setWho(2)">我是 <span id="meName2">TA</span></button>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>名字 1</label><input type="text" id="fName1" maxlength="10"></div>
+        <div class="field"><label>名字 2</label><input type="text" id="fName2" maxlength="10"></div>
+      </div>
+      <div class="field"><label>在一起的日子</label><input type="date" id="fAnniv"></div>
+      <div class="field-row">
+        <div class="field"><label>名字 1 的生日</label><input type="date" id="fBd1"></div>
+        <div class="field"><label>名字 2 的生日</label><input type="date" id="fBd2"></div>
+      </div>
+      <button class="btn" style="width:100%" onclick="saveSettings()">保存 ❤</button>
+    </div>
+    <div class="card">
+      <h2>📅 自定义纪念日</h2>
+      <div class="composer" style="display:flex; gap:8px; margin-bottom:10px;">
+        <input type="text" id="dayName" placeholder="日子名称，如：领证纪念日" maxlength="20" style="flex:2">
+        <input type="date" id="dayDate" style="flex:1.4">
+        <button class="btn small" onclick="addDay()">添加</button>
+      </div>
+      <div id="dayList"></div>
+    </div>
+    <div class="card">
+      <h2>☁️ GitHub 云同步</h2>
+      <div class="field"><label>用户名 (owner)</label><input type="text" id="ghOwner" placeholder="GitHub 用户名"></div>
+      <div class="field"><label>仓库名 (repo)</label><input type="text" id="ghRepo" placeholder="couple-data"></div>
+      <div class="field"><label>令牌 (token，需 Contents 读写权限)</label><input type="password" id="ghToken" placeholder="ghp_xxx"></div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn ghost small" id="ghTest" onclick="testGh()">测试连接</button>
+        <button class="btn ghost small" id="ghPull" onclick="pullGh()">拉取</button>
+        <button class="btn small" id="ghPush" onclick="pushGh()">上传</button>
+      </div>
+      <div class="sync-state" id="syncState"></div>
+      <p class="tips">数据同步到私有仓库 couple-data.json；照片/语音独立存 photos/、voices/ 目录。配置后改动自动防抖 2s 上传，页面切回前台自动拉取合并（按 updatedAt 墓碑合并，双设备不丢数据）</p>
+    </div>
+  </section>
+</main>
+
+<nav class="tabbar">
+  <button class="on" data-p="home" onclick="go('home', this)"><span class="ico">🏠</span>首页</button>
+  <button data-p="timeline" onclick="go('timeline', this)"><span class="ico">📖</span>时间线</button>
+  <button data-p="wishes" onclick="go('wishes', this)"><span class="ico">💫</span>心愿</button>
+  <button data-p="capsule" onclick="go('capsule', this)"><span class="ico">⏳</span>胶囊</button>
+  <button data-p="voice" onclick="go('voice', this)"><span class="ico">🎙</span>语音</button>
+  <button data-p="settings" onclick="go('settings', this)"><span class="ico">⚙️</span>设置</button>
+</nav>
+<div class="toast" id="toast"></div>
+<div id="lightbox" onclick="this.style.display='none'"><img id="lightboxImg" alt=""></div>
+
+<script>
+'use strict';
+/* ================= 数据层（与 Vue 版 store/modules/couple.js 同构） ================= */
+const KEY = 'coupleStationData', GH_KEY = 'coupleGithubConfig', SHA_KEY = 'coupleRemoteSha';
+const TAGS = ['旅行', '美食', '一起做'];
+const QUOTES = ['喜欢是乍见之欢，爱是久处不厌。','我见过很多风景，但都不及你眼里的星光。','愿我们的故事，细水长流，来日方长。','你是我平淡日子里的星辰大海。','世界上有很多美好的词语，但都不如"我们"好听。','往后余生，风雪是你，平淡是你。','和你在一起的每一天，都值得被记住。','爱不是彼此凝视，而是一起望向同一个方向。','慢慢来，我们有一辈子的时间。','想把所有的温柔，都留给你一个人。'];
+const MAX_SECONDS = 30;
+
+function defaultData() {
+  return { name1:'', name2:'', anniversary:'', birthday1:'', birthday2:'', me:1,
+    timeline:[], wishes:[], capsules:[], voices:[], customDays:[], lastSyncAt:0, syncError:'' };
+}
+let S = (() => { try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && typeof d === 'object') return Object.assign(defaultData(), d); } catch (e) {} return defaultData(); })();
+function persist() { localStorage.setItem(KEY, JSON.stringify(S)); }
+
+const $ = (id) => document.getElementById(id);
+const pad = (n) => String(n).padStart(2, '0');
+const fmtDay = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const fmtTs = (ts) => { const d = new Date(ts); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; };
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const myName = () => S.me === 1 ? (S.name1 || '我') : (S.name2 || 'TA');
+const esc = (s) => (s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const touch = (o) => { o.updatedAt = Date.now(); };
+const nextOf = (dateStr) => { if (!dateStr) return null; const d = new Date(dateStr + 'T00:00:00'); if (isNaN(d)) return null; const t = new Date(); t.setHours(0,0,0,0); const nx = new Date(t.getFullYear(), d.getMonth(), d.getDate()); if (nx < t) nx.setFullYear(nx.getFullYear() + 1); return nx; };
+const daysTo = (d) => { const t = new Date(); t.setHours(0,0,0,0); return Math.round((d - t) / 86400000); };
+
+let toastTimer;
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2000); }
+
+/* ================= GitHub Contents API（与 src/api/github.js 同构） ================= */
+const GH_API = 'https://api.github.com';
+const ghCfg = () => { try { const c = JSON.parse(localStorage.getItem(GH_KEY)); if (c && c.owner && c.repo && c.token) return c; } catch (e) {} return null; };
+const ghSet = (c) => localStorage.setItem(GH_KEY, JSON.stringify(c));
+const auth = (token) => ({ 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' });
+const encB64 = (s) => btoa(unescape(encodeURIComponent(s)));
+const decB64 = (b) => decodeURIComponent(escape(atob(b.replace(/\n/g, ''))));
+
+async function ghGet(path) {
+  const c = ghCfg(); if (!c) throw new Error('未配置');
+  const url = `${GH_API}/repos/${c.owner}/${c.repo}/contents/${path}`;
+  const r = await fetch(url + '?ref=' + (c.branch || ''), { headers: auth(c.token) });
+  if (r.status === 404) return { data: null, sha: null };
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const d = await r.json();
+  if (!d.content) { // >1MB 文件 raw 模式重取
+    const raw = await fetch(url + '?ref=' + (c.branch || ''), { headers: Object.assign(auth(c.token), { 'Accept': 'application/vnd.github.raw' }) });
+    return { data: JSON.parse(await raw.text()), sha: d.sha };
+  }
+  return { data: JSON.parse(decB64(d.content)), sha: d.sha };
+}
+async function ghPut(path, content, sha, isBinary) {
+  const c = ghCfg(); if (!c) throw new Error('未配置');
+  const body = { message: `sync: ${new Date().toISOString()}`, content: isBinary ? content : encB64(JSON.stringify(content, null, 2)), branch: c.branch || undefined };
+  if (sha) body.sha = sha;
+  const r = await fetch(`${GH_API}/repos/${c.owner}/${c.repo}/contents/${path}`, { method: 'PUT', headers: auth(c.token), body: JSON.stringify(body) });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return (await r.json()).content.sha;
+}
+async function ghPutBinary(path, dataUrl) { return ghPut(path, dataUrl.split(',')[1], null, true); }
+async function ghGetBinary(path, mime) {
+  const c = ghCfg(); if (!c) throw new Error('未配置');
+  const r = await fetch(`${GH_API}/repos/${c.owner}/${c.repo}/contents/${path}?ref=${c.branch || ''}`, { headers: Object.assign(auth(c.token), { 'Accept': 'application/vnd.github.raw' }) });
+  if (r.status === 404) return null;
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const buf = new Uint8Array(await r.arrayBuffer());
+  let bin = ''; for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
+  return `data:${mime};base64,${btoa(bin)}`;
+}
+async function ghTest() {
+  const c = ghCfg(); if (!c) throw new Error('未配置');
+  const r = await fetch(`${GH_API}/repos/${c.owner}/${c.repo}`, { headers: auth(c.token) });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const d = await r.json();
+  return { fullName: d.full_name, private: d.private };
+}
+
+/* ================= 同步：墓碑合并 / 防抖 push / 可见性 pull ================= */
+function buildPayload() {
+  return { name1:S.name1, name2:S.name2, anniversary:S.anniversary, birthday1:S.birthday1, birthday2:S.birthday2,
+    timeline:S.timeline, wishes:S.wishes, capsules:S.capsules, voices:S.voices, customDays:S.customDays };
+}
+function mergeList(local, remote) {
+  if (!Array.isArray(remote)) return local;
+  const map = new Map();
+  local.forEach(x => map.set(x.id, x));
+  remote.forEach(r => { if (!r || !r.id) return; const l = map.get(r.id); if (!l || (r.updatedAt || 0) > (l.updatedAt || 0)) map.set(r.id, r); });
+  return [...map.values()];
+}
+function importData(d) {
+  if (!d || typeof d !== 'object') return;
+  S.timeline = mergeList(S.timeline, d.timeline);
+  S.wishes = mergeList(S.wishes, d.wishes);
+  S.capsules = mergeList(S.capsules, d.capsules);
+  S.voices = mergeList(S.voices, d.voices);
+  S.customDays = mergeList(S.customDays, d.customDays);
+  ['name1','name2','anniversary','birthday1','birthday2'].forEach(k => { if (d[k]) S[k] = d[k]; });
+  persist(); renderAll();
+}
+let syncTimer = null, syncing = false;
+function schedulePush() { if (!ghCfg()) return; clearTimeout(syncTimer); syncTimer = setTimeout(flushPush, 2000); }
+async function flushPush() {
+  if (syncing || !ghCfg()) return; syncing = true;
+  try {
+    let sha = localStorage.getItem(SHA_KEY);
+    if (!sha) { const res = await ghGet('couple-data.json'); sha = res.sha; if (res.data) importData(res.data); }
+    localStorage.setItem(SHA_KEY, await ghPut('couple-data.json', buildPayload(), sha));
+    S.lastSyncAt = Date.now(); S.syncError = ''; persist(); renderSyncState();
+  } catch (e) {
+    if (e.message === 'HTTP 409' || e.message === 'HTTP 422') { // 冲突：拉取合并重试
+      try { const res = await ghGet('couple-data.json'); localStorage.setItem(SHA_KEY, await ghPut('couple-data.json', buildPayload(), res.sha)); S.lastSyncAt = Date.now(); persist(); renderSyncState(); } catch (e2) { S.syncError = String(e2); persist(); }
+    } else { S.syncError = String(e); persist(); renderSyncState(); }
+  } finally { syncing = false; }
+}
+async function initialPull() {
+  if (!ghCfg()) return;
+  try { const res = await ghGet('couple-data.json'); localStorage.setItem(SHA_KEY, res.sha); if (res.data) importData(res.data); } catch (e) {}
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') { clearTimeout(syncTimer); flushPush(); return; }
+  if (!ghCfg()) return; clearTimeout(syncTimer); flushPush().then(initialPull).catch(() => {});
+});
+
+/* ================= 通用 add/del（墓碑模式） ================= */
+function addListItem(key, item) { touch(item); S[key].push(item); persist(); renderAll(); schedulePush(); }
+function delListItem(key, id) {
+  const it = S[key].find(x => x.id === id); if (!it) return;
+  touch(it); it.deleted = true; persist(); renderAll(); schedulePush();
+}
+
+/* ================= 首页 ================= */
+function renderHome() {
+  const ann = S.anniversary;
+  $('hTitle').textContent = `${S.name1 || '我'} ❤ ${S.name2 || 'TA'}`;
+  $('hDays').textContent = ann ? Math.max(0, Math.round((new Date() - new Date(ann + 'T00:00:00')) / 86400000)) : '—';
+  $('hSince').textContent = ann ? `自 ${ann.replace(/-/g, ' . ')} 起，一直在一起` : '去「设置」里填上在一起的日子吧';
+  // 值得期待的日子
+  const items = [];
+  const push = (label, nx, icon) => { if (!nx) return; const d = daysTo(nx); items.push({ label, num: d === 0 ? `${icon}今天` : `${d} 天`, date: fmtDay(nx) }); };
+  push('恋爱周年', nextOf(S.anniversary), '🎉');
+  push(`${S.name1 || '我'}的生日`, nextOf(S.birthday1), '🎂');
+  push(`${S.name2 || 'TA'}的生日`, nextOf(S.birthday2), '🎂');
+  S.customDays.filter(c => !c.deleted && c.name && c.date).map(c => ({ c, nx: nextOf(c.date) })).filter(x => x.nx).sort((a, b) => a.nx - b.nx).forEach(x => push(x.c.name, x.nx, '🎉'));
+  $('countList').innerHTML = items.length
+    ? items.map(i => `<div class="count-item"><div class="label">${esc(i.label)}</div><div class="num">${i.num}</div><div class="date">${i.date}</div></div>`).join('')
+    : '<div class="empty">在「设置」中添加纪念日<br>就会出现在这里 📅</div>';
+  // 每日情话（按一年中第几天轮换）
+  $('quote').textContent = '「' + QUOTES[Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000) % QUOTES.length] + '」';
+  // 心愿进度
+  const act = S.wishes.filter(w => !w.deleted);
+  const done = act.filter(w => w.done).length;
+  $('wishDone').textContent = done; $('wishTotal').textContent = act.length;
+  const pct = act.length ? Math.round(done / act.length * 100) : 0;
+  $('wishPercent').textContent = pct + '%'; $('wishBar').style.width = pct + '%';
+}
+
+/* ================= 时间线 ================= */
+let pendingPhoto = null, uploading = false;
+function renderTimeline() {
+  const kw = $('tlSearch').value.trim().toLowerCase();
+  const list = [...S.timeline].filter(t => !t.deleted)
+    .filter(t => !kw || (t.text || '').toLowerCase().includes(kw) || (t.author || '').toLowerCase().includes(kw))
+    .sort((a, b) => ((b.date || '') + b.id).localeCompare((a.date || '') + a.id));
+  if (!list.length) { $('tlList').innerHTML = `<div class="empty">${kw ? '没有匹配的记录 🔍' : '还没有记录<br>写下第一条吧 ✍️'}</div>`; return; }
+  const groups = [];
+  const map = new Map();
+  list.forEach(t => { const m = (t.date || '').slice(0, 7) || '未知时间'; if (!map.has(m)) { const g = { m, items: [] }; map.set(m, g); groups.push(g); } map.get(m).items.push(t); });
+  $('tlList').innerHTML = groups.map(g =>
+    `<div class="group-month">🗓 ${g.m}</div>` + g.items.map(t =>
+      `<div class="tl-item"><div class="meta"><b>${esc(t.author)}</b> · ${esc(t.date)}</div><button class="del" onclick="delTimeline('${t.id}')">✕</button><div class="text">${esc(t.text)}</div>${t.photo ? `<img class="photo" src="" data-photo="${esc(t.photo)}" alt="照片" onclick="previewPhoto(this)">` : ''}</div>`
+    ).join('')
+  ).join('');
+  // 惰性加载照片：远端路径 → dataURL；兼容旧 data: URL
+  document.querySelectorAll('#tlList img[data-photo]').forEach(async img => {
+    const p = img.getAttribute('data-photo');
+    if (p.startsWith('data:')) { img.src = p; return; }
+    try { const url = await ghGetBinary(p, 'image/jpeg'); if (url) img.src = url; } catch (e) {}
+  });
+}
+function onPhotoChange(e) {
+  const file = e.target.files[0]; e.target.value = ''; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => { const img = new Image(); img.onload = () => {
+    const max = 600; let w = img.width, h = img.height;
+    if (w > max || h > max) { const r = max / Math.max(w, h); w = Math.round(w * r); h = Math.round(h * r); }
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    cv.getContext('2d').drawImage(img, 0, 0, w, h);
+    pendingPhoto = cv.toDataURL('image/jpeg', 0.6);
+    $('tlPreviewImg').src = pendingPhoto; $('tlPreview').style.display = 'block';
+  }; img.src = ev.target.result; };
+  reader.readAsDataURL(file);
+}
+function clearPhoto() { pendingPhoto = null; $('tlPreview').style.display = 'none'; }
+async function addTimeline() {
+  if (uploading) return;
+  const text = $('tlText').value.trim();
+  if (!text && !pendingPhoto) { toast('写点什么或加张照片吧～'); return; }
+  const id = uid();
+  let photoPath = '';
+  if (pendingPhoto) {
+    uploading = true; $('tlAdd').disabled = true;
+    try { photoPath = `photos/${id}.jpg`; await ghPutBinary(photoPath, pendingPhoto); }
+    catch (e) { toast('照片上传失败，请检查网络 ❌'); uploading = false; $('tlAdd').disabled = false; return; }
+    uploading = false; $('tlAdd').disabled = false;
+  }
+  addListItem('timeline', { id, author: myName(), text: text || '📷 分享了一张照片', photo: photoPath, date: $('tlDate').value });
+  $('tlText').value = ''; clearPhoto(); toast('已记录 ❤');
+}
+function delTimeline(id) { if (confirm('确定删除这条记录吗？')) { delListItem('timeline', id); toast('已删除'); } }
+async function previewPhoto(img) {
+  const p = img.getAttribute('data-photo');
+  const url = p.startsWith('data:') ? p : await ghGetBinary(p, 'image/jpeg').catch(() => null);
+  if (url) { $('lightboxImg').src = url; $('lightbox').style.display = 'flex'; }
+}
+
+/* ================= 心愿 ================= */
+let newTag = '', wishFilter = '';
+function renderWishes() {
+  $('tagPicker').innerHTML = TAGS.map(t => `<button class="chip ${newTag === t ? 'on' : ''}" onclick="pickTag('${t}')">${t}</button>`).join('');
+  const used = TAGS.filter(t => S.wishes.some(w => !w.deleted && w.tag === t));
+  $('filterBar').innerHTML = ['', ...used].map(t => `<button class="chip ${wishFilter === t ? 'on' : ''}" onclick="pickFilter('${t}')">${t || '全部'}</button>`).join('');
+  const list = [...S.wishes].filter(w => !w.deleted).filter(w => !wishFilter || w.tag === wishFilter)
+    .sort((a, b) => a.done - b.done || (a.createdAt < b.createdAt ? 1 : -1));
+  $('wishList').innerHTML = list.length
+    ? list.map(w => `<div class="wish-item ${w.done ? 'done' : ''}"><input type="checkbox" ${w.done ? 'checked' : ''} onchange="toggleWish('${w.id}')"><span class="text">${esc(w.text)}</span>${w.tag ? `<span class="wish-tag">${esc(w.tag)}</span>` : ''}<button class="del" style="border:none;background:none;color:#d9a3b1;cursor:pointer" onclick="delWish('${w.id}')">✕</button></div>`).join('')
+    : '<div class="empty">心愿清单还是空的<br>许下第一个愿望吧 ✨</div>';
+}
+function pickTag(t) { newTag = newTag === t ? '' : t; renderWishes(); }
+function pickFilter(t) { wishFilter = t; renderWishes(); }
+function addWish() {
+  const text = $('wishText').value.trim();
+  if (!text) { toast('先写一个心愿吧～'); return; }
+  addListItem('wishes', { id: uid(), text, tag: newTag, done: false, createdAt: Date.now() });
+  $('wishText').value = ''; newTag = ''; toast('心愿已加入 ✨');
+}
+function toggleWish(id) { const w = S.wishes.find(x => x.id === id); if (!w) return; touch(w); w.done = !w.done; persist(); renderAll(); schedulePush(); if (w.done) toast('又完成一个心愿，恭喜！🎉'); }
+function delWish(id) { if (confirm('确定删除这个心愿吗？')) delListItem('wishes', id); }
+
+/* ================= 时间胶囊 ================= */
+function blurText(t) { return (t || '').replace(/[^\s]/g, '♥'); }
+function renderCapsules() {
+  if (!$('capDate').value) { const d = new Date(); d.setFullYear(d.getFullYear() + 1); $('capDate').value = fmtDay(d); }
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const list = [...S.capsules].filter(c => !c.deleted)
+    .map(c => Object.assign({}, c, { unlocked: c.unlockAt <= fmtDay(today), daysLeft: Math.max(0, Math.round((new Date(c.unlockAt + 'T00:00:00') - today) / 86400000)) }))
+    .sort((a, b) => (a.unlocked === b.unlocked) ? (a.unlocked ? b.createdAt - a.createdAt : a.unlockAt.localeCompare(b.unlockAt)) : (a.unlocked ? 1 : -1));
+  $('capList').innerHTML = list.length
+    ? list.map(c => `<div class="capsule-item ${c.unlocked ? '' : 'locked'}"><div class="meta"><span class="badge ${c.unlocked ? 'open' : 'lock'}">${c.unlocked ? '已解锁' : `🔒 ${c.daysLeft} 天后开启`}</span><span>${esc(c.author || '')} · ${fmtTs(c.createdAt)} 封存</span></div><button class="del" style="position:absolute;top:8px;right:8px;border:none;background:none;color:#d9a3b1;cursor:pointer" onclick="delCapsule('${c.id}')">✕</button><div class="text">${c.unlocked ? esc(c.text) : esc(blurText(c.text))}</div>${c.unlocked ? '' : `<div class="meta" style="margin-top:6px"><span>解锁日：${esc(c.unlockAt)}</span></div>`}</div>`).join('')
+    : '<div class="empty">还没有封存的信<br>给未来的 TA 写一封吧 💌</div>';
+}
+function addCapsule() {
+  const text = $('capText').value.trim();
+  if (!text) { toast('写点什么再封存吧～'); return; }
+  if (!$('capDate').value) { toast('请选择解锁日期'); return; }
+  addListItem('capsules', { id: uid(), author: myName(), text, unlockAt: $('capDate').value, createdAt: Date.now() });
+  $('capText').value = ''; toast('已封存 🔒，到期见');
+}
+function delCapsule(id) { if (confirm('确定删除这个时间胶囊吗？')) { delListItem('capsules', id); toast('已删除'); } }
+
+/* ================= 语音留言 ================= */
+let recording = false, recSeconds = 0, recorder = null, chunks = [], recTimer = null, stream = null, playingId = '';
+function fmtSec(s) { return `${Math.floor(s / 60)}:${pad(Math.floor(s % 60))}`; }
+async function toggleRecord() {
+  if (recording) { stopRecording(false); return; }
+  if (!navigator.mediaDevices || !window.MediaRecorder) { toast('当前环境不支持录音 ❌'); return; }
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+  catch (e) { toast('无法获取麦克风权限 ❌'); return; }
+  chunks = []; recorder = new MediaRecorder(stream);
+  recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+  recorder.onstop = onRecordStop;
+  recorder.start(); recording = true; recSeconds = 0;
+  $('recBtn').classList.add('recording'); $('recTip').textContent = `录音中 ${fmtSec(0)} / 0:30`;
+  recTimer = setInterval(() => { recSeconds++; $('recTip').textContent = `录音中 ${fmtSec(recSeconds)} / 0:30`; if (recSeconds >= MAX_SECONDS) stopRecording(false); }, 1000);
+}
+function stopRecording(silent) {
+  if (!recording) return;
+  recording = false; clearInterval(recTimer);
+  $('recBtn').classList.remove('recording'); $('recTip').textContent = '点击开始录音，最长 30 秒';
+  if (silent) { if (recorder && recorder.state !== 'inactive') { recorder.onstop = null; recorder.stop(); } }
+  else if (recorder && recorder.state !== 'inactive') recorder.stop();
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+}
+async function onRecordStop() {
+  const blob = new Blob(chunks, { type: 'audio/webm' }); chunks = [];
+  if (!blob.size) return;
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    const id = uid(); toast('上传中…');
+    try {
+      const path = `voices/${id}.webm`;
+      await ghPutBinary(path, ev.target.result);
+      addListItem('voices', { id, by: myName(), audio: path, duration: recSeconds || 1, createdAt: Date.now() });
+      toast('语音已保存 ❤');
+    } catch (e) { toast('语音上传失败，请检查网络 ❌'); }
+  };
+  reader.readAsDataURL(blob);
+}
+function renderVoices() {
+  const list = [...S.voices].filter(v => !v.deleted).sort((a, b) => b.createdAt - a.createdAt);
+  $('voiceList').innerHTML = list.length
+    ? list.map(v => `<div class="voice-item"><button class="play-btn" onclick="togglePlay('${v.id}')">${playingId === v.id ? '⏸' : '▶'}</button><div style="flex:1"><div style="font-size:13px;font-weight:700;">${esc(v.by || '')}</div><div style="font-size:11px;color:#a08a92;">${fmtTs(v.createdAt)} · ${fmtSec(v.duration || 0)}</div></div>${playingId === v.id ? '<div class="wave">' + Array.from({length: 8}, (_, i) => `<span class="bar" style="animation-delay:${i * 0.07}s"></span>`).join('') + '</div>' : ''}<button class="del" style="border:none;background:none;color:#d9a3b1;cursor:pointer" onclick="delVoice('${v.id}')">✕</button><audio id="au-${v.id}" style="display:none" onended="playingId='';renderVoices()"></audio></div>`).join('')
+    : '<div class="empty">还没有语音留言<br>录一段想说的话吧 🎤</div>';
+}
+async function togglePlay(id) {
+  const audio = $('au-' + id); if (!audio) return;
+  if (playingId === id) { audio.pause(); playingId = ''; renderVoices(); return; }
+  const v = S.voices.find(x => x.id === id); if (!v) return;
+  if (!audio.src) {
+    try {
+      const mime = (v.audio || '').endsWith('.mp3') ? 'audio/mpeg' : 'audio/webm';
+      const url = await ghGetBinary(v.audio, mime);
+      if (!url) { toast('语音文件不存在 ❌'); return; }
+      audio.src = url;
+    } catch (e) { toast('语音加载失败 ❌'); return; }
+  }
+  playingId = id; renderVoices(); audio.play();
+}
+function delVoice(id) { if (confirm('确定删除这条语音吗？')) { delListItem('voices', id); toast('已删除'); } }
+window.addEventListener('beforeunload', () => stopRecording(true));
+
+/* ================= 设置 ================= */
+function renderSettings() {
+  $('fName1').value = S.name1; $('fName2').value = S.name2;
+  $('fAnniv').value = S.anniversary; $('fBd1').value = S.birthday1; $('fBd2').value = S.birthday2;
+  $('meName1').textContent = S.name1 || '我'; $('meName2').textContent = S.name2 || 'TA';
+  $('me1').classList.toggle('on', S.me === 1); $('me2').classList.toggle('on', S.me === 2);
+  const c = ghCfg();
+  if (c) { $('ghOwner').value = c.owner; $('ghRepo').value = c.repo; $('ghToken').value = c.token; }
+  renderSyncState(); renderDayList();
+}
+function renderSyncState() {
+  const el = $('syncState'); if (!el) return;
+  if (!ghCfg()) { el.textContent = '未配置，数据仅保存在本机'; return; }
+  el.textContent = (S.syncError ? '同步异常：' + esc(S.syncError) : S.lastSyncAt ? `上次同步：${new Date(S.lastSyncAt).toLocaleString()}` : '已配置，等待首次同步');
+}
+function setWho(me) { S.me = me; persist(); renderAll(); schedulePush(); }
+function saveSettings() {
+  Object.assign(S, {
+    name1: $('fName1').value.trim() || '我', name2: $('fName2').value.trim() || 'TA',
+    anniversary: $('fAnniv').value, birthday1: $('fBd1').value, birthday2: $('fBd2').value
+  });
+  persist(); renderAll(); schedulePush(); toast('保存成功 ❤');
+}
+function renderDayList() {
+  const list = S.customDays.filter(d => !d.deleted);
+  $('dayList').innerHTML = list.length
+    ? list.map(d => `<div class="day-item"><span>📅 ${esc(d.name)}</span><span class="d">${esc(d.date)}</span><button class="btn danger" onclick="removeDay('${d.id}')">删除</button></div>`).join('')
+    : '<div class="empty">还没有自定义纪念日</div>';
+}
+function addDay() {
+  const name = $('dayName').value.trim();
+  if (!name) { toast('先写个日子名称吧～'); return; }
+  if (!$('dayDate').value) { toast('请选择日期'); return; }
+  addListItem('customDays', { id: uid(), name, date: $('dayDate').value });
+  $('dayName').value = ''; toast('已添加 📅');
+}
+function removeDay(id) { if (confirm('确定删除这个纪念日吗？')) delListItem('customDays', id); }
+function saveGh() {
+  const owner = $('ghOwner').value.trim(), repo = $('ghRepo').value.trim(), token = $('ghToken').value.trim();
+  if (!owner || !repo || !token) { toast('请填写完整的用户名、仓库名和令牌'); return false; }
+  ghSet({ owner, repo, token }); return true;
+}
+async function testGh() {
+  if (!saveGh()) return; toast('测试中…');
+  try { const r = await ghTest(); toast(`连接成功：${r.fullName}${r.private ? '（私有）' : ''} ✅`); renderSyncState(); }
+  catch (e) { const s = e.message; toast(s === 'HTTP 401' ? '令牌无效，请重新生成 ❌' : s === 'HTTP 403' ? '权限不足，需 Contents 读写 ❌' : '连接失败，请检查网络和配置 ❌'); }
+}
+async function pullGh() {
+  if (!saveGh()) return; toast('拉取中…');
+  try {
+    const res = await ghGet('couple-data.json');
+    localStorage.setItem(SHA_KEY, res.sha);
+    if (res.data) { importData(res.data); toast('拉取成功，数据已合并 ❤'); }
+    else { toast('远端还没有数据，先上传吧'); renderAll(); }
+  } catch (e) { toast('拉取失败，请检查配置 ❌'); }
+}
+async function pushGh() {
+  if (!saveGh()) return; toast('上传中…');
+  clearTimeout(syncTimer);
+  try { await flushPush(); if (!S.syncError) toast('上传成功，已同步到 GitHub ☁️'); else toast('上传失败 ❌'); }
+  catch (e) { toast('上传失败，请检查配置 ❌'); }
+}
+
+/* ================= 路由 & 渲染 ================= */
+function go(p, btn) {
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  $('page-' + p).classList.add('active');
+  document.querySelectorAll('nav.tabbar button').forEach(b => b.classList.remove('on'));
+  if (btn) btn.classList.add('on');
+  window.scrollTo(0, 0);
+  if (p === 'voice') renderVoices();
+}
+function renderAll() { renderHome(); renderTimeline(); renderWishes(); renderCapsules(); renderVoices(); renderSettings(); }
+
+$('tlPhoto').addEventListener('change', onPhotoChange);
+$('tlSearch').addEventListener('input', renderTimeline);
+$('tlText').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addTimeline(); } });
+$('wishText').addEventListener('keydown', e => { if (e.key === 'Enter') addWish(); });
+$('capText').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.ctrlKey) { e.preventDefault(); addCapsule(); } });
+$('dayName').addEventListener('keydown', e => { if (e.key === 'Enter') addDay(); });
+
+// 默认时间线日期 = 今天
+(() => { const d = new Date(); $('tlDate').value = fmtDay(d); })();
+renderAll();
+initialPull();
+</script>
+</body>
+</html>
