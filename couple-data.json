@@ -199,14 +199,5 @@
       "updatedAt": 1794205015825,
       "deleted": true
     }
-  ],
-  "tags": [
-    {
-      "id": "tag:看电影",
-      "name": "看电影",
-      "deleted": false,
-      "createdAt": 0,
-      "updatedAt": 0
-    }
   ]
 }
