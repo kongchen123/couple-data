@@ -101,7 +101,8 @@
       "audio": "voices/mw8sk6kbjc2uz.webm",
       "duration": 2,
       "createdAt": 1794200347791,
-      "updatedAt": 1794200347791
+      "updatedAt": 1794227004795,
+      "deleted": true
     },
     {
       "id": "mw8x27m900y6z",
