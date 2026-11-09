@@ -22,7 +22,16 @@
       "updatedAt": 1794201567458
     }
   ],
-  "wishes": [],
+  "wishes": [
+    {
+      "id": "mw8u2ehw4brfe",
+      "text": "1111",
+      "tag": "",
+      "done": false,
+      "createdAt": 1794202874852,
+      "updatedAt": 1794202874852
+    }
+  ],
   "capsules": [
     {
       "id": "mw8tb6nua29he",
