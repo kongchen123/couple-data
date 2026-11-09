@@ -82,6 +82,16 @@
       "time": "21:37",
       "createdAt": 1794231423274,
       "updatedAt": 1794231423274
+    },
+    {
+      "id": "mw9c1b04s8y0a",
+      "author": "巩振",
+      "text": "本地存储好用的",
+      "photo": "",
+      "date": "2026-11-09",
+      "time": "22:04",
+      "createdAt": 1794233056756,
+      "updatedAt": 1794233056756
     }
   ],
   "wishes": [
@@ -228,5 +238,6 @@
       "updatedAt": 1794205015825,
       "deleted": true
     }
-  ]
+  ],
+  "tags": []
 }
