@@ -4,7 +4,16 @@
   "anniversary": "",
   "birthday1": "",
   "birthday2": "",
-  "timeline": [],
+  "timeline": [
+    {
+      "id": "mw8sje244v9dh",
+      "author": "巩振",
+      "text": "去吃了牛new",
+      "photo": "photos/mw8sje244v9dh.jpg",
+      "date": "2026-11-09",
+      "updatedAt": 1794200310467
+    }
+  ],
   "wishes": [],
   "capsules": [],
   "voices": [],
