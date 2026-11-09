@@ -117,7 +117,8 @@
       "audio": "voices/mw8xo8xtvoocs.webm",
       "duration": 1,
       "createdAt": 1794208934764,
-      "updatedAt": 1794208934764
+      "updatedAt": 1794227000753,
+      "deleted": true
     },
     {
       "id": "mw92k85510stx",
