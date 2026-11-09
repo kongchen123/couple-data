@@ -23,7 +23,16 @@
     }
   ],
   "wishes": [],
-  "capsules": [],
+  "capsules": [
+    {
+      "id": "mw8tb6nua29he",
+      "author": "巩振",
+      "text": "我爱你",
+      "unlockAt": "2027-11-09",
+      "createdAt": 1794201604986,
+      "updatedAt": 1794201604986
+    }
+  ],
   "voices": [
     {
       "id": "mw8sk6kbjc2uz",
