@@ -84,7 +84,8 @@
       "id": "mw8vc3r6kk7f5",
       "name": "400天",
       "date": "2026-11-09",
-      "updatedAt": 1794205007106
+      "updatedAt": 1794205015825,
+      "deleted": true
     }
   ]
 }
