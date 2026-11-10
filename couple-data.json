@@ -270,7 +270,8 @@
       "mime": "audio/webm;codecs=opus",
       "duration": 3,
       "createdAt": 1794289014915,
-      "updatedAt": 1794289014915
+      "updatedAt": 1794289045480,
+      "deleted": true
     }
   ],
   "customDays": [
