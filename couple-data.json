@@ -100,6 +100,16 @@
       "photo": "",
       "date": "2026-11-09",
       "updatedAt": 1794239423501
+    },
+    {
+      "id": "mw9zabhdps5jj",
+      "author": "巩振",
+      "text": "新的一天，又优化了一版，现在整体样式差不多了，这个腾讯WorkBuddy有点拉胯，速度慢，花费多",
+      "photo": "",
+      "date": "2026-11-10",
+      "time": "08:55",
+      "createdAt": 1794272108449,
+      "updatedAt": 1794272108449
     }
   ],
   "wishes": [
@@ -261,5 +271,6 @@
       "updatedAt": 1794239782966,
       "deleted": true
     }
-  ]
+  ],
+  "tags": []
 }
