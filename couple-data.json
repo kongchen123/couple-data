@@ -217,7 +217,8 @@
       "audio": "voices/mw8x27m900y6z.webm",
       "duration": 5,
       "createdAt": 1794207907065,
-      "updatedAt": 1794207907065
+      "updatedAt": 1794319591774,
+      "deleted": true
     },
     {
       "id": "mw8xo8xtvoocs",
@@ -252,7 +253,8 @@
       "mime": "audio/webm;codecs=opus",
       "duration": 4,
       "createdAt": 1794228280291,
-      "updatedAt": 1794228280291
+      "updatedAt": 1794319595065,
+      "deleted": true
     },
     {
       "id": "mw9avdgzddy1x",
