@@ -12,6 +12,19 @@
     "d": 14,
     "leap": true
   },
+  "tags": [
+    {
+      "id": "tag:看电影",
+      "name": "看电影",
+      "deleted": false,
+      "createdAt": 0,
+      "updatedAt": 0
+    }
+  ],
+  "periodCfg": {
+    "cycle": 28,
+    "len": 5
+  },
   "timeline": [
     {
       "id": "mw8sje244v9dh",
@@ -214,7 +227,8 @@
       "date": "2026-11-11",
       "time": "17:47",
       "createdAt": 1794390477795,
-      "updatedAt": 1794390477795
+      "updatedAt": 1794390748319,
+      "deleted": true
     }
   ],
   "wishes": [
@@ -406,13 +420,5 @@
       "deleted": true
     }
   ],
-  "tags": [
-    {
-      "id": "tag:看电影",
-      "name": "看电影",
-      "deleted": false,
-      "createdAt": 0,
-      "updatedAt": 0
-    }
-  ]
+  "periods": []
 }
