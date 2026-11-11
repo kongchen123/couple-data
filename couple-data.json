@@ -238,7 +238,8 @@
       "date": "2026-11-11",
       "time": "17:52",
       "createdAt": 1794390751863,
-      "updatedAt": 1794390751864
+      "updatedAt": 1794391669902,
+      "deleted": true
     },
     {
       "id": "mwbybn12vhtp0",
@@ -248,7 +249,8 @@
       "date": "2026-11-11",
       "time": "18:03",
       "createdAt": 1794391422806,
-      "updatedAt": 1794391422806
+      "updatedAt": 1794391457662,
+      "deleted": true
     }
   ],
   "wishes": [
