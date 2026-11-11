@@ -186,17 +186,17 @@
       "id": "mw8uqctwaw0ln",
       "text": "一起去大理",
       "tag": "旅行",
-      "done": false,
+      "done": true,
       "createdAt": 1794203992436,
-      "updatedAt": 1794203992436
+      "updatedAt": 1794378465537
     },
     {
       "id": "mw98d8ptkl0n2",
       "text": "不用上班，自由去嗨",
       "tag": "一起做",
-      "done": false,
+      "done": true,
       "createdAt": 1794226895201,
-      "updatedAt": 1794226895201
+      "updatedAt": 1794378464976
     },
     {
       "id": "mw9akfryyxhrj",
@@ -220,17 +220,17 @@
       "id": "mw9fzf5kol1ht",
       "text": "一起去三亚",
       "tag": "",
-      "done": false,
+      "done": true,
       "createdAt": 1794239687288,
-      "updatedAt": 1794239687288
+      "updatedAt": 1794378464425
     },
     {
       "id": "mwa6ei2qx6amr",
       "text": "湘湖边去晒太阳",
       "tag": "",
-      "done": false,
+      "done": true,
       "createdAt": 1794284060930,
-      "updatedAt": 1794284060930
+      "updatedAt": 1794378463161
     }
   ],
   "capsules": [
