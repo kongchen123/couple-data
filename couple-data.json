@@ -12,6 +12,11 @@
     "d": 14,
     "leap": true
   },
+  "tags": [],
+  "periodCfg": {
+    "cycle": 28,
+    "len": 5
+  },
   "timeline": [
     {
       "id": "mw8sje244v9dh",
@@ -130,6 +135,17 @@
       "time": "22:10",
       "createdAt": 1794319834229,
       "updatedAt": 1794319834229
+    },
+    {
+      "id": "mwbjwdxwp90y7",
+      "author": "巩振",
+      "text": "1111",
+      "photo": "",
+      "date": "2026-11-11",
+      "time": "11:19",
+      "createdAt": 1794367196564,
+      "updatedAt": 1794367199414,
+      "deleted": true
     }
   ],
   "wishes": [
@@ -321,7 +337,6 @@
       "deleted": true
     }
   ],
-  "tags": [],
   "periods": [
     {
       "id": "mwbj40328jg5y",
@@ -330,9 +345,5 @@
       "createdAt": 1794365872238,
       "updatedAt": 1794365872238
     }
-  ],
-  "periodCfg": {
-    "cycle": 28,
-    "len": 5
-  }
+  ]
 }
