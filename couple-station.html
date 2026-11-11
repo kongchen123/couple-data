@@ -6,53 +6,127 @@
 <title>情侣小站 · 单页版</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #fdf3f5; color: #4a3b40; padding-bottom: 70px; }
-header { background: linear-gradient(135deg, #ff8fa8 0%, #f5577f 60%, #e9407a 100%); color: #fff; padding: 24px 16px 20px; border-radius: 0 0 24px 24px; }
-header h1 { font-size: 20px; margin-bottom: 4px; }
-header .sub { font-size: 12px; opacity: .85; }
-header .days { font-size: 40px; font-weight: 800; margin: 8px 0 2px; }
-header .days small { font-size: 14px; font-weight: 500; }
-main { padding: 14px; max-width: 560px; margin: 0 auto; }
-.card { background: #fff; border-radius: 18px; box-shadow: 0 6px 24px rgba(245,87,127,.1); padding: 16px; margin-bottom: 14px; }
-.card h2 { font-size: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+html, body { height: 100%; }
+body { height: 100vh; height: 100dvh; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: linear-gradient(180deg, #ffe4ec 0%, #fff7f9 240px) #fff7f9; color: #4a3b40; display: flex; flex-direction: column; overflow: hidden; overscroll-behavior: none; }
+header { flex: none; padding: 16px 20px 6px; display: flex; align-items: center; gap: 10px; max-width: 560px; width: 100%; margin: 0 auto; }
+header .logo { font-size: 26px; }
+header h1 { font-size: 19px; font-weight: 700; letter-spacing: 1px; color: #4a3b40; }
+header .sub { font-size: 12px; color: #a08a92; margin-top: 2px; }
+main { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 4px 14px 10px; max-width: 560px; width: 100%; margin: 0 auto; }
+.hero { background: linear-gradient(135deg, #ff8fa8 0%, #f5577f 60%, #e9407a 100%); color: #fff; border-radius: 22px; padding: 18px 20px 16px; text-align: center; box-shadow: 0 10px 30px rgba(245,87,127,.35); margin-bottom: 10px; position: relative; overflow: hidden; }
+.hero::before, .hero::after { content: "♥"; position: absolute; font-size: 90px; opacity: .12; }
+.hero::before { top: -18px; left: -14px; }
+.hero::after { bottom: -26px; right: -10px; font-size: 120px; }
+.hero .names { font-size: 16px; opacity: .95; }
+.hero .days { font-size: 44px; font-weight: 800; line-height: 1.12; margin: 4px 0 3px; }
+.hero .days small { font-size: 16px; font-weight: 600; margin-left: 4px; }
+.hero .since { font-size: 12.5px; opacity: .85; }
+.card { background: #fff; border-radius: 18px; box-shadow: 0 6px 24px rgba(245,87,127,.1); padding: 13px 14px; margin-bottom: 10px; }
+.card h2 { font-size: 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
 .page { display: none; }
-.page.active { display: block; }
-.count-row { display: flex; gap: 8px; flex-wrap: wrap; }
-.count-item { flex: 1 1 45%; background: #fff5f7; border-radius: 12px; padding: 10px 12px; }
+/* 页面骨架：整页不滚，顶部固定 + 下方局部滚动 */
+.page.active { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+/* 左右滑动切页的入场动画 */
+@keyframes pageInL { from { transform: translateX(32px); opacity: .5; } }
+@keyframes pageInR { from { transform: translateX(-32px); opacity: .5; } }
+.page.active.anim-l { animation: pageInL .26s cubic-bezier(.22,.9,.32,1); }
+.page.active.anim-r { animation: pageInR .26s cubic-bezier(.22,.9,.32,1); }
+.page.active > * { flex-shrink: 0; }
+.page.active > .scroll-area { flex: 1 1 auto; min-height: 0; flex-shrink: 1; }
+.scroll-area { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: 4px; }
+.scroll-area::-webkit-scrollbar { width: 4px; }
+.scroll-area::-webkit-scrollbar-thumb { background: #f0c9d4; border-radius: 2px; }
+/* 首页/设置页内容本身较长，允许页内整体滚动（body 仍不滚） */
+#page-home.active, #page-settings.active { display: block; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+/* 值得期待的日子：每页最多 4 个（两行），超过滑动翻页 */
+.count-pager { overflow: hidden; touch-action: pan-y; }
+.count-track { display: flex; width: 100%; align-items: flex-start; transition: transform .28s ease, height .25s ease; will-change: transform; }
+.count-page { flex: 0 0 100%; min-width: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-content: start; }
+.count-page .empty { grid-column: 1 / -1; }
+.count-dots { display: flex; justify-content: center; align-items: center; gap: 5px; margin-top: 9px; }
+.count-dots:empty { display: none; }
+.count-dots i { width: 5px; height: 5px; border-radius: 3px; background: #ffd0dc; transition: all .2s; cursor: pointer; }
+.count-dots i.on { width: 14px; background: #e9407a; }
+.count-item { min-width: 0; background: #fff5f7; border-radius: 12px; padding: 8px 12px; }
+.count-item .date { word-break: break-word; overflow-wrap: anywhere; font-size: 11px; color: #c9b3bb; line-height: 1.5; }
+.count-item .date .ymd { white-space: nowrap; }
+/* 短屏压缩，尽量让首页不出现滚动 */
+@media (max-height: 760px) {
+  header { padding: 6px 20px 3px; }
+  header .logo { font-size: 21px; }
+  header h1 { font-size: 16px; }
+  header .sub { font-size: 11px; }
+  .hero { padding: 11px 14px 9px; margin-bottom: 7px; border-radius: 16px; }
+  .hero .names { font-size: 14.5px; }
+  .hero .days { font-size: 34px; margin: 2px 0 2px; }
+  .hero .since { font-size: 11px; }
+  .card { padding: 10px 11px; margin-bottom: 7px; }
+  .card h2 { margin-bottom: 7px; font-size: 13.5px; }
+  .count-pager { min-height: 0; }
+  .count-item { padding: 6px 9px; }
+  .count-item .num { font-size: 15px; }
+  .quote { font-size: 12.5px; line-height: 1.6; }
+  .hero .lunar-today { display: none; }
+}
 .count-item .label { font-size: 12px; color: #a08a92; }
 .count-item .num { font-size: 16px; font-weight: 700; color: #e9407a; margin-top: 2px; }
-.count-item .date { font-size: 11px; color: #c9b3bb; }
 .quote { font-size: 13px; color: #8a6e78; line-height: 1.7; font-style: italic; }
+.quote-refresh { margin-left: auto; width: 28px; height: 28px; border-radius: 50%; border: 1px solid #f3d6de; background: #fff6f8; color: #e9407a; font-size: 15px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .2s; }
+.quote-refresh:active { background: #ffe4ec; }
+.quote-refresh.loading { animation: qspin .8s linear infinite; }
+@keyframes qspin { to { transform: rotate(360deg); } }
 .progress-bar { height: 10px; background: #ffe3ea; border-radius: 6px; overflow: hidden; margin-top: 8px; }
 .progress-bar i { display: block; height: 100%; background: linear-gradient(90deg, #ff8fa8, #e9407a); border-radius: 6px; transition: width .3s; }
 .composer textarea { width: 100%; min-height: 80px; border: 1.5px solid #f3dee4; border-radius: 12px; padding: 10px 12px; font-size: 14px; font-family: inherit; resize: vertical; outline: none; background: #fffdfa; }
 .composer textarea:focus { border-color: #ff7e9d; }
-.composer-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
-input[type="date"], input[type="text"], input[type="password"] { border: 1.5px solid #f3dee4; border-radius: 10px; padding: 8px 10px; font-size: 13px; color: #4a3b40; background: #fff; outline: none; }
+.composer-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.composer-row input[type="date"] { flex: 1 1 120px; min-width: 0; }
+.inline-composer { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.inline-composer input[type="text"] { flex: 1 1 140px; }
+.inline-composer input[type="date"] { flex: 1 1 110px; }
+input[type="date"], input[type="text"], input[type="password"] { border: 1.5px solid #f3dee4; border-radius: 10px; padding: 8px 10px; font-size: 13px; color: #4a3b40; background: #fff; outline: none; min-width: 0; max-width: 100%; }
 input:focus { border-color: #ff7e9d; }
-.btn { border: none; border-radius: 12px; padding: 9px 16px; font-size: 14px; font-weight: 700; background: linear-gradient(135deg, #ff8fa8, #f5577f); color: #fff; cursor: pointer; box-shadow: 0 4px 12px rgba(245,87,127,.3); }
+.btn { border: none; border-radius: 12px; padding: 9px 16px; font-size: 14px; font-weight: 700; background: linear-gradient(135deg, #ff8fa8, #f5577f); color: #fff; cursor: pointer; box-shadow: 0 4px 12px rgba(245,87,127,.3); white-space: nowrap; flex-shrink: 0; }
 .btn:active { transform: scale(.96); }
 .btn:disabled { opacity: .5; }
-.btn.ghost { background: #fff; color: #e9407a; border: 1.5px solid #ffc9d6; box-shadow: none; }
+.btn.ghost, .btn.danger { background: #fff; border: 1.5px solid #ffc9d6; box-shadow: none; }
+.btn.ghost { color: #e9407a; }
 .btn.small { padding: 6px 12px; font-size: 12px; }
-.btn.danger { background: #fff; color: #e05070; border: 1.5px solid #ffc9d6; box-shadow: none; padding: 4px 10px; font-size: 12px; }
+.btn.danger { color: #e05070; padding: 4px 10px; font-size: 12px; }
 .photo-preview { position: relative; margin-top: 10px; display: none; }
 .photo-preview img { max-width: 120px; max-height: 120px; border-radius: 10px; border: 2px solid #ffd6e0; }
 .photo-preview .x { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%; background: #e05070; color: #fff; border: none; font-size: 12px; cursor: pointer; }
 .search-box { display: flex; gap: 8px; margin-bottom: 12px; }
 .search-box input { flex: 1; }
-.group-month { font-size: 13px; font-weight: 700; color: #e9407a; margin: 14px 0 8px; display: flex; align-items: center; gap: 6px; }
+/* ---- 时间线：左侧竖轴 + 圆点 + 作者徽标 ---- */
+.tl-group { position: relative; padding-left: 18px; margin-bottom: 4px; }
+.tl-group::before { content: ""; position: absolute; left: 4px; top: 36px; bottom: 14px; width: 2px; background: linear-gradient(180deg, #ffd9e2, #ffeef3); border-radius: 1px; }
+.group-month { position: sticky; top: 0; z-index: 2; font-size: 13px; font-weight: 700; color: #e9407a; padding: 8px 0; display: flex; align-items: center; gap: 6px; background: linear-gradient(180deg, #fff7f9 85%, rgba(255,247,249,0)); margin-left: -18px; padding-left: 18px; }
 .group-month::after { content: ""; flex: 1; height: 1px; background: #ffd6e0; }
-.tl-item { position: relative; background: #fff5f7; border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; }
-.tl-item .meta { font-size: 11px; color: #c9b3bb; margin-bottom: 4px; }
-.tl-item .meta b { color: #e9407a; }
-.tl-item .text { font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
-.tl-item img.photo { max-width: 100%; max-height: 200px; border-radius: 10px; margin-top: 8px; cursor: zoom-in; }
-.tl-item .del { position: absolute; top: 8px; right: 8px; border: none; background: none; color: #d9a3b1; font-size: 15px; cursor: pointer; }
+.tl-item { position: relative; background: #fff; border-radius: 14px; padding: 11px 14px; margin-bottom: 12px; box-shadow: 0 4px 14px rgba(245,87,127,.08); }
+.tl-item::before { content: ""; position: absolute; left: -17px; top: 17px; width: 8px; height: 8px; border-radius: 50%; background: #ff8fa8; box-shadow: 0 0 0 3px #ffe4ec; }
+.tl-item.who2::before { background: #8f7ff5; box-shadow: 0 0 0 3px #e9e5ff; }
+.tl-item .meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 5px; padding-right: 16px; }
+.tl-item .who { font-size: 11.5px; font-weight: 700; color: #e9407a; background: #ffeef3; border-radius: 8px; padding: 2px 9px; }
+.tl-item.who2 .who { color: #6f63d8; background: #efedff; }
+.tl-item .when { font-size: 11px; color: #c9b3bb; flex-shrink: 0; }
+.tl-item .text { font-size: 14px; line-height: 1.65; white-space: pre-wrap; word-break: break-word; }
+.tl-link, .capsule-item .tl-link { color: #e9407a; text-decoration: underline; text-underline-offset: 3px; word-break: break-all; }
+.tl-link:active { opacity: .6; }
+.tl-item img.photo { max-width: 100%; max-height: 220px; border-radius: 12px; margin-top: 8px; cursor: zoom-in; display: block; }
+.tl-item .del { position: absolute; top: 8px; right: 8px; border: none; background: none; color: #e3bcc7; font-size: 14px; cursor: pointer; padding: 2px 4px; }
 .empty { text-align: center; color: #c9b3bb; font-size: 13px; padding: 24px 0; line-height: 1.8; }
+.x-del { border: none; background: none; color: #d9a3b1; cursor: pointer; }
 .tag-picker, .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
 .chip { padding: 5px 14px; border-radius: 20px; font-size: 12px; border: 1.5px solid #f3dee4; background: #fff; color: #8a6e78; cursor: pointer; }
 .chip.on { background: #ff8fa8; border-color: #ff8fa8; color: #fff; font-weight: 700; }
+.chip.tag-new { border-style: dashed; color: #c9a1ac; }
+.chip.tag-new.on { background: #fff0f4; border-color: #ff8fa8; color: #e9407a; }
+.chip .tag-x { display: inline-block; margin-left: 4px; padding: 0 2px; font-size: 13px; line-height: 1; opacity: .55; }
+.chip .tag-x:hover { opacity: 1; }
+.tag-editor { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+.tag-editor input { flex: 1 1 140px; min-width: 0; border-radius: 12px; padding: 8px 12px; background: #fffdfa; }
+.tag-editor input:focus { border-color: #ff8fa8; }
 .wish-item { display: flex; align-items: center; gap: 10px; background: #fff5f7; border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; }
 .wish-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: #e9407a; flex-shrink: 0; }
 .wish-item .text { flex: 1; font-size: 14px; line-height: 1.5; word-break: break-word; }
@@ -60,7 +134,7 @@ input:focus { border-color: #ff7e9d; }
 .wish-tag { font-size: 10px; background: #ffe3ea; color: #e9407a; border-radius: 8px; padding: 2px 8px; flex-shrink: 0; }
 .capsule-item { position: relative; background: #fff5f7; border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; }
 .capsule-item.locked { background: #f3eef5; }
-.capsule-item .meta { font-size: 11px; color: #a08a92; margin-bottom: 6px; display: flex; justify-content: space-between; }
+.capsule-item .meta { font-size: 11px; color: #a08a92; margin-bottom: 6px; display: flex; justify-content: space-between; gap: 8px; padding-right: 20px; }
 .capsule-item .text { font-size: 14px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
 .badge { font-size: 10px; border-radius: 8px; padding: 2px 8px; font-weight: 700; }
 .badge.lock { background: #efe3f5; color: #9a6ab8; }
@@ -70,51 +144,96 @@ input:focus { border-color: #ff7e9d; }
 .rec-btn.recording { background: #e05070; animation: pulse 1s infinite; }
 @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
 .rec-tip { font-size: 12px; color: #a08a92; margin-top: 8px; }
-.voice-item { display: flex; align-items: center; gap: 10px; background: #fff5f7; border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; }
-.play-btn { width: 38px; height: 38px; border-radius: 50%; border: none; background: #e9407a; color: #fff; font-size: 14px; cursor: pointer; flex-shrink: 0; }
+.voice-item { display: flex; align-items: center; gap: 10px; background: #fff5f7; border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; box-shadow: inset 0 0 0 1.5px transparent; transition: box-shadow .2s, background .2s; }
+.voice-item.playing { background: #fff0f4; box-shadow: inset 0 0 0 1.5px #ffc9d6; }
+.voice-item .voice-msg { flex: 1; min-width: 0; }
+.voice-item .voice-msg .who { font-size: 13px; font-weight: 700; }
+.voice-item .voice-msg .sub { font-size: 11px; color: #a08a92; margin-top: 2px; }
+.play-btn { width: 38px; height: 38px; border-radius: 50%; border: none; background: #e9407a; color: #fff; font-size: 14px; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: transform .15s; }
+.play-btn:active { transform: scale(.93); }
+.play-btn.loading { background: #ffb3c6; }
 .wave { display: flex; align-items: center; gap: 2px; height: 20px; }
 .wave .bar { width: 3px; border-radius: 2px; background: #ff9fb5; animation: wave 0.9s ease-in-out infinite; }
 @keyframes wave { 0%,100% { height: 5px; } 50% { height: 18px; } }
 .field { margin-bottom: 10px; }
 .field label { display: block; font-size: 12px; color: #a08a92; margin-bottom: 4px; }
 .field input { width: 100%; }
-.field-row { display: flex; gap: 8px; }
-.field-row .field { flex: 1; }
-.me-toggle { display: flex; gap: 8px; margin-bottom: 12px; }
-.me-toggle .btn { flex: 1; }
-.me-toggle .btn.on { background: linear-gradient(135deg, #ff8fa8, #f5577f); color: #fff; }
-.me-toggle .btn:not(.on) { background: #fff; color: #8a6e78; border: 1.5px solid #f3dee4; box-shadow: none; }
 .day-item { display: flex; align-items: center; gap: 8px; background: #fff5f7; border-radius: 10px; padding: 8px 12px; margin-bottom: 8px; font-size: 13px; }
 .day-item .d { margin-left: auto; color: #a08a92; font-size: 12px; }
+/* ---- 经期记录 ---- */
+.cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.cal-head .ym { font-size: 14px; font-weight: 700; color: #e9407a; }
+.cal-head button { border: 1.5px solid #f3dee4; background: #fff; color: #e9407a; border-radius: 8px; padding: 4px 12px; font-size: 12px; cursor: pointer; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-grid .wd { text-align: center; font-size: 11px; color: #c9b3bb; padding: 2px 0; }
+.cal-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 12.5px; color: #6b5560; border-radius: 50%; }
+.cal-cell.dim { color: #e9d5da; }
+.cal-cell.on { background: #ff8fa8; color: #fff; font-weight: 700; }
+.cal-cell.pred { background: #ffe3ea; color: #e9407a; }
+.cal-cell.today { box-shadow: inset 0 0 0 2px #e9407a; }
+.cal-legend { display: flex; gap: 14px; font-size: 11px; color: #a08a92; margin-top: 8px; flex-wrap: wrap; }
+.cal-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
+.period-item { display: flex; align-items: center; gap: 10px; background: #fff5f7; border-radius: 12px; padding: 10px 14px; margin-bottom: 8px; font-size: 13px; }
+.period-item .info { flex: 1; min-width: 0; }
+.period-item .range { font-weight: 700; color: #e9407a; }
+.period-item .sub { font-size: 11px; color: #a08a92; margin-top: 2px; }
+.pred-card { background: linear-gradient(135deg, #fff0f4, #ffe3ea); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; }
+.pred-card .big { font-size: 15px; font-weight: 700; color: #e9407a; }
+.pred-card .sub { font-size: 12px; color: #a08a92; margin-top: 4px; line-height: 1.6; }
 .sync-state { font-size: 12px; color: #a08a92; margin-top: 8px; }
+/* ---- 本地缓存卡片 ---- */
+.cache-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 999px; background: #f3f8f2; color: #5b8f5b; margin-bottom: 12px; }
+.cache-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.cache-badge.busy { background: #fdf5e8; color: #b98a3a; }
+.cache-badge.warn { background: #fdeff1; color: #c9707f; }
+.cache-badge.idle { background: #f4f1f2; color: #9b8b92; }
+.cache-rows { display: flex; flex-direction: column; gap: 2px; }
+.cache-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; padding: 8px 0; border-bottom: 1px dashed rgba(214,176,186,.35); }
+.cache-row:last-child { border-bottom: none; }
+.cache-row .k { color: #9b8b92; flex: none; }
+.cache-row .v { color: #6b5560; font-weight: 600; text-align: right; line-height: 1.45; }
 .toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); background: rgba(74,59,64,.92); color: #fff; font-size: 13px; padding: 9px 18px; border-radius: 20px; z-index: 99; opacity: 0; transition: opacity .25s; pointer-events: none; }
 .toast.show { opacity: 1; }
-nav.tabbar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; display: flex; box-shadow: 0 -4px 16px rgba(245,87,127,.08); padding-bottom: env(safe-area-inset-bottom); }
+nav.tabbar { flex: none; background: #fff; display: flex; box-shadow: 0 -4px 16px rgba(245,87,127,.08); padding-bottom: env(safe-area-inset-bottom); max-width: 560px; width: 100%; margin: 0 auto; }
 nav.tabbar button { flex: 1; border: none; background: none; padding: 9px 0 7px; font-size: 11px; color: #b9a1a9; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 1px; }
 nav.tabbar button .ico { font-size: 19px; }
 nav.tabbar button.on { color: #e9407a; font-weight: 700; }
 #lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.85); display: none; align-items: center; justify-content: center; z-index: 100; cursor: zoom-out; }
 #lightbox img { max-width: 94vw; max-height: 90vh; border-radius: 8px; }
+/* 常驻语音播放器：视觉隐藏但始终留在文档中，保证 play() 不被中断 */
+#voiceAudio { position: fixed; left: 0; bottom: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .tips { font-size: 12px; color: #a08a92; margin-top: 10px; line-height: 1.6; }
+.lunar-today { font-size: 12px; opacity: .85; margin-top: 5px; letter-spacing: .3px; }
 </style>
 </head>
 <body>
 <header>
-  <h1>💖 <span id="hTitle">情侣小站</span></h1>
-  <div class="days"><span id="hDays">—</span><small> 天</small></div>
-  <div class="sub" id="hSince">去「设置」里填上在一起的日子吧</div>
+  <div class="logo">💌</div>
+  <div>
+    <h1>情侣小站</h1>
+    <div class="sub" id="hSub">我 和 TA 的专属空间</div>
+  </div>
 </header>
 
 <main>
   <!-- ============ 首页 ============ -->
-  <section class="page active" id="page-home">
-    <div class="card">
-      <h2>🎂 值得期待的日子</h2>
-      <div class="count-row" id="countList"></div>
+  <section class="page" id="page-home">
+    <div class="hero">
+      <div class="names" id="hTitle">我 ♥ TA</div>
+      <div class="days"><span id="hDays">—</span><small>天</small></div>
+      <div class="since" id="hSince">去「设置」里填上在一起的日子吧</div>
+      <div class="lunar-today" id="hLunar">农历</div>
     </div>
     <div class="card">
-      <h2>🌸 今日情话</h2>
-      <div class="quote" id="quote"></div>
+      <h2>🎂 值得期待的日子</h2>
+      <div class="count-pager" id="countPager"><div class="count-track" id="countList"></div></div>
+      <div class="count-dots" id="countDots"></div>
+    </div>
+    <div class="card">
+      <h2>🌸 今日情话
+        <button class="quote-refresh" id="quoteBtn" onclick="refreshQuote()" title="换一句" aria-label="换一句情话">↻</button>
+      </h2>
+      <div class="quote" id="quote">正在为你取一句情话…</div>
     </div>
     <div class="card">
       <h2>💫 心愿进度</h2>
@@ -127,7 +246,7 @@ nav.tabbar button.on { color: #e9407a; font-weight: 700; }
   </section>
 
   <!-- ============ 时间线 ============ -->
-  <section class="page" id="page-timeline">
+  <section class="page active" id="page-timeline">
     <div class="card composer">
       <h2>📖 记录此刻</h2>
       <textarea id="tlText" placeholder="记录你们的点点滴滴…"></textarea>
@@ -137,25 +256,28 @@ nav.tabbar button.on { color: #e9407a; font-weight: 700; }
         <button class="btn small" id="tlAdd" onclick="addTimeline()">发布</button>
       </div>
       <div class="photo-preview" id="tlPreview"><img id="tlPreviewImg" alt=""><button class="x" onclick="clearPhoto()">✕</button></div>
-      <p class="tips">照片自动压缩到 600px 并独立上传到 photos/{id}.jpg，JSON 只存路径，彻底解决 1MB 上限</p>
     </div>
     <div class="search-box"><input type="text" id="tlSearch" placeholder="🔍 搜索记录内容或作者…"></div>
-    <div id="tlList"></div>
+    <div class="scroll-area"><div id="tlList"></div></div>
   </section>
 
   <!-- ============ 心愿 ============ -->
   <section class="page" id="page-wishes">
     <div class="card">
       <h2>✨ 许个心愿</h2>
-      <div class="composer" style="display:flex; gap:8px;">
-        <input type="text" id="wishText" placeholder="想一起做的事…" style="flex:1">
+      <div class="composer inline-composer">
+        <input type="text" id="wishText" placeholder="想一起做的事…">
         <button class="btn small" onclick="addWish()">加入</button>
       </div>
       <div class="tag-picker" id="tagPicker"></div>
-      <p class="tips">可选分类：旅行 / 美食 / 一起做</p>
+      <div class="tag-editor" id="tagEditor" style="display:none">
+        <input type="text" id="tagInput" maxlength="6" placeholder="标签名，最多 6 个字">
+        <button class="btn small" onclick="confirmAddTag()">添加</button>
+        <button class="btn small ghost" onclick="toggleTagEditor(false)">取消</button>
+      </div>
     </div>
     <div class="filter-bar" id="filterBar"></div>
-    <div id="wishList"></div>
+    <div class="scroll-area"><div id="wishList"></div></div>
   </section>
 
   <!-- ============ 时间胶囊 ============ -->
@@ -169,7 +291,7 @@ nav.tabbar button.on { color: #e9407a; font-weight: 700; }
       </div>
       <p class="tips">默认一年后解锁；未到期的信件内容会以 ♥ 遮蔽，仪式感拉满</p>
     </div>
-    <div id="capList"></div>
+    <div class="scroll-area"><div id="capList"></div></div>
   </section>
 
   <!-- ============ 语音留言 ============ -->
@@ -180,146 +302,505 @@ nav.tabbar button.on { color: #e9407a; font-weight: 700; }
         <button class="rec-btn" id="recBtn" onclick="toggleRecord()">🎤</button>
         <div class="rec-tip" id="recTip">点击开始录音，最长 30 秒</div>
       </div>
-      <p class="tips">录音独立上传到 voices/{id}.webm；播放时才从远端拉取，省流量。需 HTTPS 环境授权麦克风</p>
     </div>
-    <div id="voiceList"></div>
+    <div class="scroll-area"><div id="voiceList"></div></div>
+  </section>
+
+  <!-- ============ 经期记录 ============ -->
+  <section class="page" id="page-period">
+    <div class="card">
+      <h2>🌹 经期记录</h2>
+      <div class="composer inline-composer" style="margin-bottom:10px;">
+        <input type="date" id="perStart">
+        <input type="date" id="perEnd" title="结束日期，可留空">
+        <button class="btn small" onclick="addPeriod()">记录</button>
+      </div>
+      <p class="tips">结束日期可留空（表示进行中）；记录两次以上会自动计算平均周期并预测下次经期</p>
+    </div>
+    <div class="pred-card" id="perPred"></div>
+    <div class="card">
+      <div class="cal-head">
+        <button onclick="calShift(-1)">‹ 上月</button>
+        <span class="ym" id="calYm">—</span>
+        <button onclick="calShift(1)">下月 ›</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-legend">
+        <span><i style="background:#ff8fa8"></i>经期中</span>
+        <span><i style="background:#ffe3ea"></i>预测</span>
+        <span><i style="box-shadow:inset 0 0 0 2px #e9407a"></i>今天</span>
+      </div>
+    </div>
+    <div class="scroll-area"><div id="perList"></div></div>
   </section>
 
   <!-- ============ 设置 ============ -->
   <section class="page" id="page-settings">
     <div class="card">
-      <h2>👥 我们是谁</h2>
-      <div class="me-toggle">
-        <button class="btn on" id="me1" onclick="setWho(1)">我是 <span id="meName1">我</span></button>
-        <button class="btn" id="me2" onclick="setWho(2)">我是 <span id="meName2">TA</span></button>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>名字 1</label><input type="text" id="fName1" maxlength="10"></div>
-        <div class="field"><label>名字 2</label><input type="text" id="fName2" maxlength="10"></div>
-      </div>
-      <div class="field"><label>在一起的日子</label><input type="date" id="fAnniv"></div>
-      <div class="field-row">
-        <div class="field"><label>名字 1 的生日</label><input type="date" id="fBd1"></div>
-        <div class="field"><label>名字 2 的生日</label><input type="date" id="fBd2"></div>
-      </div>
-      <button class="btn" style="width:100%" onclick="saveSettings()">保存 ❤</button>
-    </div>
-    <div class="card">
       <h2>📅 自定义纪念日</h2>
-      <div class="composer" style="display:flex; gap:8px; margin-bottom:10px;">
-        <input type="text" id="dayName" placeholder="日子名称，如：领证纪念日" maxlength="20" style="flex:2">
-        <input type="date" id="dayDate" style="flex:1.4">
+      <div class="composer inline-composer" style="margin-bottom:10px;">
+        <input type="text" id="dayName" placeholder="日子名称" maxlength="20">
+        <input type="date" id="dayDate">
         <button class="btn small" onclick="addDay()">添加</button>
       </div>
       <div id="dayList"></div>
     </div>
     <div class="card">
-      <h2>☁️ GitHub 云同步</h2>
-      <div class="field"><label>用户名 (owner)</label><input type="text" id="ghOwner" placeholder="GitHub 用户名"></div>
-      <div class="field"><label>仓库名 (repo)</label><input type="text" id="ghRepo" placeholder="couple-data"></div>
-      <div class="field"><label>令牌 (token，需 Contents 读写权限)</label><input type="password" id="ghToken" placeholder="ghp_xxx"></div>
-      <div style="display:flex; gap:8px;">
-        <button class="btn ghost small" id="ghTest" onclick="testGh()">测试连接</button>
-        <button class="btn ghost small" id="ghPull" onclick="pullGh()">拉取</button>
-        <button class="btn small" id="ghPush" onclick="pushGh()">上传</button>
+      <h2>💾 本地数据</h2>
+      <div class="cache-badge ok" id="cacheState">本地数据已就绪</div>
+      <div class="cache-rows">
+        <div class="cache-row"><span class="k">本地缓存时间</span><span class="v" id="cacheSavedAt">—</span></div>
+        <div class="cache-row"><span class="k">最近自动拉取</span><span class="v" id="cachePulledAt">—</span></div>
+        <div class="cache-row"><span class="k">数据概览</span><span class="v" id="cacheCounts">—</span></div>
+        <div class="cache-row"><span class="k">照片缓存</span><span class="v" id="photoCacheInfo">—</span></div>
+      </div>
+      <div style="margin-top:8px;">
+        <button class="btn ghost small" onclick="clearPhotoCache()">清理照片缓存</button>
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+        <button class="btn small" onclick="pullGh()">拉取最新到本地</button>
+        <button class="btn ghost small" onclick="pushGh()">上传本机数据</button>
       </div>
       <div class="sync-state" id="syncState"></div>
-      <p class="tips">数据同步到私有仓库 couple-data.json；照片/语音独立存 photos/、voices/ 目录。配置后改动自动防抖 2s 上传，页面切回前台自动拉取合并（按 updatedAt 墓碑合并，双设备不丢数据）</p>
     </div>
   </section>
 </main>
 
 <nav class="tabbar">
-  <button class="on" data-p="home" onclick="go('home', this)"><span class="ico">🏠</span>首页</button>
-  <button data-p="timeline" onclick="go('timeline', this)"><span class="ico">📖</span>时间线</button>
+  <button data-p="home" onclick="go('home', this)"><span class="ico">🏠</span>首页</button>
+  <button class="on" data-p="timeline" onclick="go('timeline', this)"><span class="ico">📖</span>时间线</button>
   <button data-p="wishes" onclick="go('wishes', this)"><span class="ico">💫</span>心愿</button>
   <button data-p="capsule" onclick="go('capsule', this)"><span class="ico">⏳</span>胶囊</button>
   <button data-p="voice" onclick="go('voice', this)"><span class="ico">🎙</span>语音</button>
+  <button data-p="period" onclick="go('period', this)"><span class="ico">🌹</span>经期</button>
   <button data-p="settings" onclick="go('settings', this)"><span class="ico">⚙️</span>设置</button>
 </nav>
 <div class="toast" id="toast"></div>
 <div id="lightbox" onclick="this.style.display='none'"><img id="lightboxImg" alt=""></div>
+<!-- 常驻语音播放器：不随列表重渲染销毁，避免「停不下来 / 播不了」 -->
+<audio id="voiceAudio" preload="none" playsinline></audio>
 
+<!-- ======== 农历算法模块（已内联，原 lunar.js） ======== -->
+<script>
+'use strict';
+/* =========================================================
+ * 农历（阴历）工具库
+ * 功能：公历 ⇄ 农历互转、农历中文名称、干支纪年、
+ *       生日数据规范化、下一次农历生日推算
+ * 支持范围：1900-01-31 ~ 2100-12-31
+ * ========================================================= */
+
+// 1900-2100 年农历数据表，每年一个 16 进制数：
+// 低 4 位   = 闰月月份（0 表示当年无闰月）
+// 第 17 位  = 闰月是否 30 天
+// 第 4-15 位 = 正月至腊月是否 30 天
+const LUNAR_INFO = [
+  0x04bd8, 0x04ae0, 0x0a570, 0x054d5, 0x0d260, 0x0d950, 0x16554, 0x056a0, 0x09ad0, 0x055d2, // 1900-1909
+  0x04ae0, 0x0a5b6, 0x0a4d0, 0x0d250, 0x1d255, 0x0b540, 0x0d6a0, 0x0ada2, 0x095b0, 0x14977, // 1910-1919
+  0x04970, 0x0a4b0, 0x0b4b5, 0x06a50, 0x06d40, 0x1ab54, 0x02b60, 0x09570, 0x052f2, 0x04970, // 1920-1929
+  0x06566, 0x0d4a0, 0x0ea50, 0x06e95, 0x05ad0, 0x02b60, 0x186e3, 0x092e0, 0x1c8d7, 0x0c950, // 1930-1939
+  0x0d4a0, 0x1d8a6, 0x0b550, 0x056a0, 0x1a5b4, 0x025d0, 0x092d0, 0x0d2b2, 0x0a950, 0x0b557, // 1940-1949
+  0x06ca0, 0x0b550, 0x15355, 0x04da0, 0x0a5b0, 0x14573, 0x052b0, 0x0a9a8, 0x0e950, 0x06aa0, // 1950-1959
+  0x0aea6, 0x0ab50, 0x04b60, 0x0aae4, 0x0a570, 0x05260, 0x0f263, 0x0d950, 0x05b57, 0x056a0, // 1960-1969
+  0x096d0, 0x04dd5, 0x04ad0, 0x0a4d0, 0x0d4d4, 0x0d250, 0x0d558, 0x0b540, 0x0b6a0, 0x195a6, // 1970-1979
+  0x095b0, 0x049b0, 0x0a974, 0x0a4b0, 0x0b27a, 0x06a50, 0x06d40, 0x0af46, 0x0ab60, 0x09570, // 1980-1989
+  0x04af5, 0x04970, 0x064b0, 0x074a3, 0x0ea50, 0x06b58, 0x055c0, 0x0ab60, 0x096d5, 0x092e0, // 1990-1999
+  0x0c960, 0x0d954, 0x0d4a0, 0x0da50, 0x07552, 0x056a0, 0x0abb7, 0x025d0, 0x092d0, 0x0cab5, // 2000-2009
+  0x0a950, 0x0b4a0, 0x0baa4, 0x0ad50, 0x055d9, 0x04ba0, 0x0a5b0, 0x15176, 0x052b0, 0x0a930, // 2010-2019
+  0x07954, 0x06aa0, 0x0ad50, 0x05b52, 0x04b60, 0x0a6e6, 0x0a4e0, 0x0d260, 0x0ea65, 0x0d530, // 2020-2029
+  0x05aa0, 0x076a3, 0x096d0, 0x04afb, 0x04ad0, 0x0a4d0, 0x1d0b6, 0x0d250, 0x0d520, 0x0dd45, // 2030-2039
+  0x0b5a0, 0x056d0, 0x055b2, 0x049b0, 0x0a577, 0x0a4b0, 0x0aa50, 0x1b255, 0x06d20, 0x0ada0, // 2040-2049
+  0x14b63, 0x09370, 0x049f8, 0x04970, 0x064b0, 0x168a6, 0x0ea50, 0x06b20, 0x1a6c4, 0x0aae0, // 2050-2059
+  0x0a2e0, 0x0d2e3, 0x0c960, 0x0d557, 0x0d4a0, 0x0da50, 0x05d55, 0x056a0, 0x0a6d0, 0x055d4, // 2060-2069
+  0x052d0, 0x0a9b8, 0x0a950, 0x0b4a0, 0x0b6a6, 0x0ad50, 0x055a0, 0x0aba4, 0x0a5b0, 0x052b0, // 2070-2079
+  0x0b273, 0x06930, 0x07337, 0x06aa0, 0x0ad50, 0x14b55, 0x04b60, 0x0a570, 0x054e4, 0x0d160, // 2080-2089
+  0x0e968, 0x0d520, 0x0daa0, 0x16aa6, 0x056d0, 0x04ae0, 0x0a9d4, 0x0a2d0, 0x0d150, 0x0f252, // 2090-2099
+  0x0d520 // 2100
+];
+
+const LUNAR_MONTH_CN = ['正', '二', '三', '四', '五', '六', '七', '八', '九', '十', '冬', '腊'];
+const GAN_CN = '甲乙丙丁戊己庚辛壬癸';
+const ZHI_CN = '子丑寅卯辰巳午未申酉戌亥';
+
+// 某农历年的闰月月份，0 表示无闰月
+function lunarLeapMonth(y) {
+  return LUNAR_INFO[y - 1900] & 0xf;
+}
+
+// 某农历年闰月的天数（无闰月返回 0）
+function lunarLeapDays(y) {
+  if (!lunarLeapMonth(y)) return 0;
+  return (LUNAR_INFO[y - 1900] & 0x10000) ? 30 : 29;
+}
+
+// 某农历年第 m 个月（非闰月）的天数
+function lunarMonthDays(y, m) {
+  return (LUNAR_INFO[y - 1900] & (0x10000 >> m)) ? 30 : 29;
+}
+
+// 某农历年的总天数
+function lunarYearDays(y) {
+  let sum = 348;
+  for (let i = 0x8000; i > 0x8; i >>= 1) {
+    sum += (LUNAR_INFO[y - 1900] & i) ? 1 : 0;
+  }
+  return sum + lunarLeapDays(y);
+}
+
+// 公历 Date → 农历 { year, month, day, isLeap }
+function solarToLunar(date) {
+  const sy = date.getFullYear();
+  const sm = date.getMonth();
+  const sd = date.getDate();
+  if (sy < 1900 || sy > 2100) return null;
+  let offset = Math.floor((Date.UTC(sy, sm, sd) - Date.UTC(1900, 0, 31)) / 86400000);
+  if (offset < 0) return null;
+  let i = 0;
+  let temp = 0;
+  for (i = 1900; i < 2101 && offset > 0; i++) {
+    temp = lunarYearDays(i);
+    offset -= temp;
+  }
+  if (offset < 0) {
+    offset += temp;
+    i--;
+  }
+  const year = i;
+  const leap = lunarLeapMonth(year);
+  let isLeap = false;
+  for (i = 1; i < 13 && offset > 0; i++) {
+    if (leap > 0 && i === leap + 1 && !isLeap) {
+      --i;
+      isLeap = true;
+      temp = lunarLeapDays(year);
+    } else {
+      temp = lunarMonthDays(year, i);
+    }
+    if (isLeap && i === leap + 1) isLeap = false;
+    offset -= temp;
+  }
+  if (offset === 0 && leap > 0 && i === leap + 1) {
+    if (isLeap) {
+      isLeap = false;
+    } else {
+      isLeap = true;
+      --i;
+    }
+  }
+  if (offset < 0) {
+    offset += temp;
+    --i;
+  }
+  return { year: year, month: i, day: offset + 1, isLeap: isLeap };
+}
+
+// 农历 → 公历 { y, m, d }；参数非法时返回 null
+function lunarToSolar(y, m, d, isLeap) {
+  if (y < 1900 || y > 2100) return null;
+  if (m < 1 || m > 12 || d < 1) return null;
+  const leap = lunarLeapMonth(y);
+  if (isLeap && leap !== m) return null;
+  const dim = isLeap ? lunarLeapDays(y) : lunarMonthDays(y, m);
+  if (!dim || d > dim) return null;
+  let offset = 0;
+  for (let i = 1900; i < y; i++) offset += lunarYearDays(i);
+  let leapAdded = false;
+  for (let i = 1; i < m; i++) {
+    if (!leapAdded && leap > 0 && leap <= i) {
+      offset += lunarLeapDays(y);
+      leapAdded = true;
+    }
+    offset += lunarMonthDays(y, i);
+  }
+  if (isLeap) offset += lunarMonthDays(y, m); // 闰月排在同名月之后
+  offset += d - 1;
+  const dt = new Date(Date.UTC(1900, 0, 31) + offset * 86400000);
+  return { y: dt.getUTCFullYear(), m: dt.getUTCMonth() + 1, d: dt.getUTCDate() };
+}
+
+// 农历月份名，如：正月 / 闰六月 / 腊月
+function lunarMonthName(m, isLeap) {
+  return (isLeap ? '闰' : '') + (LUNAR_MONTH_CN[m - 1] || '') + '月';
+}
+
+// 农历日期名，如：初一 / 十五 / 廿九 / 三十
+function lunarDayName(d) {
+  if (d < 1 || d > 30) return '';
+  if (d === 10) return '初十';
+  if (d === 20) return '二十';
+  if (d === 30) return '三十';
+  const tens = Math.floor(d / 10);
+  const pre = tens === 0 ? '初' : (tens === 1 ? '十' : '廿');
+  const digits = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+  return pre + digits[(d % 10) - 1];
+}
+
+// 干支纪年，如：2026 → 丙午
+function ganzhiYear(y) {
+  return GAN_CN[(y - 4) % 10] + ZHI_CN[(y - 4) % 12];
+}
+
+// 生日是否被自动换算过（旧版本存的是公历日期字符串）
+let bdAutoConverted = false;
+
+// 生日数据统一为农历对象 { m: 月, d: 日, leap: 是否闰月 }
+// 兼容旧数据：'YYYY-MM-DD' 形式的公历生日自动换算成对应农历
+function normalizeBirthday(v) {
+  if (!v) return null;
+  if (typeof v === 'object') {
+    const m = Number(v.m);
+    const d = Number(v.d);
+    if (m >= 1 && m <= 12 && d >= 1 && d <= 30) {
+      return { m: m, d: d, leap: !!v.leap };
+    }
+    return null;
+  }
+  if (typeof v === 'string') {
+    const mt = v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (mt) {
+      const l = solarToLunar(new Date(Number(mt[1]), Number(mt[2]) - 1, Number(mt[3])));
+      if (l) {
+        bdAutoConverted = true;
+        return { m: l.month, d: l.day, leap: l.isLeap };
+      }
+    }
+  }
+  return null;
+}
+
+// 生日的中文描述，如：农历八月十五 / 农历闰四月廿九
+function birthdayLabel(bd) {
+  if (!bd || !bd.m || !bd.d) return '';
+  return '农历' + lunarMonthName(bd.m, bd.leap) + lunarDayName(bd.d);
+}
+
+// 推算下一次农历生日对应的公历 Date
+// 规则：闰月生日在无闰月的年份按同名平月过；三十遇到小月按当月最后一天过
+function nextLunarBirthday(bd, fromDate) {
+  if (!bd || !bd.m || !bd.d) return null;
+  const today = fromDate ? new Date(fromDate.getTime()) : new Date();
+  today.setHours(0, 0, 0, 0);
+  const lt = solarToLunar(today);
+  if (!lt) return null;
+  for (let y = lt.year; y <= Math.min(lt.year + 3, 2100); y++) {
+    const useLeap = !!bd.leap && lunarLeapMonth(y) === bd.m;
+    const dim = useLeap ? lunarLeapDays(y) : lunarMonthDays(y, bd.m);
+    if (!dim) continue;
+    const day = Math.min(bd.d, dim);
+    const s = lunarToSolar(y, bd.m, day, useLeap);
+    if (!s) continue;
+    const dt = new Date(s.y, s.m - 1, s.d);
+    if (dt.getTime() >= today.getTime()) return dt;
+  }
+  return null;
+}
+</script>
 <script>
 'use strict';
 /* ================= 数据层（与 Vue 版 store/modules/couple.js 同构） ================= */
 const KEY = 'coupleStationData', GH_KEY = 'coupleGithubConfig', SHA_KEY = 'coupleRemoteSha';
 const TAGS = ['旅行', '美食', '一起做'];
+// 列表型数据字段：buildPayload / importData / hasUserData 统一引用，新增字段只改这里（tags 因需 normalize 单独处理）
+const LIST_FIELDS = ['timeline', 'wishes', 'capsules', 'voices', 'customDays', 'periods'];
 const QUOTES = ['喜欢是乍见之欢，爱是久处不厌。','我见过很多风景，但都不及你眼里的星光。','愿我们的故事，细水长流，来日方长。','你是我平淡日子里的星辰大海。','世界上有很多美好的词语，但都不如"我们"好听。','往后余生，风雪是你，平淡是你。','和你在一起的每一天，都值得被记住。','爱不是彼此凝视，而是一起望向同一个方向。','慢慢来，我们有一辈子的时间。','想把所有的温柔，都留给你一个人。'];
 const MAX_SECONDS = 30;
 
+// 平台检测：安卓默认身份为名字 1，苹果（iOS）默认身份为名字 2
+const isAndroid = () => /android/i.test(navigator.userAgent);
+const defaultMe = () => isAndroid() ? 1 : 2;
 function defaultData() {
-  return { name1:'', name2:'', anniversary:'', birthday1:'', birthday2:'', me:1,
-    timeline:[], wishes:[], capsules:[], voices:[], customDays:[], lastSyncAt:0, syncError:'' };
+  // birthday1 / birthday2 为农历对象：{ m: 月(1-12), d: 日(1-30), leap: 是否闰月 }
+  return { name1:'', name2:'', anniversary:'', birthday1:null, birthday2:null, me: defaultMe(),
+    timeline:[], wishes:[], capsules:[], voices:[], customDays:[], tags:[], periods:[],
+    periodCfg:{ cycle: 28, len: 5 }, lastSyncAt:0, syncError:'' };
+}
+// 自定义标签统一成对象结构，复用其他数据的「updatedAt + 墓碑」合并逻辑
+function normalizeTags(arr) {
+  if (!Array.isArray(arr)) return [];
+  const seen = new Set();
+  const out = [];
+  arr.forEach(t => {
+    if (typeof t === 'string') t = { id: 'tag:' + t, name: t, deleted: false, updatedAt: 0 };
+    if (!t || typeof t.name !== 'string' || !t.name.trim()) return;
+    const id = t.id || ('tag:' + t.name);
+    if (seen.has(id)) return;
+    seen.add(id);
+    out.push({ id, name: t.name.trim(), deleted: !!t.deleted, createdAt: t.createdAt || 0, updatedAt: t.updatedAt || 0 });
+  });
+  return out;
 }
 let S = (() => { try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && typeof d === 'object') return Object.assign(defaultData(), d); } catch (e) {} return defaultData(); })();
-function persist() { localStorage.setItem(KEY, JSON.stringify(S)); }
+// 旧数据兼容：原来的公历生日字符串统一换算为农历对象（bdAutoConverted 会用于设置页提示）
+S.birthday1 = normalizeBirthday(S.birthday1);
+S.birthday2 = normalizeBirthday(S.birthday2);
+// 旧版本标签是字符串数组，这里统一升级为对象（带 id / 删除标记）
+S.tags = normalizeTags(S.tags);
+/* ---------- 本地缓存层：localStorage 为主 + 无思私有存储镜像备份 ---------- */
+const MIRROR_KEY = 'coupleStationCache';
+const META_KEY = 'coupleStationMeta';
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+// 私有存储可用性检测（按规范同时校验 getItem / setItem / getAll）
+const hasWusiStorage = () => !!(window.wusiStorage
+  && typeof window.wusiStorage.getItem === 'function'
+  && typeof window.wusiStorage.setItem === 'function'
+  && typeof window.wusiStorage.getAll === 'function');
+// localStorage 是否有值（读取异常时按「有」处理，避免误覆盖）
+const lsHas = (k) => { try { return !!localStorage.getItem(k); } catch (e) { return true; } };
+// 本地缓存元信息：是否有改动待上传、最近一次拉取时间、拉取状态
+let meta = (() => {
+  try {
+    const m = JSON.parse(localStorage.getItem(META_KEY));
+    return (m && typeof m === 'object') ? m : {};
+  } catch (e) { return {}; }
+})();
+meta.pendingPush = !!meta.pendingPush;
+meta.lastPullAt = meta.lastPullAt || 0;
+meta.pullState = meta.pullState || 'idle';
+let mirrorTimer = null;
+let mirrorEnabled = false; // 启动恢复流程结束后才允许写镜像，避免用空数据覆盖备份
+// 是否已有真实内容（避免把空白数据写进镜像备份）
+function hasUserData() {
+  if (S.name1 || S.name2 || S.anniversary || S.birthday1 || S.birthday2) return true;
+  return [...LIST_FIELDS, 'tags'].some(k => Array.isArray(S[k]) && S[k].length > 0);
+}
+function saveMeta() {
+  try { localStorage.setItem(META_KEY, JSON.stringify(meta)); }
+  catch (e) { console.warn('本地元信息写入失败', e); }
+  refreshCacheUI();
+}
+// 所有数据变更都立即写入本地缓存（页面渲染永远以本地数据为准）
+function persist() {
+  S.localSavedAt = Date.now();
+  try { localStorage.setItem(KEY, JSON.stringify(S)); }
+  catch (e) { console.error('本地缓存写入失败', e); }
+  mirrorCache();
+  saveMeta();
+}
+// 把当前数据镜像到无思私有存储（防抖，失败不影响主流程）
+function mirrorCache() {
+  if (!mirrorEnabled || !hasWusiStorage() || !hasUserData()) return;
+  clearTimeout(mirrorTimer);
+  mirrorTimer = setTimeout(async () => {
+    try {
+      await window.wusiStorage.setItem(MIRROR_KEY, { savedAt: Date.now(), data: S });
+    } catch (e) {
+      console.warn('本地镜像备份失败', e);
+    }
+  }, 800);
+}
+// localStorage 被清空时，尝试从私有存储的镜像备份恢复（最多等 1.8s 让 API 就绪）
+async function hydrateFromMirror() {
+  if (!lsHas(KEY)) {
+    for (let i = 0; i < 6 && !hasWusiStorage(); i++) await sleep(300); // 等待私有存储 API 就绪（老旧设备可能延迟）
+    if (hasWusiStorage()) {
+      let cached = null;
+      try { cached = window.wusiStorage.getItem(MIRROR_KEY); } catch (e) { console.warn('读取镜像缓存失败', e); }
+      // 等待期间云端可能已把最新数据写进 localStorage，此时不再用过旧镜像覆盖
+      if (cached && cached.data && !lsHas(KEY)) {
+        S = Object.assign(defaultData(), cached.data);
+        S.birthday1 = normalizeBirthday(S.birthday1);
+        S.birthday2 = normalizeBirthday(S.birthday2);
+        invalidatePeriods(); // S 已整体替换，经期缓存必须失效
+        mirrorEnabled = true;
+        persist(); renderAll();
+        toast('已从本地备份恢复数据 ✅');
+        return true;
+      }
+    }
+  }
+  mirrorEnabled = true; // 恢复流程结束，之后所有改动都可以安全写入镜像
+  mirrorCache();
+  return false;
+}
+// 迁移完成后立即落盘，避免每次启动重复换算
+if (bdAutoConverted) persist();
 
 const $ = (id) => document.getElementById(id);
 const pad = (n) => String(n).padStart(2, '0');
 const fmtDay = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-const fmtTs = (ts) => { const d = new Date(ts); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; };
+const fmtTs = (ts) => fmtDay(new Date(ts));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const myName = () => S.me === 1 ? (S.name1 || '我') : (S.name2 || 'TA');
 const esc = (s) => (s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const touch = (o) => { o.updatedAt = Date.now(); };
-const nextOf = (dateStr) => { if (!dateStr) return null; const d = new Date(dateStr + 'T00:00:00'); if (isNaN(d)) return null; const t = new Date(); t.setHours(0,0,0,0); const nx = new Date(t.getFullYear(), d.getMonth(), d.getDate()); if (nx < t) nx.setFullYear(nx.getFullYear() + 1); return nx; };
-const daysTo = (d) => { const t = new Date(); t.setHours(0,0,0,0); return Math.round((d - t) / 86400000); };
+/* ---- 日期工具：'YYYY-MM-DD' 解析 / 字符串日期差 / 日期加法 / 今日零点（全文件统一复用） ---- */
+const parseDay = (s) => new Date(s + 'T00:00:00');
+const diffDays = (a, b) => Math.round((parseDay(a) - parseDay(b)) / 86400000);
+const addDays = (d, n) => { const x = new Date(d.getTime()); x.setDate(x.getDate() + n); return x; };
+const today0 = () => { const t = new Date(); t.setHours(0,0,0,0); return t; };
+const nextOf = (dateStr) => { if (!dateStr) return null; const d = parseDay(dateStr); if (isNaN(d)) return null; const t = today0(); const nx = new Date(t.getFullYear(), d.getMonth(), d.getDate()); if (nx < t) nx.setFullYear(nx.getFullYear() + 1); return nx; };
+const daysTo = (d) => Math.round((d - today0()) / 86400000);
 
 let toastTimer;
 function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2000); }
 
 /* ================= GitHub Contents API（与 src/api/github.js 同构） ================= */
 const GH_API = 'https://api.github.com';
-const ghCfg = () => { try { const c = JSON.parse(localStorage.getItem(GH_KEY)); if (c && c.owner && c.repo && c.token) return c; } catch (e) {} return null; };
-const ghSet = (c) => localStorage.setItem(GH_KEY, JSON.stringify(c));
+const ghUrl = (c, path) => `${GH_API}/repos/${c.owner}/${c.repo}/contents/${path}`;
+// 默认 GitHub 配置（未在设置页修改时使用）
+const DEFAULT_GH = { owner: 'kongchen123', repo: 'couple-data', token: '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', branch: '' };
+// GitHub 配置：优先读 localStorage 覆盖（手动写入 coupleGithubConfig 可换账号），否则用硬编码默认值；恒有返回值
+const ghCfg = () => {
+  try { const c = JSON.parse(localStorage.getItem(GH_KEY)); if (c && c.owner && c.repo && c.token) return c; } catch (e) {}
+  return DEFAULT_GH;
+};
 const auth = (token) => ({ 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' });
 const encB64 = (s) => btoa(unescape(encodeURIComponent(s)));
+// 网络请求优先走无思私有 API（wusiFetch），不可用时回退原生 fetch
+const netFetch = (url, opt) => (typeof window.wusiFetch === 'function')
+  ? window.wusiFetch(url, opt)
+  : fetch(url, opt);
+// 字节数组 → base64（分段处理，避免大文件逐字符拼接造成的卡顿）
+function bytesToB64(bytes) {
+  let bin = '';
+  const CHUNK = 0x8000;
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(bin);
+}
 const decB64 = (b) => decodeURIComponent(escape(atob(b.replace(/\n/g, ''))));
 
 async function ghGet(path) {
-  const c = ghCfg(); if (!c) throw new Error('未配置');
-  const url = `${GH_API}/repos/${c.owner}/${c.repo}/contents/${path}`;
-  const r = await fetch(url + '?ref=' + (c.branch || ''), { headers: auth(c.token) });
+  const c = ghCfg();
+  const url = ghUrl(c, path) + '?ref=' + (c.branch || '');
+  const r = await netFetch(url, { headers: auth(c.token) });
   if (r.status === 404) return { data: null, sha: null };
   if (!r.ok) throw new Error('HTTP ' + r.status);
   const d = await r.json();
   if (!d.content) { // >1MB 文件 raw 模式重取
-    const raw = await fetch(url + '?ref=' + (c.branch || ''), { headers: Object.assign(auth(c.token), { 'Accept': 'application/vnd.github.raw' }) });
+    const raw = await netFetch(url, { headers: Object.assign(auth(c.token), { 'Accept': 'application/vnd.github.raw' }) });
     return { data: JSON.parse(await raw.text()), sha: d.sha };
   }
   return { data: JSON.parse(decB64(d.content)), sha: d.sha };
 }
 async function ghPut(path, content, sha, isBinary) {
-  const c = ghCfg(); if (!c) throw new Error('未配置');
-  const body = { message: `sync: ${new Date().toISOString()}`, content: isBinary ? content : encB64(JSON.stringify(content, null, 2)), branch: c.branch || undefined };
+  const c = ghCfg();
+  // commit message 带设备来源标识，供 GitHub Actions 判断该通知谁（from=android → 通知 iOS，反之亦然）
+  const deviceTag = isAndroid() ? 'android' : 'ios';
+  const body = { message: `sync from=${deviceTag} me=${S.me} at=${new Date().toISOString()}`, content: isBinary ? content : encB64(JSON.stringify(content, null, 2)), branch: c.branch || undefined };
   if (sha) body.sha = sha;
-  const r = await fetch(`${GH_API}/repos/${c.owner}/${c.repo}/contents/${path}`, { method: 'PUT', headers: auth(c.token), body: JSON.stringify(body) });
+  const r = await netFetch(ghUrl(c, path), { method: 'PUT', headers: auth(c.token), body: JSON.stringify(body) });
   if (!r.ok) throw new Error('HTTP ' + r.status);
   return (await r.json()).content.sha;
 }
 async function ghPutBinary(path, dataUrl) { return ghPut(path, dataUrl.split(',')[1], null, true); }
 async function ghGetBinary(path, mime) {
-  const c = ghCfg(); if (!c) throw new Error('未配置');
-  const r = await fetch(`${GH_API}/repos/${c.owner}/${c.repo}/contents/${path}?ref=${c.branch || ''}`, { headers: Object.assign(auth(c.token), { 'Accept': 'application/vnd.github.raw' }) });
+  const c = ghCfg();
+  const r = await netFetch(ghUrl(c, path) + '?ref=' + (c.branch || ''), { headers: Object.assign(auth(c.token), { 'Accept': 'application/vnd.github.raw' }) });
   if (r.status === 404) return null;
   if (!r.ok) throw new Error('HTTP ' + r.status);
   const buf = new Uint8Array(await r.arrayBuffer());
-  let bin = ''; for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
-  return `data:${mime};base64,${btoa(bin)}`;
-}
-async function ghTest() {
-  const c = ghCfg(); if (!c) throw new Error('未配置');
-  const r = await fetch(`${GH_API}/repos/${c.owner}/${c.repo}`, { headers: auth(c.token) });
-  if (!r.ok) throw new Error('HTTP ' + r.status);
-  const d = await r.json();
-  return { fullName: d.full_name, private: d.private };
+  if (!buf.length) throw new Error('文件为空');
+  return `data:${mime};base64,${bytesToB64(buf)}`;
 }
 
-/* ================= 同步：墓碑合并 / 防抖 push / 可见性 pull ================= */
+/* ================= 同步：本地优先（本地缓存渲染 → 后台拉取最新） ================= */
 function buildPayload() {
-  return { name1:S.name1, name2:S.name2, anniversary:S.anniversary, birthday1:S.birthday1, birthday2:S.birthday2,
-    timeline:S.timeline, wishes:S.wishes, capsules:S.capsules, voices:S.voices, customDays:S.customDays };
+  const p = { name1:S.name1, name2:S.name2, anniversary:S.anniversary, birthday1:S.birthday1, birthday2:S.birthday2,
+    tags:S.tags, periodCfg:S.periodCfg };
+  LIST_FIELDS.forEach(k => p[k] = S[k]);
+  return p;
 }
 function mergeList(local, remote) {
   if (!Array.isArray(remote)) return local;
@@ -328,65 +809,288 @@ function mergeList(local, remote) {
   remote.forEach(r => { if (!r || !r.id) return; const l = map.get(r.id); if (!l || (r.updatedAt || 0) > (l.updatedAt || 0)) map.set(r.id, r); });
   return [...map.values()];
 }
+// 把远端数据合并进本地缓存；返回是否真的产生了变化
 function importData(d) {
-  if (!d || typeof d !== 'object') return;
-  S.timeline = mergeList(S.timeline, d.timeline);
-  S.wishes = mergeList(S.wishes, d.wishes);
-  S.capsules = mergeList(S.capsules, d.capsules);
-  S.voices = mergeList(S.voices, d.voices);
-  S.customDays = mergeList(S.customDays, d.customDays);
-  ['name1','name2','anniversary','birthday1','birthday2'].forEach(k => { if (d[k]) S[k] = d[k]; });
-  persist(); renderAll();
+  if (!d || typeof d !== 'object') return false;
+  const before = JSON.stringify(buildPayload());
+  LIST_FIELDS.forEach(k => { S[k] = mergeList(S[k] || [], d[k]); });
+  if (d.periodCfg && d.periodCfg.cycle) S.periodCfg = { cycle: d.periodCfg.cycle, len: d.periodCfg.len || 5 };
+  ['name1','name2','anniversary'].forEach(k => { if (d[k]) S[k] = d[k]; });
+  // 自定义标签也是按 id 合并（带墓碑），避免初始化拉取把刚加的标签冲掉
+  if (Array.isArray(d.tags)) S.tags = mergeList(S.tags, normalizeTags(d.tags));
+  // 云端的生日可能是旧的公历字符串，统一换算为农历对象
+  if (d.birthday1) S.birthday1 = normalizeBirthday(d.birthday1);
+  if (d.birthday2) S.birthday2 = normalizeBirthday(d.birthday2);
+  const changed = JSON.stringify(buildPayload()) !== before;
+  // 只有内容真的变了才重写缓存并重渲染，避免定时拉取打断用户正在输入的内容
+  if (changed) {
+    invalidatePeriods(); // 经期数据可能被远端更新，缓存失效
+    persist();      // 拉到的数据立刻落本地缓存
+    renderAll();    // 页面始终按「本地缓存的最新状态」渲染
+  }
+  return changed;
 }
-let syncTimer = null, syncing = false;
-function schedulePush() { if (!ghCfg()) return; clearTimeout(syncTimer); syncTimer = setTimeout(flushPush, 2000); }
+let syncTimer = null, syncing = false, pulling = false;
+// 本机有改动：先落本地缓存，再防抖上传；断网时保留待上传标记，联网后补传
+function schedulePush() {
+  meta.pendingPush = true;
+  saveMeta();
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(flushPush, 2000);
+}
+// 上传成功 / 失败后的统一收尾
+function markPushOk(newSha) {
+  if (newSha) localStorage.setItem(SHA_KEY, newSha);
+  S.lastSyncAt = Date.now();
+  S.syncError = '';
+  meta.pendingPush = false;
+  persist(); renderSyncState();
+  return true;
+}
+function markPushFail() {
+  S.syncError = '本机改动待上传，联网后自动重试';
+  meta.pendingPush = true;
+  persist(); renderSyncState();
+  return false;
+}
+// 上传本机数据到云端；成功返回 true
 async function flushPush() {
-  if (syncing || !ghCfg()) return; syncing = true;
+  if (syncing) return false;
+  syncing = true;
   try {
     let sha = localStorage.getItem(SHA_KEY);
-    if (!sha) { const res = await ghGet('couple-data.json'); sha = res.sha; if (res.data) importData(res.data); }
-    localStorage.setItem(SHA_KEY, await ghPut('couple-data.json', buildPayload(), sha));
-    S.lastSyncAt = Date.now(); S.syncError = ''; persist(); renderSyncState();
+    if (!sha) {
+      const res = await ghGet('couple-data.json');
+      sha = res.sha;
+      if (res.data) importData(res.data);
+    }
+    return markPushOk(await ghPut('couple-data.json', buildPayload(), sha));
   } catch (e) {
-    if (e.message === 'HTTP 409' || e.message === 'HTTP 422') { // 冲突：拉取合并重试
-      try { const res = await ghGet('couple-data.json'); localStorage.setItem(SHA_KEY, await ghPut('couple-data.json', buildPayload(), res.sha)); S.lastSyncAt = Date.now(); persist(); renderSyncState(); } catch (e2) { S.syncError = String(e2); persist(); }
-    } else { S.syncError = String(e); persist(); renderSyncState(); }
-  } finally { syncing = false; }
+    if (e && (e.message === 'HTTP 409' || e.message === 'HTTP 422')) {
+      // 冲突：重新取 sha，并把远端改动并入本地后再传，避免覆盖对方刚写入的数据
+      try {
+        const res = await ghGet('couple-data.json');
+        if (res.data) importData(res.data); // ← 关键：重试前先合并
+        return markPushOk(await ghPut('couple-data.json', buildPayload(), res.sha));
+      } catch (e2) { console.error('冲突重试失败：', e2); }
+    } else {
+      console.error('上传失败：', e);
+    }
+    return markPushFail();
+  } finally {
+    syncing = false;
+  }
 }
-async function initialPull() {
-  if (!ghCfg()) return;
-  try { const res = await ghGet('couple-data.json'); localStorage.setItem(SHA_KEY, res.sha); if (res.data) importData(res.data); } catch (e) {}
+// 拉取云端最新并写入本地缓存；页面始终以本地缓存渲染
+async function pullLatest(opts) {
+  opts = opts || {};
+  if (pulling) return { ok: false, changed: false, busy: true };
+  pulling = true;
+  meta.pullState = 'pulling';
+  saveMeta();
+  try {
+    const res = await ghGet('couple-data.json');
+    if (res.sha) localStorage.setItem(SHA_KEY, res.sha);
+    const changed = res.data ? importData(res.data) : false;
+    meta.lastPullAt = Date.now();
+    meta.pullState = 'ok';
+    S.syncError = '';
+    persist(); renderSyncState();
+    if (!opts.silent) toast(changed ? '已拉取最新数据 🔄' : '已经是最新数据 ✅');
+    return { ok: true, changed, empty: !res.data };
+  } catch (e) {
+    console.error('拉取失败：', e);
+    meta.pullState = 'error';
+    S.syncError = '当前离线，正在使用本地数据';
+    persist(); renderSyncState();
+    if (!opts.silent) toast('拉取失败，继续使用本地数据 ⚠');
+    return { ok: false, changed: false, error: e };
+  } finally {
+    pulling = false;
+    saveMeta();
+  }
+}
+// 进入应用 / 回到前台：先把本机改动推上去（若有），再自动拉取最新到本地
+async function syncOnEnter() {
+  refreshCacheUI();
+  if (meta.pendingPush) {
+    const pushed = await flushPush();
+    if (!pushed) { meta.pullState = 'error'; saveMeta(); return; } // 推送失败先不拉取，避免覆盖本机改动
+  }
+  const r = await pullLatest({ silent: true });
+  if (r.ok && r.changed) toast('已同步到最新数据 🔄');
+  else if (!r.ok && !r.busy) toast('当前离线，正在使用本地数据 📴');
+  refreshCacheUI();
+}
+// 启动：首屏已用本地缓存渲染，这里只做恢复备份 + 后台拉取
+async function boot() {
+  refreshCacheUI();
+  // localStorage 被清空时，从私有存储的镜像备份恢复（失败不影响后续拉取）
+  await hydrateFromMirror().catch(e => console.warn('镜像恢复失败：', e));
+  await syncOnEnter(); // 每次进入自动拉取最新数据写入本地
 }
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState !== 'visible') { clearTimeout(syncTimer); flushPush(); return; }
-  if (!ghCfg()) return; clearTimeout(syncTimer); flushPush().then(initialPull).catch(() => {});
+  if (document.visibilityState === 'visible') {
+    clearTimeout(syncTimer);
+    syncOnEnter().catch(e => console.warn('回到前台同步失败：', e));
+  } else {
+    clearTimeout(syncTimer);
+    if (meta.pendingPush) flushPush(); // 切后台时尽量把改动传上去
+  }
 });
+// 从缓存历史返回（bfcache）时也刷新一次
+window.addEventListener('pageshow', (e) => {
+  if (e && e.persisted) syncOnEnter().catch(err => console.warn('页面恢复同步失败：', err));
+});
+// 前台每 5 分钟静默刷新本地缓存，避免长时间停留看到旧数据
+setInterval(() => {
+  if (document.visibilityState === 'visible' && !meta.pendingPush && !pulling && !syncing) {
+    pullLatest({ silent: true }).catch(e => console.warn('定时拉取失败：', e));
+  }
+}, 5 * 60 * 1000);
 
 /* ================= 通用 add/del（墓碑模式） ================= */
-function addListItem(key, item) { touch(item); S[key].push(item); persist(); renderAll(); schedulePush(); }
+// 各数据 key → 需要重渲染的页面（首页含心愿进度/期待日子，相关数据变更需联动刷新）
+const RENDERERS = {
+  timeline: [renderTimeline],
+  wishes: [renderWishes, renderHome],
+  capsules: [renderCapsules],
+  voices: [renderVoices],
+  customDays: [renderDayList, renderHome],
+  tags: [renderWishes],
+  periods: [renderPeriods],
+};
+// 数据变更统一收口：落本地缓存 + 按需重渲染 + 防抖上传（不传 key 时全量渲染，供远端同步等场景使用）
+const commit = (...keys) => {
+  persist();
+  invalidatePeriods();
+  if (!keys.length) renderAll();
+  else keys.forEach(k => (RENDERERS[k] || []).forEach(fn => fn()));
+  schedulePush();
+};
+function addListItem(key, item) { if (!item.createdAt) item.createdAt = Date.now(); touch(item); S[key].push(item); commit(key); }
 function delListItem(key, id) {
   const it = S[key].find(x => x.id === id); if (!it) return;
-  touch(it); it.deleted = true; persist(); renderAll(); schedulePush();
+  if (key === 'timeline' && it.photo) { // 顺手释放已删照片的内存缓存 + 持久缓存
+    const u = photoCache.get(it.photo);
+    if (u) { try { URL.revokeObjectURL(u); } catch (e) { /* 忽略 */ } photoCache.delete(it.photo); }
+    idbDelPhoto(it.photo);
+  }
+  touch(it); it.deleted = true; commit(key);
 }
+// 确认后删除并提示
+function confirmDel(msg, key, id) { if (confirm(msg)) { delListItem(key, id); toast('已删除'); } }
 
 /* ================= 首页 ================= */
+/* 值得期待的日子：翻页状态与手势 */
+let countPage = 0;
+function goCountPage(i) {
+  const total = $('countList').children.length || 1;
+  countPage = Math.max(0, Math.min(total - 1, i));
+  $('countList').style.transform = `translateX(-${countPage * 100}%)`;
+  [...$('countDots').children].forEach((d, k) => d.classList.toggle('on', k === countPage));
+  syncCountHeight();
+}
+// 通用左右滑动手势：轴向锁定（先判定横/竖，避免与页面滚动误触）+ 跟手拖拽回调 + 快速轻扫判定
+function onSwipe(el, opt, cb) {
+  if (!el) return;
+  let x0 = null, y0 = null, t0 = 0, axis = null; // axis: 'x' 已锁定水平 / 'y' 已锁定垂直 / null 未判定
+  const reset = () => { x0 = y0 = null; axis = null; if (opt.onEnd) opt.onEnd(); };
+  el.addEventListener('touchstart', e => {
+    if (e.touches.length === 1 && !(opt.guard && opt.guard(e))) { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now(); axis = null; }
+    else x0 = null;
+  }, { passive: true });
+  el.addEventListener('touchmove', e => {
+    if (x0 === null) return;
+    const dx = e.touches[0].clientX - x0, dy = e.touches[0].clientY - y0;
+    if (axis === null) { // 位移超过 12px 才锁轴向，且水平需明显占优（1.2 倍），轻微抖动不误判
+      if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.2) axis = 'x';
+      else if (Math.abs(dy) > 12) axis = 'y';
+    }
+    if (axis === 'x' && opt.onMove) opt.onMove(dx);
+  }, { passive: true });
+  el.addEventListener('touchcancel', reset, { passive: true });
+  el.addEventListener('touchend', e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    const dy = e.changedTouches[0].clientY - y0;
+    const dt = Date.now() - t0;
+    // 已锁定水平：位移达标或 300ms 内的快速轻扫即可切换；未锁定（极短滑动）沿用距离+角度判定
+    const ok = axis === 'x'
+      ? (Math.abs(dx) >= opt.min || (dt < 300 && Math.abs(dx) >= (opt.flick || opt.min)))
+      : (axis === null && Math.abs(dx) >= opt.min && Math.abs(dx) >= Math.abs(dy) * opt.ratio);
+    reset();
+    if (ok) cb(dx);
+  }, { passive: true });
+}
+// 值得期待的日子：左右滑动翻页（跟手拖动轨道，松手回弹或翻页）
+onSwipe($('countPager'), {
+  min: 36, ratio: 1.3, flick: 20,
+  onMove: dx => {
+    const track = $('countList'); if (!track) return;
+    const total = track.children.length;
+    const edge = (countPage <= 0 && dx > 0) || (countPage >= total - 1 && dx < 0); // 首/末页往外拖
+    track.style.transition = 'none';
+    track.style.transform = `translateX(calc(-${countPage * 100}% + ${Math.round(dx * (edge ? 0.25 : 0.5))}px))`;
+  },
+  onEnd: () => {
+    const track = $('countList'); if (!track) return;
+    track.style.transition = ''; // 恢复 CSS 里的 .28s 过渡
+    track.style.transform = `translateX(-${countPage * 100}%)`; // 弹回当前页（翻页时 goCountPage 会接着设新位置）
+  }
+}, dx => goCountPage(countPage + (dx < 0 ? 1 : -1)));
+// 尺寸变化后按当前页重新定高
+window.addEventListener('resize', syncCountHeight);
+
+// 轨道高度跟随当前页，避免短页留大片空白
+function syncCountHeight() {
+  const track = $('countList');
+  if (!track) return;
+  // 首页隐藏时（display:none）offsetHeight 恒为 0，绝不能写内联高度，否则切回首页会整个消失
+  if (!$('page-home').classList.contains('active')) { track.style.height = ''; return; }
+  const cur = track.children[countPage];
+  track.style.height = cur ? cur.offsetHeight + 'px' : '';
+}
+
 function renderHome() {
   const ann = S.anniversary;
-  $('hTitle').textContent = `${S.name1 || '我'} ❤ ${S.name2 || 'TA'}`;
-  $('hDays').textContent = ann ? Math.max(0, Math.round((new Date() - new Date(ann + 'T00:00:00')) / 86400000)) : '—';
+  $('hTitle').textContent = `${S.name1 || '我'} ♥ ${S.name2 || 'TA'}`;
+  $('hSub').textContent = `${S.name1 || '我'} 和 ${S.name2 || 'TA'} 的专属空间`;
+  $('hDays').textContent = ann ? Math.max(0, diffDays(fmtDay(new Date()), ann)) : '—';
   $('hSince').textContent = ann ? `自 ${ann.replace(/-/g, ' . ')} 起，一直在一起` : '去「设置」里填上在一起的日子吧';
+  // 今日农历（含干支纪年）
+  const lt = solarToLunar(new Date());
+  $('hLunar').textContent = lt ? `农历${lunarMonthName(lt.month, lt.isLeap)}${lunarDayName(lt.day)} · ${ganzhiYear(lt.year)}年` : '';
   // 值得期待的日子
   const items = [];
-  const push = (label, nx, icon) => { if (!nx) return; const d = daysTo(nx); items.push({ label, num: d === 0 ? `${icon}今天` : `${d} 天`, date: fmtDay(nx) }); };
+  const push = (label, nx, icon, sub) => {
+    if (!nx) return;
+    const d = daysTo(nx);
+    items.push({ label, num: d === 0 ? `${icon}今天` : `${d} 天`, sub: sub || '', day: fmtDay(nx) });
+  };
   push('恋爱周年', nextOf(S.anniversary), '🎉');
-  push(`${S.name1 || '我'}的生日`, nextOf(S.birthday1), '🎂');
-  push(`${S.name2 || 'TA'}的生日`, nextOf(S.birthday2), '🎂');
+  // 生日按农历推算每年对应的公历日期（加载/导入时已统一 normalize 过）
+  const bd1 = S.birthday1, bd2 = S.birthday2;
+  // 卡片里空间有限，省略「农历」二字，写成「闰五月十五 · 2027-06-19」
+  const shortBd = bd => (bd ? birthdayLabel(bd).replace(/^农历/, '') : '');
+  push(`${S.name1 || '我'}的生日`, nextLunarBirthday(bd1), '🎂', shortBd(bd1));
+  push(`${S.name2 || 'TA'}的生日`, nextLunarBirthday(bd2), '🎂', shortBd(bd2));
   S.customDays.filter(c => !c.deleted && c.name && c.date).map(c => ({ c, nx: nextOf(c.date) })).filter(x => x.nx).sort((a, b) => a.nx - b.nx).forEach(x => push(x.c.name, x.nx, '🎉'));
-  $('countList').innerHTML = items.length
-    ? items.map(i => `<div class="count-item"><div class="label">${esc(i.label)}</div><div class="num">${i.num}</div><div class="date">${i.date}</div></div>`).join('')
-    : '<div class="empty">在「设置」中添加纪念日<br>就会出现在这里 📅</div>';
-  // 每日情话（按一年中第几天轮换）
-  $('quote').textContent = '「' + QUOTES[Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000) % QUOTES.length] + '」';
+  // 每页 4 个（两行两列），更多则左右滑动翻页
+  const PER_PAGE = 4;
+  const pages = [];
+  for (let i = 0; i < items.length; i += PER_PAGE) pages.push(items.slice(i, i + PER_PAGE));
+  $('countList').innerHTML = pages.length
+    ? pages.map(pg => '<div class="count-page">' + pg.map(i => `<div class="count-item"><div class="label">${esc(i.label)}</div><div class="num">${i.num}</div><div class="date">${i.sub ? `<span class="lbl">${esc(i.sub)} ·</span> ` : ''}<span class="ymd">${esc(i.day)}</span></div></div>`).join('') + '</div>').join('')
+    : '<div class="count-page"><div class="empty">在「设置」里填写农历生日或纪念日<br>就会出现在这里 📅</div></div>';
+  countPage = Math.min(countPage, Math.max(0, pages.length - 1));
+  $('countDots').innerHTML = pages.length > 1
+    ? pages.map((_, i) => `<i class="${i === countPage ? 'on' : ''}" onclick="goCountPage(${i})"></i>`).join('')
+    : '';
+  $('countList').style.transform = `translateX(-${countPage * 100}%)`;
+  syncCountHeight();
+  // 每日情话：优先用当天缓存，没有就联网取一句
+  renderQuote();
   // 心愿进度
   const act = S.wishes.filter(w => !w.deleted);
   const done = act.filter(w => w.done).length;
@@ -395,27 +1099,268 @@ function renderHome() {
   $('wishPercent').textContent = pct + '%'; $('wishBar').style.width = pct + '%';
 }
 
+/* ================= 今日情话（在线接口 + 本地兜底） ================= */
+const QUOTE_CACHE_KEY = 'coupleQuoteCache';
+// 按顺序尝试；都失败就用 QUOTES 本地库，保证任何网络环境都有内容
+const QUOTE_APIS = [
+  { name: '彩虹屁', url: 'https://api.shadiao.pro/chp', pick: d => d && d.data && d.data.text },
+  { name: '一言 · 网易云热评', url: 'https://v1.hitokoto.cn/?encode=json&c=j', pick: d => d && d.hitokoto }
+];
+let quoteLoading = false;
+let quoteRetryAfter = 0; // 失败后的冷却时间，避免每次 renderAll 都重试
+
+function readQuoteCache() {
+  try {
+    const c = JSON.parse(localStorage.getItem(QUOTE_CACHE_KEY) || 'null');
+    return c && c.date === fmtDay(new Date()) && c.text ? c : null;
+  } catch (e) { return null; }
+}
+function writeQuoteCache(q) {
+  try { localStorage.setItem(QUOTE_CACHE_KEY, JSON.stringify({ date: fmtDay(new Date()), text: q.text, from: q.from || '' })); } catch (e) {}
+}
+function showQuote(q) {
+  $('quote').textContent = '「' + q.text + '」';
+}
+function setQuoteLoading(on) {
+  const btn = $('quoteBtn');
+  if (btn) btn.classList.toggle('loading', on);
+  if (on) { $('quote').textContent = '正在为你取一句情话…'; }
+}
+async function fetchOneQuote(api) {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 3500);
+  try {
+    const r = await fetch(api.url, { signal: ctl.signal, cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    const t = api.pick(d);
+    if (!t || typeof t !== 'string') throw new Error('格式异常');
+    return t.trim();
+  } finally { clearTimeout(timer); }
+}
+async function fetchQuote() {
+  let longOne = null;
+  for (const api of QUOTE_APIS) {
+    try {
+      const t = await fetchOneQuote(api);
+      if (!t) continue;
+      if (t.length <= 60) return { text: t, from: api.name }; // 优先短句，卡片更好看
+      if (!longOne) longOne = { text: t, from: api.name };
+    } catch (e) { /* 换下一个源 */ }
+  }
+  return longOne;
+}
+function localQuote() {
+  return { text: QUOTES[Math.floor(Math.random() * QUOTES.length)], from: '本地情话' };
+}
+// force=true 表示用户主动点刷新
+async function renderQuote(force) {
+  if (quoteLoading) return;
+  if (!force) {
+    const cached = readQuoteCache();
+    if (cached) { showQuote(cached); return; }
+    if (Date.now() < quoteRetryAfter) { showQuote(localQuote()); return; }
+  }
+  const current = $('quote').textContent; // 先记下当前显示内容，用于判断是否重复
+  quoteLoading = true;
+  setQuoteLoading(true);
+  let q = await fetchQuote();
+  // 刷新时如果返回了同一句，再取一次，避免“点了没反应”的错觉
+  if (q && force && '「' + q.text + '」' === current) q = await fetchQuote();
+  quoteLoading = false;
+  setQuoteLoading(false);
+  if (q) { showQuote(q); writeQuoteCache(q); return; }
+  quoteRetryAfter = Date.now() + 5 * 60 * 1000; // 5 分钟内不再自动重试
+  showQuote(localQuote());
+  if (force) toast('网络不太顺，先送你一句本地的 💌');
+}
+function refreshQuote() { renderQuote(true); }
+
 /* ================= 时间线 ================= */
 let pendingPhoto = null, uploading = false;
+/* ---------- 照片持久缓存：独立 IndexedDB 存 Blob，刷新页面不再重新下载 ---------- */
+const PHOTO_DB = 'couplePhotoCache', PHOTO_STORE = 'blobs';
+const PHOTO_CACHE_MAX = 60, PHOTO_CACHE_BYTES = 20 * 1024 * 1024; // 双上限：最多 60 张 / 20MB，超出按 savedAt 淘汰最旧
+let photoDbPromise = null, photoDbDisabled = false;
+function photoDb() {
+  if (photoDbPromise) return photoDbPromise;
+  if (photoDbDisabled) return Promise.resolve(null);
+  photoDbPromise = new Promise((resolve, reject) => {
+    if (!window.indexedDB) { reject(new Error('IndexedDB 不可用')); return; }
+    let settled = false;
+    const fail = (e) => { if (!settled) { settled = true; reject(e); } };
+    // 部分 WebView / 隐私模式下 open 永不回调，1.5s 后放弃，直接走网络
+    const timer = setTimeout(() => { photoDbDisabled = true; fail(new Error('IndexedDB 超时')); }, 1500);
+    try {
+      const req = indexedDB.open(PHOTO_DB, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(PHOTO_STORE)) db.createObjectStore(PHOTO_STORE);
+      };
+      req.onsuccess = () => { clearTimeout(timer); if (!settled) { settled = true; resolve(req.result); } };
+      req.onerror = () => { clearTimeout(timer); fail(req.error); };
+      req.onblocked = () => { clearTimeout(timer); fail(new Error('IndexedDB 被阻塞')); };
+    } catch (e) { clearTimeout(timer); fail(e); }
+  }).catch(e => { console.warn('照片缓存不可用：', e); return null; });
+  return photoDbPromise;
+}
+async function idbGetPhoto(path) {
+  const db = await photoDb(); if (!db) return null;
+  return new Promise(res => {
+    try {
+      const r = db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE).get(path);
+      r.onsuccess = () => { const v = r.result; res(v ? (v.blob || v) : null); };
+      r.onerror = () => res(null);
+    } catch (e) { res(null); }
+  });
+}
+async function idbPutPhoto(path, blob) {
+  const db = await photoDb(); if (!db) return;
+  try { db.transaction(PHOTO_STORE, 'readwrite').objectStore(PHOTO_STORE).put({ blob, savedAt: Date.now() }, path); } catch (e) { /* 忽略配额错误 */ }
+}
+async function idbDelPhoto(path) {
+  const db = await photoDb(); if (!db) return;
+  try { db.transaction(PHOTO_STORE, 'readwrite').objectStore(PHOTO_STORE).delete(path); } catch (e) {}
+}
+// 超限时按 savedAt 淘汰最旧的记录（数量或体积任一超限都触发）
+async function trimPhotoCache() {
+  const db = await photoDb(); if (!db) return;
+  return new Promise(res => {
+    try {
+      const store = db.transaction(PHOTO_STORE, 'readwrite').objectStore(PHOTO_STORE);
+      const all = store.getAll();
+      all.onsuccess = () => {
+        const items = (all.result || []).map((v, i) => ({ key: store.key(i), savedAt: v.savedAt || 0, size: (v.blob && v.blob.size) || 0 }));
+        const total = items.reduce((s, x) => s + x.size, 0);
+        if (items.length <= PHOTO_CACHE_MAX && total <= PHOTO_CACHE_BYTES) { res(); return; }
+        items.sort((a, b) => a.savedAt - b.savedAt); // 最旧在前
+        let n = items.length, bytes = total;
+        const victims = [];
+        while ((n > PHOTO_CACHE_MAX || bytes > PHOTO_CACHE_BYTES) && victims.length < items.length) {
+          const v = items[victims.length];
+          victims.push(v.key); n--; bytes -= v.size;
+        }
+        victims.forEach(k => { try { store.delete(k); } catch (e) { /* 忽略 */ } });
+        res();
+      };
+      all.onerror = () => res();
+    } catch (e) { res(); }
+  });
+}
+// 照片内存缓存：路径 → Blob URL（Blob 存 IndexedDB，URL 只存内存，beforeunload 统一释放）
+const photoCache = new Map();
+function dataUrlToBlob(dataUrl) {
+  const str = String(dataUrl || '');
+  const comma = str.indexOf(',');
+  if (comma < 0) return null;
+  const bin = atob(str.slice(comma + 1));
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], { type: 'image/jpeg' });
+}
+// 取照片可显示地址：data: 直用 → 内存 → IndexedDB → 网络（下载后回填两级缓存）
+async function getPhotoCached(p) {
+  if (!p) return null;
+  if (p.startsWith('data:')) return p;
+  if (photoCache.has(p)) { // 命中则移到队尾，实现 LRU
+    const hit = photoCache.get(p);
+    photoCache.delete(p); photoCache.set(p, hit);
+    return hit;
+  }
+  let blob = await idbGetPhoto(p);
+  if (!blob) {
+    const dataUrl = await ghGetBinary(p, 'image/jpeg').catch(() => null);
+    if (!dataUrl) return null; // 失败下次还能重试
+    blob = dataUrlToBlob(dataUrl);
+    if (blob) { idbPutPhoto(p, blob); trimPhotoCache(); } // 不阻塞显示，后台写入
+  }
+  if (!blob) return null;
+  const url = blobToUrl(blob);
+  if (!url) return null;
+  photoCache.set(p, url);
+  while (photoCache.size > PHOTO_CACHE_MAX) { // 内存层同样限量，淘汰时释放 Blob URL
+    const oldest = photoCache.keys().next().value;
+    try { URL.revokeObjectURL(photoCache.get(oldest)); } catch (e) { /* 忽略 */ }
+    photoCache.delete(oldest);
+  }
+  return url;
+}
+// 上传成功后回填缓存：自己刚发的照片不用再从 GitHub 下载一遍
+function cachePhotoFromUpload(path, dataUrl) {
+  if (!path || !dataUrl) return;
+  const blob = dataUrlToBlob(dataUrl);
+  if (!blob) return;
+  idbPutPhoto(path, blob); trimPhotoCache();
+  const url = blobToUrl(blob);
+  if (url) photoCache.set(path, url);
+}
+// 统计照片缓存占用（张数 / MB），供设置页展示
+async function photoCacheStats() {
+  const db = await photoDb(); if (!db) return null;
+  return new Promise(res => {
+    try {
+      const r = db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE).getAll();
+      r.onsuccess = () => {
+        const items = r.result || [];
+        res({ count: items.length, bytes: items.reduce((s, v) => s + ((v.blob && v.blob.size) || 0), 0) });
+      };
+      r.onerror = () => res(null);
+    } catch (e) { res(null); }
+  });
+}
+// 清空照片持久缓存（设置页按钮）
+async function clearPhotoCache() {
+  const db = await photoDb(); if (!db) { toast('照片缓存不可用'); return; }
+  photoCache.forEach(u => { try { URL.revokeObjectURL(u); } catch (e) { /* 忽略 */ } });
+  photoCache.clear();
+  try { db.transaction(PHOTO_STORE, 'readwrite').objectStore(PHOTO_STORE).clear(); toast('照片缓存已清理 ✨'); } catch (e) { toast('清理失败，请重试'); }
+  renderPhotoCacheRow();
+}
+function hmOf(ts) {
+  const d = new Date(ts || 0);
+  return isNaN(d.getTime()) ? '' : pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+// 记录时刻：新数据用发布时刻 time，老数据回退到创建/更新时间
+function tlTimeOf(t) { return t.time || hmOf(t.createdAt || t.updatedAt); }
+// 时间线日期的人性化显示：今天 / 昨天 / 11-09（月份已由分组头承担）
+function tlDayLabel(dateStr) {
+  if (!dateStr) return '';
+  const today = fmtDay(new Date());
+  if (dateStr === today) return '今天';
+  const y = new Date(); y.setDate(y.getDate() - 1);
+  if (dateStr === fmtDay(y)) return '昨天';
+  return dateStr.slice(5);
+}
+
+// 文本中的网址自动转可点击链接：按原始 URL 分段（split 捕获组交替返回 普通段/URL 段），各段分别 esc 转义，URL 段包上 <a>
+function linkify(text) {
+  return String(text || '').split(/(https?:\/\/[^\s<>"']+)/g).map((seg, i) =>
+    i % 2 ? `<a href="${esc(seg)}" target="_blank" rel="noopener noreferrer" class="tl-link">${esc(seg)}</a>` : esc(seg)
+  ).join('');
+}
+
 function renderTimeline() {
   const kw = $('tlSearch').value.trim().toLowerCase();
   const list = [...S.timeline].filter(t => !t.deleted)
     .filter(t => !kw || (t.text || '').toLowerCase().includes(kw) || (t.author || '').toLowerCase().includes(kw))
-    .sort((a, b) => ((b.date || '') + b.id).localeCompare((a.date || '') + a.id));
+    .sort((a, b) => ((b.date || '') + (tlTimeOf(b) || '00:00') + b.id).localeCompare((a.date || '') + (tlTimeOf(a) || '00:00') + a.id));
   if (!list.length) { $('tlList').innerHTML = `<div class="empty">${kw ? '没有匹配的记录 🔍' : '还没有记录<br>写下第一条吧 ✍️'}</div>`; return; }
+  // 列表已按日期倒序，同月记录必然相邻，直接顺序分组
   const groups = [];
-  const map = new Map();
-  list.forEach(t => { const m = (t.date || '').slice(0, 7) || '未知时间'; if (!map.has(m)) { const g = { m, items: [] }; map.set(m, g); groups.push(g); } map.get(m).items.push(t); });
+  let cur = null;
+  list.forEach(t => { const m = (t.date || '').slice(0, 7) || '未知时间'; if (!cur || cur.m !== m) { cur = { m, items: [] }; groups.push(cur); } cur.items.push(t); });
   $('tlList').innerHTML = groups.map(g =>
-    `<div class="group-month">🗓 ${g.m}</div>` + g.items.map(t =>
-      `<div class="tl-item"><div class="meta"><b>${esc(t.author)}</b> · ${esc(t.date)}</div><button class="del" onclick="delTimeline('${t.id}')">✕</button><div class="text">${esc(t.text)}</div>${t.photo ? `<img class="photo" src="" data-photo="${esc(t.photo)}" alt="照片" onclick="previewPhoto(this)">` : ''}</div>`
-    ).join('')
+    `<div class="tl-group"><div class="group-month">🗓 ${g.m}</div>` + g.items.map(t => {
+      const tm = tlTimeOf(t);
+      const who2 = S.name2 && t.author === S.name2;
+      return `<div class="tl-item ${who2 ? 'who2' : ''}"><div class="meta"><span class="who">${esc(t.author)}</span><span class="when">${esc(tlDayLabel(t.date))}${tm ? ' ' + tm : ''}</span></div><button class="del" onclick="delTimeline('${t.id}')">✕</button><div class="text">${linkify(t.text)}</div>${t.photo ? `<img class="photo" src="" data-photo="${esc(t.photo)}" alt="照片" onclick="previewPhoto(this)">` : ''}</div>`;
+    }).join('') + '</div>'
   ).join('');
-  // 惰性加载照片：远端路径 → dataURL；兼容旧 data: URL
+  // 惰性加载照片：优先命中缓存，未命中才请求；兼容旧 data: URL
   document.querySelectorAll('#tlList img[data-photo]').forEach(async img => {
     const p = img.getAttribute('data-photo');
-    if (p.startsWith('data:')) { img.src = p; return; }
-    try { const url = await ghGetBinary(p, 'image/jpeg'); if (url) img.src = url; } catch (e) {}
+    const url = await getPhotoCached(p);
+    if (url) img.src = url;
   });
 }
 function onPhotoChange(e) {
@@ -440,42 +1385,100 @@ async function addTimeline() {
   let photoPath = '';
   if (pendingPhoto) {
     uploading = true; $('tlAdd').disabled = true;
-    try { photoPath = `photos/${id}.jpg`; await ghPutBinary(photoPath, pendingPhoto); }
-    catch (e) { toast('照片上传失败，请检查网络 ❌'); uploading = false; $('tlAdd').disabled = false; return; }
-    uploading = false; $('tlAdd').disabled = false;
+    try {
+      photoPath = `photos/${id}.jpg`;
+      await ghPutBinary(photoPath, pendingPhoto);
+      cachePhotoFromUpload(photoPath, pendingPhoto); // 上传成功立刻回填缓存，自己刚发的照片不用再下载
+    } catch (e) {
+      toast('照片上传失败，请检查网络 ❌');
+      return;
+    } finally {
+      uploading = false; $('tlAdd').disabled = false;
+    }
   }
-  addListItem('timeline', { id, author: myName(), text: text || '📷 分享了一张照片', photo: photoPath, date: $('tlDate').value });
+  // 记录时刻自动取当前时间；日期仍可手动选（补记过去的事）
+  addListItem('timeline', { id, author: myName(), text: text || '📷 分享了一张照片', photo: photoPath, date: $('tlDate').value, time: hmOf(Date.now()) });
   $('tlText').value = ''; clearPhoto(); toast('已记录 ❤');
 }
-function delTimeline(id) { if (confirm('确定删除这条记录吗？')) { delListItem('timeline', id); toast('已删除'); } }
+const delTimeline = (id) => confirmDel('确定删除这条记录吗？', 'timeline', id);
 async function previewPhoto(img) {
-  const p = img.getAttribute('data-photo');
-  const url = p.startsWith('data:') ? p : await ghGetBinary(p, 'image/jpeg').catch(() => null);
+  const url = await getPhotoCached(img.getAttribute('data-photo'));
   if (url) { $('lightboxImg').src = url; $('lightbox').style.display = 'flex'; }
 }
 
 /* ================= 心愿 ================= */
-let newTag = '', wishFilter = '';
+let newTag = '', wishFilter = '', tagEditing = false;
+// 自定义标签（未删除的），按创建顺序
+const customTags = () => (S.tags || []).filter(t => t && !t.deleted && t.name && !TAGS.includes(t.name));
+// 默认标签 + 自定义标签，供选择器使用
+const allTags = () => [...TAGS, ...customTags().map(t => t.name)];
 function renderWishes() {
-  $('tagPicker').innerHTML = TAGS.map(t => `<button class="chip ${newTag === t ? 'on' : ''}" onclick="pickTag('${t}')">${t}</button>`).join('');
-  const used = TAGS.filter(t => S.wishes.some(w => !w.deleted && w.tag === t));
-  $('filterBar').innerHTML = ['', ...used].map(t => `<button class="chip ${wishFilter === t ? 'on' : ''}" onclick="pickFilter('${t}')">${t || '全部'}</button>`).join('');
+  const tags = allTags();
+  const custom = customTags();
+  const defaultChips = TAGS.map(t =>
+    `<button class="chip ${newTag === t ? 'on' : ''}" data-tag="${esc(t)}" onclick="pickTag(this.dataset.tag)">${esc(t)}</button>`
+  ).join('');
+  const customChips = custom.map(t =>
+    `<button class="chip ${newTag === t.name ? 'on' : ''}" data-tag="${esc(t.name)}" onclick="pickTag(this.dataset.tag)">${esc(t.name)}<span class="tag-x" data-id="${esc(t.id)}" onclick="delTag(event,this.dataset.id)" title="删除标签">×</span></button>`
+  ).join('');
+  $('tagPicker').innerHTML = defaultChips + customChips +
+    `<button class="chip tag-new ${tagEditing ? 'on' : ''}" onclick="toggleTagEditor()">＋ 自定义</button>`;
+
+  // 筛选条只显示「真的被用过」的标签，按标签顺序排列
+  const used = [...new Set(S.wishes.filter(w => !w.deleted && w.tag).map(w => w.tag))];
+  const order = t => { const i = tags.indexOf(t); return i < 0 ? 99 : i; };
+  used.sort((a, b) => order(a) - order(b) || a.localeCompare(b));
+  $('filterBar').innerHTML = ['', ...used].map(t => `<button class="chip ${wishFilter === t ? 'on' : ''}" data-tag="${esc(t)}" onclick="pickFilter(this.dataset.tag)">${t ? esc(t) : '全部'}</button>`).join('');
+
   const list = [...S.wishes].filter(w => !w.deleted).filter(w => !wishFilter || w.tag === wishFilter)
     .sort((a, b) => a.done - b.done || (a.createdAt < b.createdAt ? 1 : -1));
   $('wishList').innerHTML = list.length
-    ? list.map(w => `<div class="wish-item ${w.done ? 'done' : ''}"><input type="checkbox" ${w.done ? 'checked' : ''} onchange="toggleWish('${w.id}')"><span class="text">${esc(w.text)}</span>${w.tag ? `<span class="wish-tag">${esc(w.tag)}</span>` : ''}<button class="del" style="border:none;background:none;color:#d9a3b1;cursor:pointer" onclick="delWish('${w.id}')">✕</button></div>`).join('')
+    ? list.map(w => `<div class="wish-item ${w.done ? 'done' : ''}"><input type="checkbox" ${w.done ? 'checked' : ''} onchange="toggleWish('${w.id}')"><span class="text">${esc(w.text)}</span>${w.tag ? `<span class="wish-tag">${esc(w.tag)}</span>` : ''}<button class="x-del" onclick="delWish('${w.id}')">✕</button></div>`).join('')
     : '<div class="empty">心愿清单还是空的<br>许下第一个愿望吧 ✨</div>';
 }
-function pickTag(t) { newTag = newTag === t ? '' : t; renderWishes(); }
-function pickFilter(t) { wishFilter = t; renderWishes(); }
+function pickTag(t) { newTag = (newTag === t) ? '' : t; renderWishes(); }
+function pickFilter(t) { wishFilter = t || ''; renderWishes(); }
+function toggleTagEditor(force) {
+  tagEditing = (typeof force === 'boolean') ? force : !tagEditing;
+  $('tagEditor').style.display = tagEditing ? 'flex' : 'none';
+  renderWishes();
+  if (tagEditing) { const i = $('tagInput'); i.value = ''; setTimeout(() => i.focus(), 30); }
+}
+function confirmAddTag() {
+  const input = $('tagInput');
+  const t = (input.value || '').trim().replace(/\s+/g, ' ');
+  if (!t) { toast('先输入标签名～'); return; }
+  if (t.length > 6) { toast('标签最多 6 个字'); return; }
+  if (allTags().includes(t)) { toast('这个标签已经有了'); return; }
+  if (allTags().length >= 12) { toast('最多 12 个标签，先删几个吧'); return; }
+  input.value = '';
+  tagEditing = false;
+  $('tagEditor').style.display = 'none';
+  addListItem('tags', { id: uid(), name: t, deleted: false, createdAt: Date.now() });
+  toast(`已添加「${t}」✨`);
+}
+function delTag(e, id) {
+  if (e) { e.stopPropagation(); e.preventDefault(); }
+  const tag = (S.tags || []).find(x => x && x.id === id && !x.deleted);
+  if (!tag) return;
+  const name = tag.name;
+  if (!confirm(`删除标签「${name}」？\n使用它的心愿会变成未分类`)) return;
+  touch(tag); tag.deleted = true; // 墓碑：另一台设备拉取后会同步删除
+  // 已经用了这个标签的心愿，tag 置空（保留心愿本身）
+  S.wishes.forEach(w => { if (w.tag === name && !w.deleted) { touch(w); w.tag = ''; } });
+  if (newTag === name) newTag = '';
+  if (wishFilter === name) wishFilter = '';
+  commit('tags', 'wishes');
+  toast('标签已删除');
+}
 function addWish() {
   const text = $('wishText').value.trim();
   if (!text) { toast('先写一个心愿吧～'); return; }
   addListItem('wishes', { id: uid(), text, tag: newTag, done: false, createdAt: Date.now() });
   $('wishText').value = ''; newTag = ''; toast('心愿已加入 ✨');
 }
-function toggleWish(id) { const w = S.wishes.find(x => x.id === id); if (!w) return; touch(w); w.done = !w.done; persist(); renderAll(); schedulePush(); if (w.done) toast('又完成一个心愿，恭喜！🎉'); }
-function delWish(id) { if (confirm('确定删除这个心愿吗？')) delListItem('wishes', id); }
+function toggleWish(id) { const w = S.wishes.find(x => x.id === id); if (!w) return; touch(w); w.done = !w.done; commit('wishes'); if (w.done) toast('又完成一个心愿，恭喜！🎉'); }
+const delWish = (id) => confirmDel('确定删除这个心愿吗？', 'wishes', id);
 
 /* ================= 时间胶囊 ================= */
 function blurText(t) { return (t || '').replace(/[^\s]/g, '♥'); }
@@ -483,10 +1486,10 @@ function renderCapsules() {
   if (!$('capDate').value) { const d = new Date(); d.setFullYear(d.getFullYear() + 1); $('capDate').value = fmtDay(d); }
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const list = [...S.capsules].filter(c => !c.deleted)
-    .map(c => Object.assign({}, c, { unlocked: c.unlockAt <= fmtDay(today), daysLeft: Math.max(0, Math.round((new Date(c.unlockAt + 'T00:00:00') - today) / 86400000)) }))
+    .map(c => Object.assign({}, c, { unlocked: c.unlockAt <= fmtDay(today), daysLeft: Math.max(0, diffDays(c.unlockAt, fmtDay(today))) }))
     .sort((a, b) => (a.unlocked === b.unlocked) ? (a.unlocked ? b.createdAt - a.createdAt : a.unlockAt.localeCompare(b.unlockAt)) : (a.unlocked ? 1 : -1));
   $('capList').innerHTML = list.length
-    ? list.map(c => `<div class="capsule-item ${c.unlocked ? '' : 'locked'}"><div class="meta"><span class="badge ${c.unlocked ? 'open' : 'lock'}">${c.unlocked ? '已解锁' : `🔒 ${c.daysLeft} 天后开启`}</span><span>${esc(c.author || '')} · ${fmtTs(c.createdAt)} 封存</span></div><button class="del" style="position:absolute;top:8px;right:8px;border:none;background:none;color:#d9a3b1;cursor:pointer" onclick="delCapsule('${c.id}')">✕</button><div class="text">${c.unlocked ? esc(c.text) : esc(blurText(c.text))}</div>${c.unlocked ? '' : `<div class="meta" style="margin-top:6px"><span>解锁日：${esc(c.unlockAt)}</span></div>`}</div>`).join('')
+    ? list.map(c => `<div class="capsule-item ${c.unlocked ? '' : 'locked'}"><div class="meta"><span class="badge ${c.unlocked ? 'open' : 'lock'}">${c.unlocked ? '已解锁' : `🔒 ${c.daysLeft} 天后开启`}</span><span>${esc(c.author || '')} · ${fmtTs(c.createdAt)} 封存</span></div><button class="x-del" style="position:absolute;top:8px;right:8px" onclick="delCapsule('${c.id}')">✕</button><div class="text">${c.unlocked ? linkify(c.text) : esc(blurText(c.text))}</div>${c.unlocked ? '' : `<div class="meta" style="margin-top:6px"><span>解锁日：${esc(c.unlockAt)}</span></div>`}</div>`).join('')
     : '<div class="empty">还没有封存的信<br>给未来的 TA 写一封吧 💌</div>';
 }
 function addCapsule() {
@@ -496,91 +1499,497 @@ function addCapsule() {
   addListItem('capsules', { id: uid(), author: myName(), text, unlockAt: $('capDate').value, createdAt: Date.now() });
   $('capText').value = ''; toast('已封存 🔒，到期见');
 }
-function delCapsule(id) { if (confirm('确定删除这个时间胶囊吗？')) { delListItem('capsules', id); toast('已删除'); } }
+const delCapsule = (id) => confirmDel('确定删除这个时间胶囊吗？', 'capsules', id);
 
 /* ================= 语音留言 ================= */
-let recording = false, recSeconds = 0, recorder = null, chunks = [], recTimer = null, stream = null, playingId = '';
+let recording = false, recSeconds = 0, recorder = null, chunks = [], recTimer = null, stream = null;
+let playingId = '', voiceLoadingId = '', recMime = '';
+const resetPlayState = () => { playingId = ''; voiceLoadingId = ''; };
+const voiceUrlCache = new Map(); // 远端路径 -> Blob URL，避免重复下载
+/* ---------- 语音持久缓存：IndexedDB 存 Blob，第二次打开秒播 ---------- */
+const VOICE_DB = 'coupleVoiceCache', VOICE_STORE = 'blobs';
+let voiceDbPromise = null, voiceDbDisabled = false;
+function voiceDb() {
+  if (voiceDbPromise) return voiceDbPromise;
+  if (voiceDbDisabled) return Promise.resolve(null);
+  voiceDbPromise = new Promise((resolve, reject) => {
+    if (!window.indexedDB) { reject(new Error('IndexedDB 不可用')); return; }
+    let settled = false;
+    const fail = (e) => { if (!settled) { settled = true; reject(e); } };
+    // 部分 WebView / 隐私模式下 open 永不回调，1.5s 后放弃，直接走网络
+    const timer = setTimeout(() => { voiceDbDisabled = true; fail(new Error('IndexedDB 超时')); }, 1500);
+    try {
+      const req = indexedDB.open(VOICE_DB, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(VOICE_STORE)) db.createObjectStore(VOICE_STORE);
+      };
+      req.onsuccess = () => { clearTimeout(timer); if (!settled) { settled = true; resolve(req.result); } };
+      req.onerror = () => { clearTimeout(timer); fail(req.error); };
+      req.onblocked = () => { clearTimeout(timer); fail(new Error('IndexedDB 被阻塞')); };
+    } catch (e) { clearTimeout(timer); fail(e); }
+  }).catch(e => { console.warn('语音缓存不可用：', e); return null; });
+  return voiceDbPromise;
+}
+async function idbGetVoice(path) {
+  const db = await voiceDb(); if (!db) return null;
+  return new Promise(res => {
+    try {
+      const r = db.transaction(VOICE_STORE, 'readonly').objectStore(VOICE_STORE).get(path);
+      r.onsuccess = () => { const v = r.result; res(v ? (v.blob || v) : null); };
+      r.onerror = () => res(null);
+    } catch (e) { res(null); }
+  });
+}
+async function idbPutVoice(path, blob) {
+  const db = await voiceDb(); if (!db) return;
+  try { db.transaction(VOICE_STORE, 'readwrite').objectStore(VOICE_STORE).put({ blob, savedAt: Date.now() }, path); } catch (e) { /* 忽略配额错误 */ }
+}
+async function idbDelVoice(path) {
+  const db = await voiceDb(); if (!db) return;
+  try { db.transaction(VOICE_STORE, 'readwrite').objectStore(VOICE_STORE).delete(path); } catch (e) {}
+}
+function blobToUrl(blob) {
+  return (typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') ? URL.createObjectURL(blob) : null;
+}
+// 取语音可播放地址：内存 → IndexedDB → 网络（下载后回填两级缓存）
+async function getVoiceUrl(v) {
+  const hit = voiceUrlCache.get(v.audio);
+  if (hit) return hit;
+  let blob = await idbGetVoice(v.audio);
+  if (!blob) {
+    const dataUrl = await ghGetBinary(v.audio, voiceMime(v));
+    if (!dataUrl) throw new Error('HTTP 404');
+    blob = dataUrlToAudioBlob(dataUrl);
+    idbPutVoice(v.audio, blob); // 不阻塞播放，后台写入
+  }
+  const url = blobToUrl(blob);
+  if (!url) throw new Error('无法创建播放地址');
+  voiceUrlCache.set(v.audio, url);
+  return url;
+}
+// 空闲时预取最近几条语音，点播放就能瞬间出声
+let voicePrefetching = false, prefetchTimer = null;
+function scheduleVoicePrefetch(delay) {
+  clearTimeout(prefetchTimer);
+  prefetchTimer = setTimeout(() => { prefetchVoices(3); }, delay == null ? 800 : delay);
+}
+async function prefetchVoices(limit) {
+  if (voicePrefetching) return;
+  if (playingId || voiceLoadingId) return;           // 正在播放/加载时不抢带宽
+  const voicePage = $('page-voice');
+  if (!voicePage || !voicePage.classList.contains('active')) return; // 只在语音页预取，避免浪费流量
+  const list = [...S.voices].filter(v => !v.deleted && v.audio && !voiceUrlCache.has(v.audio)).slice(0, limit || 3);
+  if (!list.length) return;
+  voicePrefetching = true;
+  try {
+    for (const v of list) {
+      if (document.visibilityState === 'hidden' || playingId || voiceLoadingId) break;
+      try { await getVoiceUrl(v); } catch (e) { /* 预取失败不影响手动播放 */ }
+    }
+  } finally { voicePrefetching = false; }
+}
+// 选取当前环境支持的录音编码：iOS / 部分 WebView 只支持 audio/mp4
+function pickRecMime() {
+  if (!window.MediaRecorder || typeof MediaRecorder.isTypeSupported !== 'function') return '';
+  const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const list = ios
+    ? ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus']
+    : ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
+  for (let i = 0; i < list.length; i++) {
+    try { if (MediaRecorder.isTypeSupported(list[i])) return list[i]; } catch (e) { /* 忽略探测异常 */ }
+  }
+  return '';
+}
+// mime -> 文件后缀
+function extOfMime(mime) {
+  const m = String(mime || '').toLowerCase();
+  if (m.indexOf('mp4') >= 0 || m.indexOf('aac') >= 0) return 'm4a';
+  if (m.indexOf('ogg') >= 0) return 'ogg';
+  if (m.indexOf('mpeg') >= 0) return 'mp3';
+  if (m.indexOf('wav') >= 0) return 'wav';
+  return 'webm';
+}
 function fmtSec(s) { return `${Math.floor(s / 60)}:${pad(Math.floor(s % 60))}`; }
+// 通过文件头识别真实音频格式，兼容旧版把 m4a 存成 .webm 的记录
+function sniffAudioMime(bytes) {
+  if (!bytes || bytes.length < 12) return '';
+  if (bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3) return 'audio/webm';
+  if (bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70) return 'audio/mp4';
+  if (bytes[0] === 0x4f && bytes[1] === 0x67 && bytes[2] === 0x67 && bytes[3] === 0x53) return 'audio/ogg';
+  if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46) return 'audio/wav';
+  if ((bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) ||
+      (bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0)) return 'audio/mpeg';
+  return '';
+}
+// dataURL -> Blob：部分 WebView 不支持把 data: 直接当音频源
+function dataUrlToAudioBlob(dataUrl) {
+  const str = String(dataUrl || '');
+  const comma = str.indexOf(',');
+  if (comma < 0) throw new Error('音频数据无效');
+  const bin = atob(str.slice(comma + 1));
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  const headMime = (str.slice(0, comma).match(/data:([^;]+)/) || [])[1] || '';
+  const mime = sniffAudioMime(bytes) || headMime || 'audio/webm';
+  return new Blob([bytes], { type: mime });
+}
+// 语音记录的 mime（旧记录没有 mime 字段时按后缀推断）
+function voiceMime(v) {
+  if (v && v.mime) return v.mime;
+  const ext = String((v && v.audio) || '').split('.').pop().toLowerCase();
+  const map = { webm: 'audio/webm', m4a: 'audio/mp4', mp4: 'audio/mp4', mp3: 'audio/mpeg', ogg: 'audio/ogg', wav: 'audio/wav' };
+  return map[ext] || 'audio/webm';
+}
+// 常驻播放器（在 body 底部，不随列表重渲染销毁，避免 play() 被打断）
+function voicePlayer() { return $('voiceAudio'); }
+// 停止播放并同步列表 UI
+function stopVoice() {
+  const a = voicePlayer();
+  resetPlayState();
+  if (a) { try { a.pause(); } catch (e) { console.warn('暂停语音失败', e); } }
+  renderVoices();
+}
+// 播放器事件只绑定一次
+function bindVoicePlayer() {
+  const a = voicePlayer();
+  if (!a || a.dataset.bound === '1') return;
+  a.dataset.bound = '1';
+  a.addEventListener('ended', () => { resetPlayState(); renderVoices(); });
+  a.addEventListener('error', () => {
+    if (!a.getAttribute('src')) return;
+    console.error('语音播放出错：', a.error && a.error.code, a.error && a.error.message);
+    resetPlayState(); renderVoices();
+    toast('这条语音无法播放，可能文件已损坏 ❌');
+  });
+}
 async function toggleRecord() {
   if (recording) { stopRecording(false); return; }
   if (!navigator.mediaDevices || !window.MediaRecorder) { toast('当前环境不支持录音 ❌'); return; }
-  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: { ideal: 1 }, echoCancellation: true, noiseSuppression: true } }); }
   catch (e) { toast('无法获取麦克风权限 ❌'); return; }
-  chunks = []; recorder = new MediaRecorder(stream);
+  chunks = []; recMime = pickRecMime();
+  // 32kbps 单声道对语音足够，文件更小 → 对方下载更快；指定参数失败时逐级回退
+  const create = (o) => { try { recorder = new MediaRecorder(stream, o); return true; } catch (e) { return false; } };
+  const ok = recMime
+    ? (create({ mimeType: recMime, audioBitsPerSecond: 32000 }) || create({ mimeType: recMime }))
+    : (create({ audioBitsPerSecond: 32000 }) || create());
+  if (!ok) {
+    console.error('创建录音器失败');
+    toast('当前环境无法录音 ❌');
+    stream.getTracks().forEach(t => t.stop()); stream = null;
+    $('recTip').textContent = `点击开始录音，最长 ${MAX_SECONDS} 秒`;
+    return;
+  }
+  recMime = recorder.mimeType || recMime || 'audio/webm';
   recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
   recorder.onstop = onRecordStop;
   recorder.start(); recording = true; recSeconds = 0;
-  $('recBtn').classList.add('recording'); $('recTip').textContent = `录音中 ${fmtSec(0)} / 0:30`;
-  recTimer = setInterval(() => { recSeconds++; $('recTip').textContent = `录音中 ${fmtSec(recSeconds)} / 0:30`; if (recSeconds >= MAX_SECONDS) stopRecording(false); }, 1000);
+  $('recBtn').classList.add('recording'); $('recTip').textContent = `录音中 ${fmtSec(0)} / ${fmtSec(MAX_SECONDS)}`;
+  recTimer = setInterval(() => { recSeconds++; $('recTip').textContent = `录音中 ${fmtSec(recSeconds)} / ${fmtSec(MAX_SECONDS)}`; if (recSeconds >= MAX_SECONDS) stopRecording(false); }, 1000);
 }
 function stopRecording(silent) {
   if (!recording) return;
   recording = false; clearInterval(recTimer);
-  $('recBtn').classList.remove('recording'); $('recTip').textContent = '点击开始录音，最长 30 秒';
-  if (silent) { if (recorder && recorder.state !== 'inactive') { recorder.onstop = null; recorder.stop(); } }
-  else if (recorder && recorder.state !== 'inactive') recorder.stop();
+  $('recBtn').classList.remove('recording'); $('recTip').textContent = `点击开始录音，最长 ${MAX_SECONDS} 秒`;
+  if (recorder && recorder.state !== 'inactive') {
+    if (silent) recorder.onstop = null; // 静默丢弃本次录音
+    recorder.stop();
+  }
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
 }
 async function onRecordStop() {
-  const blob = new Blob(chunks, { type: 'audio/webm' }); chunks = [];
-  if (!blob.size) return;
+  const mime = recMime || (chunks[0] && chunks[0].type) || 'audio/webm';
+  const blob = new Blob(chunks, { type: mime });
+  chunks = [];
+  if (!blob.size) { toast('没有录到声音，再试一次吧 🎤'); return; }
+  const ext = extOfMime(mime);
+  const dur = Math.max(1, recSeconds); // 先固定时长，避免上传期间被下一次录音清零
   const reader = new FileReader();
+  reader.onerror = () => { console.error('录音读取失败：', reader.error); toast('录音读取失败 ❌'); };
   reader.onload = async ev => {
-    const id = uid(); toast('上传中…');
+    const id = uid();
+    toast('语音上传中…');
     try {
-      const path = `voices/${id}.webm`;
+      const path = `voices/${id}.${ext}`;
       await ghPutBinary(path, ev.target.result);
-      addListItem('voices', { id, by: myName(), audio: path, duration: recSeconds || 1, createdAt: Date.now() });
+      // mime 一并保存，回放时按真实格式解码
+      addListItem('voices', { id, by: myName(), audio: path, mime: mime, duration: dur, createdAt: Date.now() });
       toast('语音已保存 ❤');
-    } catch (e) { toast('语音上传失败，请检查网络 ❌'); }
+    } catch (e) {
+      console.error('语音上传失败：', e);
+      toast('语音上传失败，请检查网络 ❌');
+    }
   };
   reader.readAsDataURL(blob);
 }
 function renderVoices() {
   const list = [...S.voices].filter(v => !v.deleted).sort((a, b) => b.createdAt - a.createdAt);
-  $('voiceList').innerHTML = list.length
-    ? list.map(v => `<div class="voice-item"><button class="play-btn" onclick="togglePlay('${v.id}')">${playingId === v.id ? '⏸' : '▶'}</button><div style="flex:1"><div style="font-size:13px;font-weight:700;">${esc(v.by || '')}</div><div style="font-size:11px;color:#a08a92;">${fmtTs(v.createdAt)} · ${fmtSec(v.duration || 0)}</div></div>${playingId === v.id ? '<div class="wave">' + Array.from({length: 8}, (_, i) => `<span class="bar" style="animation-delay:${i * 0.07}s"></span>`).join('') + '</div>' : ''}<button class="del" style="border:none;background:none;color:#d9a3b1;cursor:pointer" onclick="delVoice('${v.id}')">✕</button><audio id="au-${v.id}" style="display:none" onended="playingId='';renderVoices()"></audio></div>`).join('')
-    : '<div class="empty">还没有语音留言<br>录一段想说的话吧 🎤</div>';
+  if (!list.length) {
+    $('voiceList').innerHTML = '<div class="empty">还没有语音留言<br>录一段想说的话吧 🎤</div>';
+    return;
+  }
+  // 注意：列表里不再放 audio 元素，播放统一交给常驻播放器 #voiceAudio
+  $('voiceList').innerHTML = list.map(v => {
+    const isPlaying = playingId === v.id;
+    const isLoading = voiceLoadingId === v.id;
+    const ico = isLoading ? '⏳' : (isPlaying ? '⏸' : '▶');
+    const wave = isPlaying
+      ? '<div class="wave">' + Array.from({ length: 8 }, (_, i) => `<span class="bar" style="animation-delay:${(i * 0.07).toFixed(2)}s"></span>`).join('') + '</div>'
+      : '';
+    return `<div class="voice-item${isPlaying ? ' playing' : ''}">
+      <button class="play-btn${isLoading ? ' loading' : ''}" onclick="togglePlay('${v.id}')" aria-label="播放语音">${ico}</button>
+      <div class="voice-msg">
+        <div class="who">${esc(v.by || '')}</div>
+        <div class="sub">${fmtTs(v.createdAt)} · ${fmtSec(v.duration || 0)}</div>
+      </div>
+      ${wave}
+      <button class="x-del" style="padding:4px" onclick="delVoice('${v.id}')">✕</button>
+    </div>`;
+  }).join('');
+  // 停留在语音页时，渲染完顺手预取最近几条
+  const vp = $('page-voice');
+  if (vp && vp.classList.contains('active')) scheduleVoicePrefetch(1200);
 }
 async function togglePlay(id) {
-  const audio = $('au-' + id); if (!audio) return;
-  if (playingId === id) { audio.pause(); playingId = ''; renderVoices(); return; }
-  const v = S.voices.find(x => x.id === id); if (!v) return;
-  if (!audio.src) {
-    try {
-      const mime = (v.audio || '').endsWith('.mp3') ? 'audio/mpeg' : 'audio/webm';
-      const url = await ghGetBinary(v.audio, mime);
-      if (!url) { toast('语音文件不存在 ❌'); return; }
-      audio.src = url;
-    } catch (e) { toast('语音加载失败 ❌'); return; }
+  const a = voicePlayer();
+  if (!a) { toast('播放器未就绪，请稍后再试'); return; }
+  if (playingId === id) { stopVoice(); return; }        // 再点一次 = 暂停
+  if (voiceLoadingId === id) return;                    // 正在下载，忽略连点
+  const v = S.voices.find(x => x.id === id && !x.deleted);
+  if (!v) { toast('这条语音已不存在'); return; }
+  if (!v.audio) { toast('语音文件缺失 ❌'); return; }
+  // 切换前先停掉上一条，避免两条同时播放
+  if (playingId) {
+    playingId = '';
+    try { a.pause(); } catch (e) { console.warn('暂停上一条语音失败', e); }
   }
-  playingId = id; renderVoices(); audio.play();
+  // 已缓存的直接同步拿地址，保证 play() 仍在用户点击的手势上下文里（iOS 必需）
+  let url = voiceUrlCache.get(v.audio) || null;
+  if (!url) {
+    voiceLoadingId = id;
+    renderVoices();
+    try {
+      url = await getVoiceUrl(v);   // 内存 / IndexedDB / 网络三级取数
+    } catch (e) {
+      console.error('语音加载失败：', v.audio, e);
+      if (voiceLoadingId === id) voiceLoadingId = '';
+      renderVoices();
+      toast(/404/.test(String(e && e.message)) ? '语音文件还没同步过来 ❌' : '语音加载失败，请检查网络 ❌');
+      return;
+    }
+  }
+  // 下载期间用户可能又点了别的语音，此时放弃本次播放，避免抢占播放状态
+  if (voiceLoadingId && voiceLoadingId !== id) { renderVoices(); return; }
+  voiceLoadingId = '';
+  // 下载期间可能被删除或再次点击，做个兜底
+  if (!S.voices.some(x => x.id === id && !x.deleted)) { renderVoices(); return; }
+  playingId = id;
+  renderVoices();   // 只刷新列表 UI，播放器节点常驻，不会被移出文档
+  try {
+    a.src = url;
+    try { a.currentTime = 0; } catch (e) { /* 未就绪时忽略 */ }
+    const p = a.play();
+    if (p && typeof p.catch === 'function') p.catch(err => {
+      const name = (err && err.name) || '';
+      if (name === 'AbortError') return; // 切换 / 暂停导致的中断，正常现象
+      if (name === 'NotAllowedError') { resetPlayState(); renderVoices(); toast('再点一次播放按钮试试 🎧'); return; }
+      console.warn('语音播放失败：', name, err && err.message);
+    });
+  } catch (e) {
+    console.error('语音播放异常：', e);
+    resetPlayState(); renderVoices();
+    toast('播放失败，请重试 ❌');
+  }
 }
-function delVoice(id) { if (confirm('确定删除这条语音吗？')) { delListItem('voices', id); toast('已删除'); } }
-window.addEventListener('beforeunload', () => stopRecording(true));
+function delVoice(id) {
+  if (!confirm('确定删除这条语音吗？')) return;
+  const v = S.voices.find(x => x.id === id);
+  if (playingId === id) stopVoice();
+  if (v && v.audio) {
+    const u = voiceUrlCache.get(v.audio);
+    if (u) { try { URL.revokeObjectURL(u); } catch (e) { /* 忽略 */ } voiceUrlCache.delete(v.audio); }
+    idbDelVoice(v.audio); // 同时清掉本地持久缓存
+  }
+  delListItem('voices', id);
+  toast('已删除');
+}
+// 离开页面时收尾：停录音、停播放、释放语音/照片 Blob 缓存
+window.addEventListener('beforeunload', () => {
+  stopRecording(true);
+  const a = voicePlayer();
+  if (a) { try { a.pause(); } catch (e) { /* 忽略 */ } }
+  voiceUrlCache.forEach(u => { try { URL.revokeObjectURL(u); } catch (e) { /* 忽略 */ } });
+  voiceUrlCache.clear();
+  photoCache.forEach(u => { try { URL.revokeObjectURL(u); } catch (e) { /* 忽略 */ } });
+  photoCache.clear();
+});
+// 兜底：切换/暂停语音时浏览器可能抛出 AbortError 的 play() Promise，
+// 属于正常中断而非真实错误，这里统一吞掉，避免被记录成异常日志
+window.addEventListener('unhandledrejection', (e) => {
+  const err = e && e.reason;
+  if (err && (err.name === 'AbortError' || err.name === 'NotAllowedError')) {
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+    console.warn('已忽略媒体播放中断：', err.name);
+  }
+});
+
+/* ================= 经期记录 & 预测 ================= */
+let calY = new Date().getFullYear(), calM = new Date().getMonth();
+// 经期列表缓存：数据变更处（commit / importData / hydrateFromMirror）调用 invalidatePeriods() 失效，避免每次渲染重复过滤排序
+let _periodsCache = null;
+function invalidatePeriods() { _periodsCache = null; }
+const validPeriods = () => _periodsCache || (_periodsCache = (S.periods || []).filter(p => p && !p.deleted && p.start).sort((a, b) => a.start < b.start ? 1 : -1));
+// 平均周期：取最近几次相邻开始日间隔，剔除 21~45 天之外的异常值；样本不足时用配置默认值
+function avgCycle() {
+  const ps = validPeriods();
+  if (ps.length < 2) return (S.periodCfg && S.periodCfg.cycle) || 28;
+  const gaps = [];
+  for (let i = 0; i < Math.min(ps.length - 1, 5); i++) {
+    const g = diffDays(ps[i].start, ps[i + 1].start);
+    if (g >= 21 && g <= 45) gaps.push(g);
+  }
+  return gaps.length ? Math.round(gaps.reduce((s, x) => s + x, 0) / gaps.length) : (S.periodCfg && S.periodCfg.cycle) || 28;
+}
+// 平均经期长度：有结束日的记录取平均（1~10 天内视为有效），否则用配置默认值
+function avgLen() {
+  const ps = validPeriods().filter(p => p.end);
+  if (!ps.length) return (S.periodCfg && S.periodCfg.len) || 5;
+  const lens = ps.map(p => Math.max(1, diffDays(p.end, p.start) + 1)).filter(x => x <= 10);
+  return lens.length ? Math.round(lens.reduce((s, x) => s + x, 0) / lens.length) : (S.periodCfg && S.periodCfg.len) || 5;
+}
+// 下次经期预测：最近一次开始日 + 平均周期；长期未记录时按周期推进到未来，避免一直显示过去的日期
+function nextPeriod() {
+  const ps = validPeriods();
+  if (!ps.length) return null;
+  const nx = parseDay(ps[0].start);
+  const cyc = avgCycle();
+  nx.setDate(nx.getDate() + cyc);
+  const t = today0();
+  while (nx < t) nx.setDate(nx.getDate() + cyc);
+  return nx;
+}
+// 某天的状态：'on' = 经期记录中，'pred' = 预测经期
+function dayState(ds) {
+  for (const p of validPeriods()) {
+    if (ds >= p.start && (!p.end || ds <= p.end)) return 'on';
+  }
+  const nx = nextPeriod();
+  if (nx) {
+    for (let k = 0; k < avgLen(); k++) {
+      const d = addDays(nx, k);
+      if (fmtDay(d) === ds) return 'pred';
+    }
+  }
+  return '';
+}
+function addPeriod() {
+  const start = $('perStart').value;
+  if (!start) { toast('先选择开始日期'); return; }
+  const end = $('perEnd').value;
+  if (end && end < start) { toast('结束日期不能早于开始日期'); return; }
+  addListItem('periods', { id: uid(), start, end: end || '' });
+  $('perStart').value = ''; $('perEnd').value = '';
+  toast('已记录 🌹');
+}
+const delPeriod = (id) => confirmDel('确定删除这条经期记录吗？', 'periods', id);
+function calShift(n) { calM += n; if (calM < 0) { calM = 11; calY--; } else if (calM > 11) { calM = 0; calY++; } renderCalendar(); }
+function renderCalendar() {
+  $('calYm').textContent = `${calY}年${calM + 1}月`;
+  const startWd = new Date(calY, calM, 1).getDay();
+  const days = new Date(calY, calM + 1, 0).getDate();
+  const today = fmtDay(new Date());
+  let html = ['日','一','二','三','四','五','六'].map(w => `<div class="wd">${w}</div>`).join('');
+  for (let i = 0; i < startWd; i++) html += '<div class="cal-cell dim"></div>';
+  for (let d = 1; d <= days; d++) {
+    const ds = `${calY}-${pad(calM + 1)}-${pad(d)}`;
+    const st = dayState(ds);
+    html += `<div class="cal-cell${st ? ' ' + st : ''}${ds === today ? ' today' : ''}">${d}</div>`;
+  }
+  $('calGrid').innerHTML = html;
+}
+function renderPeriods() {
+  renderCalendar();
+  const ps = validPeriods();
+  const today = fmtDay(new Date());
+  const st = dayState(today);
+  let head = '还没有经期记录', sub = '记录一次经期的开始/结束日期，就会自动计算周期并预测下次经期';
+  if (st === 'on') {
+    const p = ps.find(x => today >= x.start && (!x.end || today <= x.end));
+    const dayN = diffDays(today, p.start) + 1;
+    head = `🌹 经期第 ${dayN} 天`;
+    sub = p.end ? `本次记录到 ${p.end} 结束 · 多喝热水，好好休息` : '结束后记得补填结束日期，预测会更准 💕';
+  } else if (ps.length) {
+    const nx = nextPeriod();
+    const days = daysTo(nx);
+    head = days > 0 ? `距下次经期约 ${days} 天` : '下次经期预计就在这几天';
+    sub = `预计 ${fmtDay(nx)} 前后开始 · 平均周期 ${avgCycle()} 天 · 经期约 ${avgLen()} 天`;
+  }
+  $('perPred').innerHTML = `<div class="big">${esc(head)}</div><div class="sub">${esc(sub)}</div>`;
+  $('perList').innerHTML = ps.length ? ps.map(p => {
+    const len = p.end ? diffDays(p.end, p.start) + 1 : 0;
+    return `<div class="period-item"><div class="info"><div class="range">${esc(p.start)}${p.end ? ' ~ ' + esc(p.end) : ' · 进行中'}</div><div class="sub">${len ? `共 ${len} 天` : '尚未填写结束日期'} · 记录于 ${fmtTs(p.createdAt)}</div></div><button class="btn danger" onclick="delPeriod('${p.id}')">删除</button></div>`;
+  }).join('') : '<div class="empty">还没有经期记录<br>在上面填入开始日期开始记录吧 🌹</div>';
+}
 
 /* ================= 设置 ================= */
+/* ---- 「我们是谁」模块已移除：名字/纪念日/生日沿用已保存数据，不再提供编辑界面 ---- */
+/* ---- GitHub 配置卡片已移除：使用硬编码 DEFAULT_GH，不再提供编辑界面 ---- */
 function renderSettings() {
-  $('fName1').value = S.name1; $('fName2').value = S.name2;
-  $('fAnniv').value = S.anniversary; $('fBd1').value = S.birthday1; $('fBd2').value = S.birthday2;
-  $('meName1').textContent = S.name1 || '我'; $('meName2').textContent = S.name2 || 'TA';
-  $('me1').classList.toggle('on', S.me === 1); $('me2').classList.toggle('on', S.me === 2);
-  const c = ghCfg();
-  if (c) { $('ghOwner').value = c.owner; $('ghRepo').value = c.repo; $('ghToken').value = c.token; }
-  renderSyncState(); renderDayList();
+  renderSyncState(); renderDayList(); renderPhotoCacheRow();
+}
+// 设置页「照片缓存」行：张数 / 占用（IndexedDB 不可用时显示不可用）
+async function renderPhotoCacheRow() {
+  const el = $('photoCacheInfo'); if (!el) return;
+  const st = await photoCacheStats();
+  el.textContent = st ? `${st.count} 张 · ${(st.bytes / 1024 / 1024).toFixed(1)} MB` : '不可用（仅内存缓存）';
 }
 function renderSyncState() {
   const el = $('syncState'); if (!el) return;
-  if (!ghCfg()) { el.textContent = '未配置，数据仅保存在本机'; return; }
-  el.textContent = (S.syncError ? '同步异常：' + esc(S.syncError) : S.lastSyncAt ? `上次同步：${new Date(S.lastSyncAt).toLocaleString()}` : '已配置，等待首次同步');
+  if (S.syncError) { el.textContent = '同步异常：' + S.syncError; return; }
+  const parts = [];
+  if (S.lastSyncAt) parts.push('上次上传：' + new Date(S.lastSyncAt).toLocaleString());
+  if (meta.lastPullAt) parts.push('上次拉取：' + new Date(meta.lastPullAt).toLocaleString());
+  el.textContent = parts.length ? parts.join(' · ') : '已配置，等待首次同步';
 }
-function setWho(me) { S.me = me; persist(); renderAll(); schedulePush(); }
-function saveSettings() {
-  Object.assign(S, {
-    name1: $('fName1').value.trim() || '我', name2: $('fName2').value.trim() || 'TA',
-    anniversary: $('fAnniv').value, birthday1: $('fBd1').value, birthday2: $('fBd2').value
-  });
-  persist(); renderAll(); schedulePush(); toast('保存成功 ❤');
+
+/* ================= 本地缓存状态展示 ================= */
+// 时间戳 → 「今天 10:24 / 3月9日 10:24」
+// 注意：此函数在启动早期就会被调用，不能依赖 $ / pad 常量（可能尚未初始化）
+function fmtTimeShort(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return '—';
+  const p2 = (n) => String(n).padStart(2, '0');
+  const hm = `${p2(d.getHours())}:${p2(d.getMinutes())}`;
+  const now = new Date();
+  return d.toDateString() === now.toDateString() ? `今天 ${hm}` : `${d.getMonth() + 1}月${d.getDate()}日 ${hm}`;
+}
+// 统计有效条目（过滤墓碑）
+function countValid(key) {
+  return (S[key] || []).filter(x => x && !x.deleted).length;
+}
+// 刷新「本地数据」卡片（元素不存在时直接跳过）
+function refreshCacheUI() {
+  const saved = document.getElementById('cacheSavedAt');
+  if (!saved) return;
+  saved.textContent = fmtTimeShort(S.localSavedAt);
+  const pulled = document.getElementById('cachePulledAt');
+  if (pulled) pulled.textContent = fmtTimeShort(meta.lastPullAt);
+  const counts = document.getElementById('cacheCounts');
+  if (counts) counts.textContent = `时间线 ${countValid('timeline')} · 心愿 ${countValid('wishes')} · 胶囊 ${countValid('capsules')} · 语音 ${countValid('voices')} · 经期 ${countValid('periods')}`;
+  const st = document.getElementById('cacheState');
+  if (!st) return;
+  let text = '本地数据已就绪';
+  let cls = 'ok';
+  if (meta.pullState === 'pulling') { text = '正在拉取云端最新的…'; cls = 'busy'; }
+  else if (meta.pullState === 'error') { text = '离线，正在使用本地数据'; cls = 'warn'; }
+  else if (meta.pendingPush) { text = '有本机改动待上传'; cls = 'warn'; }
+  else if (meta.pullState === 'ok') { text = '已同步到最新'; cls = 'ok'; }
+  else if (meta.pullState === 'local') { text = '仅本机保存'; cls = 'idle'; }
+  st.textContent = text;
+  st.className = 'cache-badge ' + cls;
 }
 function renderDayList() {
   const list = S.customDays.filter(d => !d.deleted);
@@ -595,55 +2004,82 @@ function addDay() {
   addListItem('customDays', { id: uid(), name, date: $('dayDate').value });
   $('dayName').value = ''; toast('已添加 📅');
 }
-function removeDay(id) { if (confirm('确定删除这个纪念日吗？')) delListItem('customDays', id); }
-function saveGh() {
-  const owner = $('ghOwner').value.trim(), repo = $('ghRepo').value.trim(), token = $('ghToken').value.trim();
-  if (!owner || !repo || !token) { toast('请填写完整的用户名、仓库名和令牌'); return false; }
-  ghSet({ owner, repo, token }); return true;
-}
-async function testGh() {
-  if (!saveGh()) return; toast('测试中…');
-  try { const r = await ghTest(); toast(`连接成功：${r.fullName}${r.private ? '（私有）' : ''} ✅`); renderSyncState(); }
-  catch (e) { const s = e.message; toast(s === 'HTTP 401' ? '令牌无效，请重新生成 ❌' : s === 'HTTP 403' ? '权限不足，需 Contents 读写 ❌' : '连接失败，请检查网络和配置 ❌'); }
-}
+const removeDay = (id) => confirmDel('确定删除这个纪念日吗？', 'customDays', id);
 async function pullGh() {
-  if (!saveGh()) return; toast('拉取中…');
-  try {
-    const res = await ghGet('couple-data.json');
-    localStorage.setItem(SHA_KEY, res.sha);
-    if (res.data) { importData(res.data); toast('拉取成功，数据已合并 ❤'); }
-    else { toast('远端还没有数据，先上传吧'); renderAll(); }
-  } catch (e) { toast('拉取失败，请检查配置 ❌'); }
+  toast('拉取中…');
+  const r = await pullLatest({ silent: false });
+  if (r.ok && r.empty) toast('远端还没有数据，先上传吧');
 }
 async function pushGh() {
-  if (!saveGh()) return; toast('上传中…');
+  toast('上传中…');
   clearTimeout(syncTimer);
-  try { await flushPush(); if (!S.syncError) toast('上传成功，已同步到 GitHub ☁️'); else toast('上传失败 ❌'); }
-  catch (e) { toast('上传失败，请检查配置 ❌'); }
+  const ok = await flushPush();
+  toast(ok ? '上传成功，已同步到 GitHub ☁️' : '上传失败，请检查网络或配置 ❌');
 }
-
 /* ================= 路由 & 渲染 ================= */
-function go(p, btn) {
-  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
-  $('page-' + p).classList.add('active');
+function go(p, btn, dir) {
+  const target = $('page-' + p);
+  // 同时清掉滑动跟手留下的内联 transform/transition，避免残留影响下次入场动画
+  document.querySelectorAll('.page').forEach(el => { el.classList.remove('active', 'anim-l', 'anim-r'); el.style.transform = ''; el.style.transition = ''; });
+  target.classList.add('active');
+  if (dir) target.classList.add(dir === 'l' ? 'anim-l' : 'anim-r');
+  if (!btn) btn = document.querySelector('nav.tabbar button[data-p="' + p + '"]');
   document.querySelectorAll('nav.tabbar button').forEach(b => b.classList.remove('on'));
   if (btn) btn.classList.add('on');
   window.scrollTo(0, 0);
-  if (p === 'voice') renderVoices();
+  if (p === 'home') { syncCountHeight(); setTimeout(syncCountHeight, 60); } // 切回首页时补量高度（隐藏时量不到；rAF 在部分 WebView 会被节流，用直接调用+短延时兜底）
+  if (p === 'voice') { renderVoices(); scheduleVoicePrefetch(300); } // 进页面就先偷偷把最近几条下载好
+  if (p === 'period') renderPeriods(); // 进经期页刷新日历与预测（跨月停留后数据可能已更新）
 }
-function renderAll() { renderHome(); renderTimeline(); renderWishes(); renderCapsules(); renderVoices(); renderSettings(); }
+/* ===== 左右滑动切换页面 ===== */
+// 与底部导航同序（从 DOM 生成，新增页签无需改这里）；滑动只发生在「非输入控件、非纪念日翻页区」上，且横向位移明显大于纵向
+const TAB_ORDER = [...document.querySelectorAll('nav.tabbar button')].map(b => b.dataset.p);
+onSwipe(document.querySelector('main'), {
+  min: 60, ratio: 1.4, flick: 30,
+  guard: e => e.target.closest('#countPager, input, textarea, select, button'),
+  // 跟手拖拽：当前页随手势平移（0.55 阻尼；首/末页往外拖只剩 0.25，暗示到边了）
+  onMove: dx => {
+    const cur = document.querySelector('.page.active');
+    if (!cur) return;
+    const idx = TAB_ORDER.indexOf(cur.id.replace('page-', ''));
+    const edge = (idx <= 0 && dx > 0) || (idx >= TAB_ORDER.length - 1 && dx < 0);
+    cur.style.transition = 'none';
+    cur.style.transform = `translateX(${Math.round(dx * (edge ? 0.25 : 0.55))}px)`;
+  },
+  // 松手未达切换阈值时弹回原位（切页时 go() 会直接清掉内联样式，不冲突）
+  onEnd: () => {
+    const cur = document.querySelector('.page.active');
+    if (!cur || !cur.style.transform) return;
+    cur.style.transition = 'transform .22s ease';
+    cur.style.transform = '';
+    setTimeout(() => { cur.style.transition = ''; }, 240);
+  }
+}, dx => {
+  const cur = document.querySelector('.page.active');
+  const idx = cur ? TAB_ORDER.indexOf(cur.id.replace('page-', '')) : -1;
+  if (idx < 0) return;
+  const next = idx + (dx < 0 ? 1 : -1);
+  if (next >= 0 && next < TAB_ORDER.length) go(TAB_ORDER[next], null, dx < 0 ? 'l' : 'r');
+});
+
+function renderAll() {
+  renderHome(); renderTimeline(); renderWishes(); renderCapsules(); renderVoices(); renderPeriods(); renderSettings();
+  refreshCacheUI(); // 数据一变就同步刷新「本地缓存」卡片
+}
 
 $('tlPhoto').addEventListener('change', onPhotoChange);
 $('tlSearch').addEventListener('input', renderTimeline);
 $('tlText').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addTimeline(); } });
 $('wishText').addEventListener('keydown', e => { if (e.key === 'Enter') addWish(); });
+$('tagInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); confirmAddTag(); } });
 $('capText').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.ctrlKey) { e.preventDefault(); addCapsule(); } });
 $('dayName').addEventListener('keydown', e => { if (e.key === 'Enter') addDay(); });
 
-// 默认时间线日期 = 今天
-(() => { const d = new Date(); $('tlDate').value = fmtDay(d); })();
+// 默认时间线日期 = 今天；录音提示文案与 MAX_SECONDS 保持单一来源；语音播放器事件只需绑定一次
+(() => { $('tlDate').value = fmtDay(new Date()); $('recTip').textContent = `点击开始录音，最长 ${MAX_SECONDS} 秒`; })();
+bindVoicePlayer();
 renderAll();
-initialPull();
+boot().catch(err => console.error('启动同步流程异常：', err));
 </script>
 </body>
 </html>
