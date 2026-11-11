@@ -12,11 +12,6 @@
     "d": 14,
     "leap": true
   },
-  "tags": [],
-  "periodCfg": {
-    "cycle": 28,
-    "len": 5
-  },
   "timeline": [
     {
       "id": "mw8sje244v9dh",
@@ -146,6 +141,16 @@
       "createdAt": 1794367196564,
       "updatedAt": 1794367199414,
       "deleted": true
+    },
+    {
+      "id": "mwbm8fgylkc4r",
+      "author": "婷婷",
+      "text": "冬天的一碗热汤面很舒服",
+      "photo": "photos/mwbm8fgylkc4r.jpg",
+      "date": "2026-11-11",
+      "time": "12:25",
+      "createdAt": 1794371120129,
+      "updatedAt": 1794371120129
     }
   ],
   "wishes": [
@@ -337,13 +342,5 @@
       "deleted": true
     }
   ],
-  "periods": [
-    {
-      "id": "mwbj40328jg5y",
-      "start": "2026-11-11",
-      "end": "",
-      "createdAt": 1794365872238,
-      "updatedAt": 1794365872238
-    }
-  ]
+  "tags": []
 }
