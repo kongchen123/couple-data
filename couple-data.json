@@ -12,11 +12,6 @@
     "d": 14,
     "leap": true
   },
-  "tags": [],
-  "periodCfg": {
-    "cycle": 28,
-    "len": 5
-  },
   "timeline": [
     {
       "id": "mw8sje244v9dh",
@@ -210,6 +205,16 @@
       "createdAt": 1794388174998,
       "updatedAt": 1794388418390,
       "deleted": true
+    },
+    {
+      "id": "mwbxrduqzpsfb",
+      "author": "巩振",
+      "text": "1111",
+      "photo": "",
+      "date": "2026-11-11",
+      "time": "17:47",
+      "createdAt": 1794390477795,
+      "updatedAt": 1794390477795
     }
   ],
   "wishes": [
@@ -401,13 +406,13 @@
       "deleted": true
     }
   ],
-  "periods": [
+  "tags": [
     {
-      "id": "mwbj40328jg5y",
-      "start": "2026-11-11",
-      "end": "",
-      "createdAt": 1794365872238,
-      "updatedAt": 1794365872238
+      "id": "tag:看电影",
+      "name": "看电影",
+      "deleted": false,
+      "createdAt": 0,
+      "updatedAt": 0
     }
   ]
 }
