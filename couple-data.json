@@ -377,7 +377,8 @@
       "text": "1111",
       "unlockAt": "2026-11-11",
       "createdAt": 1794394657451,
-      "updatedAt": 1794394657451
+      "updatedAt": 1794394662743,
+      "deleted": true
     }
   ],
   "voices": [
