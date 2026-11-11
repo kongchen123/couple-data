@@ -1,0 +1,41 @@
+name: notify-partner
+
+# 方案 A：push 事件 → Bark(iOS) / ntfy(安卓) 系统通知
+# 前端 ghPut() 的 commit message 带 from=android / from=ios 标识，
+# 安卓推的数据 → 通知 iOS（Bark）；iOS 推的数据 → 通知安卓（ntfy）
+
+on:
+  push:
+    paths:
+      - 'couple-data.json'   # 只在主数据变化时通知，避免照片/语音多次触发
+
+concurrency:
+  group: notify-partner
+  cancel-in-progress: true   # 连续多次提交只发最后一条
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 推送给 iOS（Bark）
+        if: contains(github.event.head_commit.message, 'from=android')
+        run: |
+          curl -s -X POST https://api.day.app/push \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "device_key": "${{ secrets.BARK_KEY }}",
+              "title": "TA 更新了小站 ❤",
+              "body": "点开看看有什么新内容",
+              "group": "couple",
+              "sound": "bell"
+            }'
+
+      - name: 推送给安卓（ntfy）
+        if: contains(github.event.head_commit.message, 'from=ios')
+        run: |
+          curl -s -X POST https://ntfy.sh \
+            -H "Title: TA 更新了小站 ❤" \
+            -H "Tags: heart" \
+            -H "Priority: high" \
+            -d "点开看看有什么新内容" \
+            "https://ntfy.sh/${{ secrets.NTFY_TOPIC }}"
