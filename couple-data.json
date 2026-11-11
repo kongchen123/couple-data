@@ -321,5 +321,18 @@
       "deleted": true
     }
   ],
-  "tags": []
+  "tags": [],
+  "periods": [
+    {
+      "id": "mwbj40328jg5y",
+      "start": "2026-11-11",
+      "end": "",
+      "createdAt": 1794365872238,
+      "updatedAt": 1794365872238
+    }
+  ],
+  "periodCfg": {
+    "cycle": 28,
+    "len": 5
+  }
 }
