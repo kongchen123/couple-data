@@ -12,26 +12,6 @@
     "d": 14,
     "leap": true
   },
-  "tags": [
-    {
-      "id": "tag:看电影",
-      "name": "看电影",
-      "deleted": true,
-      "createdAt": 0,
-      "updatedAt": 1794463700291
-    },
-    {
-      "id": "mwd7xy9hfcdah",
-      "name": "旅行",
-      "deleted": false,
-      "createdAt": 1794468046517,
-      "updatedAt": 1794468046517
-    }
-  ],
-  "periodCfg": {
-    "cycle": 28,
-    "len": 5
-  },
   "timeline": [
     {
       "id": "mw8sje244v9dh",
@@ -56,7 +36,8 @@
       "text": "今天把王者下载了回来看打了两局没啥意思，而且比较累，就没有再玩了，希望这次真的对王者没那么大兴趣了",
       "photo": "",
       "date": "2026-11-09",
-      "updatedAt": 1794226726939
+      "updatedAt": 1794479199295,
+      "deleted": true
     },
     {
       "id": "mw98jh0i3w3lf",
@@ -533,49 +514,20 @@
       "deleted": true
     }
   ],
-  "periods": [
+  "tags": [
     {
-      "id": "mwbj40328jg5y",
-      "start": "2026-11-11",
-      "end": "",
-      "createdAt": 1794365872238,
-      "updatedAt": 1794394377532,
-      "deleted": true
+      "id": "tag:看电影",
+      "name": "看电影",
+      "deleted": true,
+      "createdAt": 0,
+      "updatedAt": 1794463700291
     },
     {
-      "id": "mwc01vnv5hbmn",
-      "start": "2026-11-11",
-      "end": "2026-11-15",
-      "createdAt": 1794394326667,
-      "updatedAt": 1794394326667
-    },
-    {
-      "id": "mwc02bys63nzn",
-      "start": "2026-10-14",
-      "end": "2026-10-18",
-      "createdAt": 1794394347796,
-      "updatedAt": 1794394347796
-    },
-    {
-      "id": "mwc02u7o79hnv",
-      "start": "2026-09-17",
-      "end": "2026-09-21",
-      "createdAt": 1794394371444,
-      "updatedAt": 1794394371444
-    },
-    {
-      "id": "mwc039uj7vgb6",
-      "start": "2026-08-21",
-      "end": "2026-08-25",
-      "createdAt": 1794394391707,
-      "updatedAt": 1794394391707
-    },
-    {
-      "id": "mwc03tjp1h7rl",
-      "start": "2026-07-25",
-      "end": "2026-07-29",
-      "createdAt": 1794394417237,
-      "updatedAt": 1794394417237
+      "id": "mwd7xy9hfcdah",
+      "name": "旅行",
+      "deleted": false,
+      "createdAt": 1794468046517,
+      "updatedAt": 1794468046517
     }
   ]
 }
