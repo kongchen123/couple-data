@@ -12,26 +12,6 @@
     "d": 14,
     "leap": true
   },
-  "tags": [
-    {
-      "id": "tag:看电影",
-      "name": "看电影",
-      "deleted": true,
-      "createdAt": 0,
-      "updatedAt": 1794463700291
-    },
-    {
-      "id": "mwd7xy9hfcdah",
-      "name": "旅行",
-      "deleted": false,
-      "createdAt": 1794468046517,
-      "updatedAt": 1794468046517
-    }
-  ],
-  "periodCfg": {
-    "cycle": 28,
-    "len": 5
-  },
   "timeline": [
     {
       "id": "mw8sje244v9dh",
@@ -334,6 +314,16 @@
       "time": "17:41",
       "createdAt": 1794476510837,
       "updatedAt": 1794476510837
+    },
+    {
+      "id": "mwdmy2wuhazpj",
+      "author": "婷婷",
+      "text": "时空穿越了",
+      "photo": "",
+      "date": "2026-12-01",
+      "time": "22:20",
+      "createdAt": 1794493246782,
+      "updatedAt": 1794493246782
     }
   ],
   "wishes": [
@@ -534,5 +524,20 @@
       "deleted": true
     }
   ],
-  "periods": []
+  "tags": [
+    {
+      "id": "tag:看电影",
+      "name": "看电影",
+      "deleted": true,
+      "createdAt": 0,
+      "updatedAt": 1794463700291
+    },
+    {
+      "id": "mwd7xy9hfcdah",
+      "name": "旅行",
+      "deleted": false,
+      "createdAt": 1794468046517,
+      "updatedAt": 1794468046517
+    }
+  ]
 }
