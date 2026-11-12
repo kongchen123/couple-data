@@ -309,7 +309,8 @@
       "date": "2026-11-12",
       "time": "16:46",
       "createdAt": 1794473169866,
-      "updatedAt": 1794473169866
+      "updatedAt": 1794473181374,
+      "deleted": true
     }
   ],
   "wishes": [
