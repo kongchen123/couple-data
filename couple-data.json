@@ -12,6 +12,26 @@
     "d": 14,
     "leap": true
   },
+  "tags": [
+    {
+      "id": "tag:看电影",
+      "name": "看电影",
+      "deleted": true,
+      "createdAt": 0,
+      "updatedAt": 1794463700291
+    },
+    {
+      "id": "mwd7xy9hfcdah",
+      "name": "旅行",
+      "deleted": false,
+      "createdAt": 1794468046517,
+      "updatedAt": 1794468046517
+    }
+  ],
+  "periodCfg": {
+    "cycle": 28,
+    "len": 5
+  },
   "timeline": [
     {
       "id": "mw8sje244v9dh",
@@ -324,6 +344,16 @@
       "time": "22:20",
       "createdAt": 1794493246782,
       "updatedAt": 1794493246782
+    },
+    {
+      "id": "mwe6sruklntlz",
+      "author": "巩振",
+      "text": "好久没有熬夜了，以后还是得注意一些。",
+      "photo": "",
+      "date": "2026-11-13",
+      "time": "07:36",
+      "createdAt": 1794526591484,
+      "updatedAt": 1794526591484
     }
   ],
   "wishes": [
@@ -524,20 +554,5 @@
       "deleted": true
     }
   ],
-  "tags": [
-    {
-      "id": "tag:看电影",
-      "name": "看电影",
-      "deleted": true,
-      "createdAt": 0,
-      "updatedAt": 1794463700291
-    },
-    {
-      "id": "mwd7xy9hfcdah",
-      "name": "旅行",
-      "deleted": false,
-      "createdAt": 1794468046517,
-      "updatedAt": 1794468046517
-    }
-  ]
+  "periods": []
 }
