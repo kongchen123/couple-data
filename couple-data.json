@@ -16,9 +16,9 @@
     {
       "id": "tag:看电影",
       "name": "看电影",
-      "deleted": false,
+      "deleted": true,
       "createdAt": 0,
-      "updatedAt": 0
+      "updatedAt": 1794463700291
     }
   ],
   "periodCfg": {
