@@ -12,6 +12,26 @@
     "d": 14,
     "leap": true
   },
+  "tags": [
+    {
+      "id": "tag:看电影",
+      "name": "看电影",
+      "deleted": true,
+      "createdAt": 0,
+      "updatedAt": 1794463700291
+    },
+    {
+      "id": "mwd7xy9hfcdah",
+      "name": "旅行",
+      "deleted": false,
+      "createdAt": 1794468046517,
+      "updatedAt": 1794468046517
+    }
+  ],
+  "periodCfg": {
+    "cycle": 28,
+    "len": 5
+  },
   "timeline": [
     {
       "id": "mw8sje244v9dh",
@@ -339,17 +359,17 @@
       "id": "mw8uqctwaw0ln",
       "text": "一起去大理",
       "tag": "旅行",
-      "done": true,
+      "done": false,
       "createdAt": 1794203992436,
-      "updatedAt": 1794479268069
+      "updatedAt": 1794483363691
     },
     {
       "id": "mw98d8ptkl0n2",
       "text": "不用上班，自由去嗨",
       "tag": "一起做",
-      "done": true,
+      "done": false,
       "createdAt": 1794226895201,
-      "updatedAt": 1794479274044
+      "updatedAt": 1794483365446
     },
     {
       "id": "mw9akfryyxhrj",
@@ -373,9 +393,9 @@
       "id": "mw9fzf5kol1ht",
       "text": "一起去三亚",
       "tag": "",
-      "done": true,
+      "done": false,
       "createdAt": 1794239687288,
-      "updatedAt": 1794479270483
+      "updatedAt": 1794483364731
     },
     {
       "id": "mwa6ei2qx6amr",
@@ -514,20 +534,5 @@
       "deleted": true
     }
   ],
-  "tags": [
-    {
-      "id": "tag:看电影",
-      "name": "看电影",
-      "deleted": true,
-      "createdAt": 0,
-      "updatedAt": 1794463700291
-    },
-    {
-      "id": "mwd7xy9hfcdah",
-      "name": "旅行",
-      "deleted": false,
-      "createdAt": 1794468046517,
-      "updatedAt": 1794468046517
-    }
-  ]
+  "periods": []
 }
