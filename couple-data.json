@@ -19,6 +19,13 @@
       "deleted": true,
       "createdAt": 0,
       "updatedAt": 1794463700291
+    },
+    {
+      "id": "mwd7xy9hfcdah",
+      "name": "旅行",
+      "deleted": false,
+      "createdAt": 1794468046517,
+      "updatedAt": 1794468046517
     }
   ],
   "periodCfg": {
