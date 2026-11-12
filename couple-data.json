@@ -339,9 +339,9 @@
       "id": "mw8uqctwaw0ln",
       "text": "一起去大理",
       "tag": "旅行",
-      "done": false,
+      "done": true,
       "createdAt": 1794203992436,
-      "updatedAt": 1794479265865
+      "updatedAt": 1794479268069
     },
     {
       "id": "mw98d8ptkl0n2",
@@ -373,9 +373,9 @@
       "id": "mw9fzf5kol1ht",
       "text": "一起去三亚",
       "tag": "",
-      "done": false,
+      "done": true,
       "createdAt": 1794239687288,
-      "updatedAt": 1794379277555
+      "updatedAt": 1794479270483
     },
     {
       "id": "mwa6ei2qx6amr",
