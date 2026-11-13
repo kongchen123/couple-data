@@ -2669,7 +2669,8 @@ async function verifyGhToken() {
     badge.className = 'cache-badge warn'; badge.textContent = '❌ 网络异常';
     toast('❌ 网络异常：' + e.message);
   }
-  renderGhTokenState();
+  // 只刷新指纹行，不整体重渲染——避免把上面设置的验证结果徽章覆盖回「已配置」状态
+  const fpEl2 = $('ghTokenFp'); if (fpEl2) fpEl2.textContent = '本机已存：' + tokenFp(c.token);
 }
 function askClearGhToken() {
   askConfirm('确定清除本机保存的 Token 吗？清除后云端同步将不可用，需重新填写', () => {
