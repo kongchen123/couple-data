@@ -1140,7 +1140,7 @@ function undoDelete() { const fn = undoFn; hideUndo(); if (fn) { fn(); toast('�
 const GH_API = 'https://api.github.com';
 const ghUrl = (c, path) => `${GH_API}/repos/${c.owner}/${c.repo}/contents/${path}`;
 // 默认 GitHub 配置（未在设置页修改时使用）
-const DEFAULT_GH = { owner: 'kongchen123', repo: 'couple-data', token: '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', branch: '' };
+const DEFAULT_GH = { owner: 'kongchen123', repo: 'couple-data', token: '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', branch: '' };
 // GitHub 配置：优先读 localStorage 覆盖（手动写入 coupleGithubConfig 可换账号），否则用硬编码默认值；恒有返回值
 const ghCfg = () => {
   try { const c = JSON.parse(localStorage.getItem(GH_KEY)); if (c && c.owner && c.repo && c.token) return c; } catch (e) {}
