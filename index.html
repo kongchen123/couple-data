@@ -149,7 +149,7 @@ main { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 4
 .inline-composer { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
 .inline-composer input[type="text"] { flex: 1 1 140px; }
 .inline-composer input[type="date"] { flex: 1 1 110px; }
-input[type="date"], input[type="text"] { border: 1.5px solid var(--border-input); border-radius: 10px; padding: 8px 10px; font-size: 13px; color: var(--text-main); background: var(--bg-input); outline: none; min-width: 0; max-width: 100%; }
+input[type="date"], input[type="text"], input[type="password"] { border: 1.5px solid var(--border-input); border-radius: 10px; padding: 8px 10px; font-size: 13px; color: var(--text-main); background: var(--bg-input); outline: none; min-width: 0; max-width: 100%; }
 input:focus { border-color: #ff7e9d; }
 .btn { border: none; border-radius: 12px; padding: 9px 16px; font-size: 14px; font-weight: 700; background: var(--btn-grad); color: #fff; cursor: pointer; box-shadow: var(--shadow-btn); white-space: nowrap; flex-shrink: 0; transition: transform .15s, box-shadow .2s, opacity .2s; }
 .btn:active { transform: scale(.96); }
@@ -615,6 +615,16 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
         <button class="btn ghost small" onclick="pushGh()">上传本机数据</button>
       </div>
       <div class="sync-state" id="syncState"></div>
+    </div>
+    <div class="card">
+      <h2>🔑 GitHub 同步 Token</h2>
+      <div class="cache-badge warn" id="ghTokenBadge">Token 未配置</div>
+      <input type="password" id="ghTokenIpt" placeholder="粘贴 GitHub Token（github_pat_ 开头）" autocomplete="off" style="width:100%">
+      <div class="btn-row tight">
+        <button class="btn small" onclick="saveGhToken()">保存</button>
+        <button class="btn small ghost danger" onclick="askClearGhToken()">清除</button>
+      </div>
+      <div class="sync-state">Token 仅保存在本机浏览器（localStorage），不会写入代码仓库；重新生成后在此更新即可</div>
     </div>
   </section>
 </main>
@@ -1139,13 +1149,16 @@ function undoDelete() { const fn = undoFn; hideUndo(); if (fn) { fn(); toast('�
 /* ================= GitHub Contents API（与 src/api/github.js 同构） ================= */
 const GH_API = 'https://api.github.com';
 const ghUrl = (c, path) => `${GH_API}/repos/${c.owner}/${c.repo}/contents/${path}`;
-// 默认 GitHub 配置（未在设置页修改时使用）
-const DEFAULT_GH = { owner: 'kongchen123', repo: 'couple-data', token: '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', branch: '' };
-// GitHub 配置：优先读 localStorage 覆盖（手动写入 coupleGithubConfig 可换账号），否则用硬编码默认值；恒有返回值
+// 默认 GitHub 配置：仓库信息写死即可；Token 改为用户在设置页自行输入，仅存本机 localStorage，不再硬编码进代码
+const DEFAULT_GH = { owner: 'kongchen123', repo: 'couple-data', token: '', branch: '' };
+// GitHub 配置：与本机 localStorage 中 coupleGithubConfig（GH_KEY）保存的 Token 等字段合并，缺省项回落 DEFAULT_GH
 const ghCfg = () => {
-  try { const c = JSON.parse(localStorage.getItem(GH_KEY)); if (c && c.owner && c.repo && c.token) return c; } catch (e) {}
-  return DEFAULT_GH;
+  let saved = {};
+  try { const c = JSON.parse(localStorage.getItem(GH_KEY)); if (c && typeof c === 'object') saved = c; } catch (e) {}
+  return Object.assign({}, DEFAULT_GH, saved);
 };
+// Token 未配置时统一提示并拦截云端同步操作（设置页「GitHub 同步 Token」卡片里填写）
+const needToken = () => { if (ghCfg().token) return false; toast('请先到「更多 → GitHub 同步 Token」填写 Token 🔑'); return true; };
 const auth = (token) => ({ 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' });
 const encB64 = (s) => btoa(unescape(encodeURIComponent(s)));
 // 网络请求优先走无思私有 API（wusiFetch），不可用时回退原生 fetch
@@ -1164,6 +1177,7 @@ function bytesToB64(bytes) {
 const decB64 = (b) => decodeURIComponent(escape(atob(b.replace(/\n/g, ''))));
 
 async function ghGet(path) {
+  if (needToken()) throw new Error('缺少 GitHub Token');
   const c = ghCfg();
   const url = ghUrl(c, path) + '?ref=' + (c.branch || '');
   const r = await netFetch(url, { headers: auth(c.token) });
@@ -1177,6 +1191,7 @@ async function ghGet(path) {
   return { data: JSON.parse(decB64(d.content)), sha: d.sha };
 }
 async function ghPut(path, content, sha, isBinary) {
+  if (needToken()) throw new Error('缺少 GitHub Token');
   const c = ghCfg();
   // commit message 带设备来源标识，供 GitHub Actions 判断该通知谁（from=android → 通知 iOS，反之亦然）
   const deviceTag = isAndroid() ? 'android' : 'ios';
@@ -1188,6 +1203,7 @@ async function ghPut(path, content, sha, isBinary) {
 }
 async function ghPutBinary(path, dataUrl) { return ghPut(path, dataUrl.split(',')[1], null, true); }
 async function ghGetBinary(path, mime) {
+  if (needToken()) throw new Error('缺少 GitHub Token');
   const c = ghCfg();
   const r = await netFetch(ghUrl(c, path) + '?ref=' + (c.branch || ''), { headers: Object.assign(auth(c.token), { 'Accept': 'application/vnd.github.raw' }) });
   if (r.status === 404) return null;
@@ -2607,9 +2623,30 @@ function renderPeriods() {
 
 /* ================= 设置 ================= */
 /* ---- 「我们是谁」：设置页可修正名字 / 纪念日 / 农历生日 / 本机身份 ---- */
-/* ---- GitHub 配置卡片已移除：使用硬编码 DEFAULT_GH，不再提供编辑界面 ---- */
+/* ---- GitHub Token 卡片：用户自行输入，仅存本机 localStorage，不再硬编码进代码 ---- */
+function renderGhTokenState() {
+  const badge = $('ghTokenBadge'); if (!badge) return;
+  const ok = !!ghCfg().token;
+  badge.className = 'cache-badge ' + (ok ? 'ok' : 'warn');
+  badge.textContent = ok ? 'Token 已配置' : 'Token 未配置';
+}
+function saveGhToken() {
+  const v = ($('ghTokenIpt').value || '').trim();
+  if (!v) { toast('请先粘贴 Token'); return; }
+  try { localStorage.setItem(GH_KEY, JSON.stringify(Object.assign(ghCfg(), { token: v }))); } catch (e) { toast('保存失败，请重试'); return; }
+  $('ghTokenIpt').value = '';
+  renderGhTokenState(); renderSyncState();
+  toast('Token 已保存到本机浏览器 🔒');
+}
+function askClearGhToken() {
+  askConfirm('确定清除本机保存的 Token 吗？清除后云端同步将不可用，需重新填写', () => {
+    try { localStorage.removeItem(GH_KEY); } catch (e) {}
+    renderGhTokenState(); renderSyncState();
+    toast('Token 已清除');
+  });
+}
 function renderSettings() {
-  renderWho(); renderSyncState(); renderDayList(); renderPhotoCacheRow();
+  renderWho(); renderSyncState(); renderDayList(); renderPhotoCacheRow(); renderGhTokenState();
 }
 /* ---- 「我们是谁」编辑：名字 / 在一起的日子 / 农历生日 / 本机身份 ---- */
 // 输入框回填时避开正在输入的控件，避免后台同步刷新打断编辑
