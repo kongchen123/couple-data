@@ -37,5 +37,6 @@ jobs:
             -H "Title: TA 更新了小站 ❤" \
             -H "Tags: heart" \
             -H "Priority: high" \
+            -H "Click:gz123456789://"\
             -d "点开看看有什么新内容" \
             "https://ntfy.sh/${{ secrets.NTFY_TOPIC }}"
