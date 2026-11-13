@@ -2709,8 +2709,9 @@ async function renderPhotoCacheRow() {
 }
 function renderSyncState() {
   const el = $('syncState'); if (!el) return;
-  if (S.syncError) { el.textContent = '同步异常：' + S.syncError; return; }
+  // 未配置 Token 时优先提示缺凭证，避免把「没配 Token」误报成「网络离线」
   if (!ghCfg().token) { el.textContent = '未配置 Token，云端同步不可用'; return; }
+  if (S.syncError) { el.textContent = '同步异常：' + S.syncError; return; }
   const parts = [];
   if (S.lastSyncAt) parts.push('上次上传：' + new Date(S.lastSyncAt).toLocaleString());
   if (meta.lastPullAt) parts.push('上次拉取：' + new Date(meta.lastPullAt).toLocaleString());
