@@ -402,7 +402,8 @@
       "pw": 0,
       "ph": 0,
       "createdAt": 1794548531863,
-      "updatedAt": 1794548531864
+      "updatedAt": 1794548570683,
+      "deleted": true
     }
   ],
   "wishes": [
