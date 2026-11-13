@@ -343,7 +343,8 @@
       "date": "2026-12-01",
       "time": "22:20",
       "createdAt": 1794493246782,
-      "updatedAt": 1794493246782
+      "updatedAt": 1794538720016,
+      "deleted": true
     },
     {
       "id": "mwe6sruklntlz",
