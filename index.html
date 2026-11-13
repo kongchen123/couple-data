@@ -619,9 +619,10 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
     <div class="card">
       <h2>🔑 GitHub 同步 Token</h2>
       <div class="cache-badge warn" id="ghTokenBadge">Token 未配置</div>
-      <input type="password" id="ghTokenIpt" placeholder="粘贴 GitHub Token（github_pat_ 开头）" autocomplete="off" style="width:100%">
+      <input type="password" id="ghTokenIpt" placeholder="粘贴 GitHub Token（github_pat_ 开头）" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" style="width:100%">
       <div class="btn-row tight">
-        <button class="btn small" onclick="saveGhToken()">保存</button>
+        <button class="btn small" onclick="saveGhToken()">保存并验证</button>
+        <button class="btn small ghost" onclick="verifyGhToken()">测试</button>
         <button class="btn small ghost danger" onclick="askClearGhToken()">清除</button>
       </div>
       <div class="sync-state">Token 仅保存在本机浏览器（localStorage），不会写入代码仓库；重新生成后在此更新即可</div>
@@ -2628,15 +2629,35 @@ function renderGhTokenState() {
   const badge = $('ghTokenBadge'); if (!badge) return;
   const ok = !!ghCfg().token;
   badge.className = 'cache-badge ' + (ok ? 'ok' : 'warn');
-  badge.textContent = ok ? 'Token 已配置' : 'Token 未配置';
+  badge.textContent = ok ? 'Token 已配置（点「测试」确认有效性）' : 'Token 未配置，云端同步不可用';
 }
+// 校验并保存：去掉所有空白（手机粘贴常带换行/空格）→ 校验前缀 → 写入 localStorage → 立即联网验证
 function saveGhToken() {
-  const v = ($('ghTokenIpt').value || '').trim();
+  const v = ($('ghTokenIpt').value || '').replace(/\s+/g, '');
   if (!v) { toast('请先粘贴 Token'); return; }
-  try { localStorage.setItem(GH_KEY, JSON.stringify(Object.assign(ghCfg(), { token: v }))); } catch (e) { toast('保存失败，请重试'); return; }
+  if (!/^(github_pat_|ghp_)/.test(v)) { toast('格式不对：Token 应以 github_pat_ 开头'); return; }
+  try { localStorage.setItem(GH_KEY, JSON.stringify(Object.assign(ghCfg(), { token: v }))); }
+  catch (e) { toast('保存失败：浏览器禁用了本地存储（无痕模式？）'); return; }
   $('ghTokenIpt').value = '';
   renderGhTokenState(); renderSyncState();
-  toast('Token 已保存到本机浏览器 🔒');
+  verifyGhToken();
+}
+// 联网校验 Token：区分「无效」「权限不足」「网络异常」，把结果直接显示在卡片上
+async function verifyGhToken() {
+  const badge = $('ghTokenBadge'); if (!badge) return;
+  const c = ghCfg();
+  if (!c.token) { toast('请先填写 Token'); return; }
+  badge.className = 'cache-badge busy'; badge.textContent = '正在验证 Token…';
+  try {
+    const r = await netFetch(`${GH_API}/repos/${c.owner}/${c.repo}`, { headers: auth(c.token) });
+    if (r.ok) { badge.className = 'cache-badge ok'; badge.textContent = '✅ Token 有效 · 同步已就绪'; toast('✅ Token 验证通过，云端同步已启用'); }
+    else if (r.status === 401) { badge.className = 'cache-badge warn'; badge.textContent = '❌ Token 无效（401）'; toast('❌ Token 无效，请重新生成'); }
+    else if (r.status === 403) { badge.className = 'cache-badge warn'; badge.textContent = '❌ 权限不足（403）'; toast('❌ 权限不足，请给 Contents 读写权限'); }
+    else { badge.className = 'cache-badge warn'; badge.textContent = '❌ 验证失败（HTTP ' + r.status + '）'; toast('❌ 验证失败：HTTP ' + r.status); }
+  } catch (e) {
+    badge.className = 'cache-badge warn'; badge.textContent = '❌ 网络异常';
+    toast('❌ 网络异常：' + e.message);
+  }
 }
 function askClearGhToken() {
   askConfirm('确定清除本机保存的 Token 吗？清除后云端同步将不可用，需重新填写', () => {
@@ -2689,10 +2710,11 @@ async function renderPhotoCacheRow() {
 function renderSyncState() {
   const el = $('syncState'); if (!el) return;
   if (S.syncError) { el.textContent = '同步异常：' + S.syncError; return; }
+  if (!ghCfg().token) { el.textContent = '未配置 Token，云端同步不可用'; return; }
   const parts = [];
   if (S.lastSyncAt) parts.push('上次上传：' + new Date(S.lastSyncAt).toLocaleString());
   if (meta.lastPullAt) parts.push('上次拉取：' + new Date(meta.lastPullAt).toLocaleString());
-  el.textContent = parts.length ? parts.join(' · ') : '已配置，等待首次同步';
+  el.textContent = parts.length ? parts.join(' · ') : 'Token 已配置，等待首次同步';
 }
 
 /* ================= 本地缓存状态展示 ================= */
