@@ -69,7 +69,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { height: 100%; }
 body { height: 100vh; height: 100dvh; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--bg-page); color: var(--text-main); display: flex; flex-direction: column; overflow: hidden; overscroll-behavior: none; }
-header { flex: none; padding: calc(34px + env(safe-area-inset-top)) 20px 10px; display: flex; align-items: center; gap: 10px; max-width: 560px; width: 100%; margin: 0 auto; }
+header { flex: none; padding: calc(22px + env(safe-area-inset-top)) 20px 10px; display: flex; align-items: center; gap: 10px; max-width: 560px; width: 100%; margin: 0 auto; }
 header .logo { font-size: 26px; }
 header h1 { font-size: 19px; font-weight: 700; letter-spacing: 1px; color: var(--text-main); }
 header .sub { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
@@ -117,7 +117,7 @@ main { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 4
 .count-item .date .ymd { white-space: nowrap; }
 /* 短屏压缩，尽量让首页不出现滚动 */
 @media (max-height: 760px) {
-  header { padding: calc(24px + env(safe-area-inset-top)) 20px 5px; }
+  header { padding: calc(12px + env(safe-area-inset-top)) 20px 5px; }
   header .logo { font-size: 21px; }
   header h1 { font-size: 16px; }
   header .sub { font-size: 11px; }
@@ -210,6 +210,10 @@ input:focus { border-color: #ff7e9d; }
 .wall-item img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; transition: opacity .3s; cursor: zoom-in; }
 .wall-item img.loaded { opacity: 1; }
 .wall-del { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border: none; border-radius: 50%; background: rgba(0,0,0,.45); color: #fff; font-size: 13px; line-height: 20px; padding: 0; cursor: pointer; }
+/* 灯箱内的删除按钮（照片墙照片预览时显示） */
+#lbDel { display: none; position: absolute; bottom: max(20px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); border: none; border-radius: 999px; background: rgba(255,255,255,.16); color: #fff; font-size: 13px; padding: 9px 22px; cursor: pointer; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+#lbDel.show { display: inline-block; }
+#lbDel:active { background: rgba(255,255,255,.28); }
 .wall-empty { grid-column: 1 / -1; text-align: center; color: var(--text-sub); font-size: 13px; line-height: 2; padding: 16px 0; }
 .tl-count { font-size: 11.5px; color: var(--text-sub); margin: -4px 0 8px 4px; } /* 搜索命中计数：显隐由 JS 内联控制 */
 @keyframes tlNew { from { opacity: 0; transform: translateY(10px); } }
@@ -704,7 +708,7 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
     <button class="btn small" onclick="tlEditSave()">保存</button>
   </div>
 </div>
-<div id="lightbox" onclick="this.classList.remove('show')"><img id="lightboxImg" alt=""></div>
+<div id="lightbox" onclick="this.classList.remove('show')"><img id="lightboxImg" alt=""><button id="lbDel" onclick="event.stopPropagation(); delWallPhoto()">删除这张照片</button></div>
 <!-- 自制日期选择面板：农历 + 法定假期标注（替代原生日期控件） -->
 <div id="dpMask" onclick="closeDatePicker()"></div>
 <div id="dpPanel" role="dialog" aria-label="选择日期">
@@ -1594,7 +1598,7 @@ function renderWall() {
   const list = [...S.wall].filter(w => !w.deleted).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   if (!list.length) { grid.innerHTML = '<div class="wall-empty">还没有照片<br>点右上角 ＋ 上传你们的合影吧</div>'; return; }
   grid.innerHTML = list.map(w =>
-    `<div class="wall-item"><img data-photo="${esc(w.photo)}" alt="照片墙照片" loading="lazy" decoding="async" onclick="previewPhoto(this)"><button class="wall-del" onclick="confirmDel('确定从照片墙删除这张照片吗？','wall','${w.id}')" aria-label="删除">×</button></div>`
+    `<div class="wall-item"><img data-photo="${esc(w.photo)}" alt="照片墙照片" loading="lazy" decoding="async" onclick="previewPhoto(this,'${w.id}')"></div>`
   ).join('');
   // 惰性加载：与时间线照片同一套缓存策略（内存 → IndexedDB → GitHub）
   document.querySelectorAll('#wallGrid img[data-photo]').forEach(async img => {
@@ -2079,9 +2083,21 @@ function tlComposeClose(e) {
   $('tlComposePanel').classList.remove('show');
 }
 const delTimeline = (id) => confirmDel('确定删除这条记录吗？', 'timeline', id);
-async function previewPhoto(img) {
+let curWallId = null; // 当前灯箱中预览的照片墙条目（非照片墙照片为 null，不显示删除按钮）
+async function previewPhoto(img, wallId) {
   const url = await getPhotoCached(img.getAttribute('data-photo'));
-  if (url) { $('lightboxImg').src = url; $('lightbox').classList.add('show'); }
+  if (url) {
+    $('lightboxImg').src = url;
+    curWallId = wallId || null;
+    $('lbDel').classList.toggle('show', !!curWallId);
+    $('lightbox').classList.add('show');
+  }
+}
+function delWallPhoto() {
+  if (!curWallId) return;
+  const id = curWallId;
+  $('lightbox').classList.remove('show'); // 先关灯箱再弹确认，避免两层遮罩叠着
+  confirmDel('确定从照片墙删除这张照片吗？', 'wall', id);
 }
 
 /* ================= 时间线动作面板（长按 / ⋯）：编辑 / 复制 / 删除 ================= */
