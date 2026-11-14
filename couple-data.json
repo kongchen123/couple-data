@@ -738,13 +738,6 @@
   ],
   "wall": [
     {
-      "id": "mwfu6it2tao63",
-      "photo": "photos/mwfu6it2tao63.jpg",
-      "createdAt": 1794626332282,
-      "updatedAt": 1794626528949,
-      "deleted": true
-    },
-    {
       "id": "mwfu2dkh5m9rx",
       "photo": "photos/mwfu2dkh5m9rx.jpg",
       "createdAt": 1794626139294,
@@ -761,6 +754,20 @@
       "photo": "photos/mwfu68yzf9gco.jpg",
       "createdAt": 1794626319659,
       "updatedAt": 1794626319659
+    },
+    {
+      "id": "mwfu6kpe7ur2w",
+      "photo": "photos/mwfu6kpe7ur2w.jpg",
+      "createdAt": 1794626335115,
+      "updatedAt": 1794626339556,
+      "deleted": true
+    },
+    {
+      "id": "mwfu6it2tao63",
+      "photo": "photos/mwfu6it2tao63.jpg",
+      "createdAt": 1794626332282,
+      "updatedAt": 1794626528949,
+      "deleted": true
     },
     {
       "id": "mwfuabb8zyg3d",
