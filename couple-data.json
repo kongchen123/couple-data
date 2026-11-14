@@ -735,5 +735,13 @@
       "updatedAt": 1794536976352,
       "deleted": true
     }
+  ],
+  "wall": [
+    {
+      "id": "mwfu2dkh5m9rx",
+      "photo": "photos/mwfu2dkh5m9rx.jpg",
+      "createdAt": 1794626139294,
+      "updatedAt": 1794626139294
+    }
   ]
 }
