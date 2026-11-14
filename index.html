@@ -69,7 +69,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { height: 100%; }
 body { height: 100vh; height: 100dvh; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--bg-page); color: var(--text-main); display: flex; flex-direction: column; overflow: hidden; overscroll-behavior: none; }
-header { flex: none; padding: calc(44px + env(safe-area-inset-top)) 20px 10px; display: flex; align-items: center; gap: 10px; max-width: 560px; width: 100%; margin: 0 auto; }
+header { flex: none; padding: calc(34px + env(safe-area-inset-top)) 20px 10px; display: flex; align-items: center; gap: 10px; max-width: 560px; width: 100%; margin: 0 auto; }
 header .logo { font-size: 26px; }
 header h1 { font-size: 19px; font-weight: 700; letter-spacing: 1px; color: var(--text-main); }
 header .sub { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
@@ -204,6 +204,13 @@ input:focus { border-color: #ff7e9d; }
 /* ---- 空状态缺省图：全列表通用，统一居中展示 ---- */
 .empty { text-align: center; color: var(--text-sub); font-size: 13px; line-height: 2; padding: 36px 20px; }
 .empty .btn { margin-top: 10px; }
+/* ---- 照片墙：首页 3 列方格展示，点击放大、右上角删除 ---- */
+.wall-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.wall-item { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: var(--bg-input); }
+.wall-item img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; transition: opacity .3s; cursor: zoom-in; }
+.wall-item img.loaded { opacity: 1; }
+.wall-del { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border: none; border-radius: 50%; background: rgba(0,0,0,.45); color: #fff; font-size: 13px; line-height: 20px; padding: 0; cursor: pointer; }
+.wall-empty { grid-column: 1 / -1; text-align: center; color: var(--text-sub); font-size: 13px; line-height: 2; padding: 16px 0; }
 .tl-count { font-size: 11.5px; color: var(--text-sub); margin: -4px 0 8px 4px; } /* 搜索命中计数：显隐由 JS 内联控制 */
 @keyframes tlNew { from { opacity: 0; transform: translateY(10px); } }
 .tl-item.new { animation: tlNew .4s ease; } /* 新写入的记录淡入落位 */
@@ -455,12 +462,11 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
       <div class="quote" id="quote">正在为你取一句情话…</div>
     </div>
     <div class="card">
-      <h2>💫 心愿进度</h2>
-      <div class="row-between">
-        <span>已完成 <b id="wishDone" class="accent">0</b> / <span id="wishTotal">0</span></span>
-        <b id="wishPercent" class="accent">0%</b>
-      </div>
-      <div class="progress-bar"><i id="wishBar" style="width:0%"></i></div>
+      <h2>📷 照片墙
+        <button class="quote-refresh" onclick="wallPick()" title="添加照片" aria-label="添加照片">＋</button>
+      </h2>
+      <div class="wall-grid" id="wallGrid"></div>
+      <input type="file" id="wallInput" accept="image/*" multiple style="display:none">
     </div>
   </section>
 
@@ -473,6 +479,14 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
 
   <!-- ============ 心愿 ============ -->
   <section class="page" id="page-wishes">
+    <div class="card">
+      <h2>💫 心愿进度</h2>
+      <div class="row-between">
+        <span>已完成 <b id="wishDone" class="accent">0</b> / <span id="wishTotal">0</span></span>
+        <b id="wishPercent" class="accent">0%</b>
+      </div>
+      <div class="progress-bar"><i id="wishBar" style="width:0%"></i></div>
+    </div>
     <div class="card">
       <h2>✨ 许个心愿</h2>
       <div class="composer inline-composer">
@@ -927,7 +941,7 @@ function nextLunarBirthday(bd, fromDate) {
 const KEY = 'coupleStationData', GH_KEY = 'coupleGithubConfig', SHA_KEY = 'coupleRemoteSha';
 const TAGS = ['日常', '美食', '碎碎念'];
 // 列表型数据字段：buildPayload / importData / hasUserData 统一引用，新增字段只改这里（tags 因需 normalize 单独处理）
-const LIST_FIELDS = ['timeline', 'wishes', 'capsules', 'voices', 'customDays', 'periods'];
+const LIST_FIELDS = ['timeline', 'wishes', 'capsules', 'voices', 'customDays', 'periods', 'wall'];
 const QUOTES = ['喜欢是乍见之欢，爱是久处不厌。','我见过很多风景，但都不及你眼里的星光。','愿我们的故事，细水长流，来日方长。','你是我平淡日子里的星辰大海。','世界上有很多美好的词语，但都不如"我们"好听。','往后余生，风雪是你，平淡是你。','和你在一起的每一天，都值得被记住。','爱不是彼此凝视，而是一起望向同一个方向。','慢慢来，我们有一辈子的时间。','想把所有的温柔，都留给你一个人。'];
 const MAX_SECONDS = 30;
 
@@ -937,7 +951,7 @@ const defaultMe = () => isAndroid() ? 1 : 2;
 function defaultData() {
   // birthday1 / birthday2 为农历对象：{ m: 月(1-12), d: 日(1-30), leap: 是否闰月 }
   return { name1:'', name2:'', anniversary:'', birthday1:null, birthday2:null, me: defaultMe(),
-    timeline:[], wishes:[], capsules:[], voices:[], customDays:[], tags:[], periods:[],
+    timeline:[], wishes:[], capsules:[], voices:[], customDays:[], tags:[], periods:[], wall:[],
     periodCfg:{ cycle: 28, len: 5 }, lastSyncAt:0, syncError:'' };
 }
 // 自定义标签统一成对象结构，复用其他数据的「updatedAt + 墓碑」合并逻辑
@@ -1372,15 +1386,16 @@ setInterval(() => {
 }, 5 * 60 * 1000);
 
 /* ================= 通用 add/del（墓碑模式） ================= */
-// 各数据 key → 需要重渲染的页面（首页含心愿进度/期待日子，相关数据变更需联动刷新）
+// 各数据 key → 需要重渲染的页面（首页含照片墙/期待日子，相关数据变更需联动刷新）
 const RENDERERS = {
   timeline: [renderTimeline],
-  wishes: [renderWishes, renderHome],
+  wishes: [renderWishes],
   capsules: [renderCapsules],
   voices: [renderVoices],
   customDays: [renderDayList, renderHome],
   tags: [renderWishes],
   periods: [renderPeriods],
+  wall: [renderWall],
 };
 // 数据变更统一收口：落本地缓存 + 按需重渲染 + 防抖上传（不传 key 时全量渲染，供远端同步等场景使用）
 const commit = (...keys) => {
@@ -1393,7 +1408,7 @@ const commit = (...keys) => {
 function addListItem(key, item) { if (!item.createdAt) item.createdAt = Date.now(); touch(item); S[key].push(item); commit(key); }
 function delListItem(key, id) {
   const it = S[key].find(x => x.id === id); if (!it) return;
-  if (key === 'timeline' && it.photo) { // 顺手释放已删照片的内存缓存 + 持久缓存
+  if ((key === 'timeline' || key === 'wall') && it.photo) { // 顺手释放已删照片的内存缓存 + 持久缓存
     const u = photoCache.get(it.photo);
     if (u) { try { URL.revokeObjectURL(u); } catch (e) { /* 忽略 */ } photoCache.delete(it.photo); }
     photoStore.del(it.photo);
@@ -1524,12 +1539,68 @@ function renderHome() {
   syncCountHeight();
   // 每日情话：优先用当天缓存，没有就联网取一句
   renderQuote();
-  // 心愿进度
-  const act = S.wishes.filter(w => !w.deleted);
-  const done = act.filter(w => w.done).length;
-  $('wishDone').textContent = done; $('wishTotal').textContent = act.length;
-  const pct = act.length ? Math.round(done / act.length * 100) : 0;
-  $('wishPercent').textContent = pct + '%'; $('wishBar').style.width = pct + '%';
+  // 照片墙
+  renderWall();
+}
+
+/* ================= 照片墙：自定义上传，首页展示 ================= */
+// 图片文件 → 压缩 dataURL（与时间线照片同规格：最长边 600px、JPEG 0.6）
+function wallCompress(file, max, quality) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('读取文件失败'));
+    reader.onload = ev => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('图片解析失败'));
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > max || h > max) { const r = max / Math.max(w, h); w = Math.round(w * r); h = Math.round(h * r); }
+        const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+        cv.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(cv.toDataURL('image/jpeg', quality));
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+function wallPick() { $('wallInput').click(); }
+let wallUploading = false;
+function onWallChange(e) {
+  const files = [...(e.target.files || [])]; e.target.value = '';
+  if (!files.length) return;
+  if (wallUploading) { toast('正在上传中，稍等一下～'); return; }
+  wallUploading = true;
+  toast(`开始上传 ${files.length} 张照片…`);
+  (async () => {
+    let ok = 0, fail = 0;
+    for (const f of files) {
+      try {
+        const dataUrl = await wallCompress(f, 600, 0.6);
+        const id = uid();
+        const path = `photos/${id}.jpg`;
+        await ghPutBinary(path, dataUrl);
+        cachePhotoFromUpload(path, dataUrl); // 上传成功回填缓存，立即可见
+        addListItem('wall', { id, photo: path, createdAt: Date.now() });
+        ok++;
+      } catch (err) { fail++; }
+    }
+    wallUploading = false;
+    toast(fail ? `上传完成：成功 ${ok} 张、失败 ${fail} 张` : (ok > 1 ? `已添加 ${ok} 张照片 📷` : '已添加到照片墙 📷'));
+  })();
+}
+function renderWall() {
+  const grid = $('wallGrid'); if (!grid) return;
+  const list = [...S.wall].filter(w => !w.deleted).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  if (!list.length) { grid.innerHTML = '<div class="wall-empty">还没有照片<br>点右上角 ＋ 上传你们的合影吧</div>'; return; }
+  grid.innerHTML = list.map(w =>
+    `<div class="wall-item"><img data-photo="${esc(w.photo)}" alt="照片墙照片" loading="lazy" decoding="async" onclick="previewPhoto(this)"><button class="wall-del" onclick="confirmDel('确定从照片墙删除这张照片吗？','wall','${w.id}')" aria-label="删除">×</button></div>`
+  ).join('');
+  // 惰性加载：与时间线照片同一套缓存策略（内存 → IndexedDB → GitHub）
+  document.querySelectorAll('#wallGrid img[data-photo]').forEach(async img => {
+    const url = await getPhotoCached(img.getAttribute('data-photo'));
+    if (url) { img.onload = () => img.classList.add('loaded'); img.src = url; if (img.complete) img.classList.add('loaded'); }
+  });
 }
 
 /* ================= 今日情话（在线接口 + 本地兜底） ================= */
@@ -2088,6 +2159,12 @@ const customTags = () => (S.tags || []).filter(t => t && !t.deleted && t.name &&
 // 默认标签 + 自定义标签，供选择器使用
 const allTags = () => [...TAGS, ...customTags().map(t => t.name)];
 function renderWishes() {
+  // 心愿进度（原在首页，已迁移至心愿页顶部）
+  const act = S.wishes.filter(w => !w.deleted);
+  const done = act.filter(w => w.done).length;
+  $('wishDone').textContent = done; $('wishTotal').textContent = act.length;
+  const pct = act.length ? Math.round(done / act.length * 100) : 0;
+  $('wishPercent').textContent = pct + '%'; $('wishBar').style.width = pct + '%';
   const tags = allTags();
   const custom = customTags();
   const defaultChips = TAGS.map(t =>
@@ -2971,6 +3048,7 @@ function renderAll() {
 }
 
 $('tlPhoto').addEventListener('change', onPhotoChange);
+$('wallInput').addEventListener('change', onWallChange);
 // 搜索防抖 150ms：避免每敲一个字符就全量重建 DOM + 重走照片缓存
 let tlSearchTimer = null;
 $('tlSearch').addEventListener('input', () => { clearTimeout(tlSearchTimer); tlSearchTimer = setTimeout(renderTimeline, 150); });
