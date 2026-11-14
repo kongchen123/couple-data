@@ -738,17 +738,17 @@
   ],
   "wall": [
     {
-      "id": "mwfu6it2tao63",
-      "photo": "photos/mwfu6it2tao63.jpg",
-      "createdAt": 1794626332282,
-      "updatedAt": 1794626390139,
-      "deleted": true
-    },
-    {
       "id": "mwfu2dkh5m9rx",
       "photo": "photos/mwfu2dkh5m9rx.jpg",
       "createdAt": 1794626139294,
       "updatedAt": 1794626139294
+    },
+    {
+      "id": "mwfu6it2tao63",
+      "photo": "photos/mwfu6it2tao63.jpg",
+      "createdAt": 1794626332282,
+      "updatedAt": 1794626466230,
+      "deleted": true
     },
     {
       "id": "mwfu5sllozler",
