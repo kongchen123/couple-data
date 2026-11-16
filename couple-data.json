@@ -536,6 +536,19 @@
       "ph": 0,
       "createdAt": 1794819958250,
       "updatedAt": 1794819958250
+    },
+    {
+      "id": "mwj8ug2rkav6c",
+      "author": "巩振",
+      "text": "邵师傅牛杂煲，臭豆腐蛮好吃的",
+      "tag": "美食",
+      "photo": "photos/mwj8ug2rkav6c.jpg",
+      "date": "2026-11-16",
+      "time": "20:32",
+      "pw": 600,
+      "ph": 450,
+      "createdAt": 1794832364324,
+      "updatedAt": 1794832364324
     }
   ],
   "wishes": [
@@ -830,6 +843,72 @@
       "createdAt": 1794731992831,
       "updatedAt": 1794731995402,
       "deleted": true
+    }
+  ],
+  "wall": [
+    {
+      "id": "mwfu2dkh5m9rx",
+      "photo": "photos/mwfu2dkh5m9rx.jpg",
+      "createdAt": 1794626139294,
+      "updatedAt": 1794626139294
+    },
+    {
+      "id": "mwfu5sllozler",
+      "photo": "photos/mwfu5sllozler.jpg",
+      "createdAt": 1794626299282,
+      "updatedAt": 1794626299282
+    },
+    {
+      "id": "mwfu68yzf9gco",
+      "photo": "photos/mwfu68yzf9gco.jpg",
+      "createdAt": 1794626319659,
+      "updatedAt": 1794626319659
+    },
+    {
+      "id": "mwfu6kpe7ur2w",
+      "photo": "photos/mwfu6kpe7ur2w.jpg",
+      "createdAt": 1794626335115,
+      "updatedAt": 1794626339556,
+      "deleted": true
+    },
+    {
+      "id": "mwfu6it2tao63",
+      "photo": "photos/mwfu6it2tao63.jpg",
+      "createdAt": 1794626332282,
+      "updatedAt": 1794626528949,
+      "deleted": true
+    },
+    {
+      "id": "mwfuabb8zyg3d",
+      "photo": "photos/mwfuabb8zyg3d.jpg",
+      "createdAt": 1794626509829,
+      "updatedAt": 1794645954733,
+      "deleted": true
+    },
+    {
+      "id": "mwfuadfifgj23",
+      "photo": "photos/mwfuadfifgj23.jpg",
+      "createdAt": 1794626512256,
+      "updatedAt": 1794645959477,
+      "deleted": true
+    },
+    {
+      "id": "mwfuaf998dp7m",
+      "photo": "photos/mwfuaf998dp7m.jpg",
+      "createdAt": 1794626515348,
+      "updatedAt": 1794626515348
+    },
+    {
+      "id": "mwfuahnnm23pg",
+      "photo": "photos/mwfuahnnm23pg.jpg",
+      "createdAt": 1794626517918,
+      "updatedAt": 1794626517918
+    },
+    {
+      "id": "mwfuajndfyizs",
+      "photo": "photos/mwfuajndfyizs.jpg",
+      "createdAt": 1794626520559,
+      "updatedAt": 1794626520559
     }
   ]
 }
