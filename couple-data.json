@@ -497,6 +497,19 @@
       "ph": 0,
       "createdAt": 1794731866382,
       "updatedAt": 1794731866382
+    },
+    {
+      "id": "mwio68kq0ngfo",
+      "author": "婷婷",
+      "text": "当关系出现问题的时候，希望我们能看透问题的本质，关于爱 关于是否还在乎对方…而不是一言以蔽之，只看到表面的冲突，简单归结为吵架生气…",
+      "tag": "日常",
+      "photo": "",
+      "date": "2026-11-16",
+      "time": "10:53",
+      "pw": 0,
+      "ph": 0,
+      "createdAt": 1794797637867,
+      "updatedAt": 1794797637867
     }
   ],
   "wishes": [
@@ -791,72 +804,6 @@
       "createdAt": 1794731992831,
       "updatedAt": 1794731995402,
       "deleted": true
-    }
-  ],
-  "wall": [
-    {
-      "id": "mwfu2dkh5m9rx",
-      "photo": "photos/mwfu2dkh5m9rx.jpg",
-      "createdAt": 1794626139294,
-      "updatedAt": 1794626139294
-    },
-    {
-      "id": "mwfu5sllozler",
-      "photo": "photos/mwfu5sllozler.jpg",
-      "createdAt": 1794626299282,
-      "updatedAt": 1794626299282
-    },
-    {
-      "id": "mwfu68yzf9gco",
-      "photo": "photos/mwfu68yzf9gco.jpg",
-      "createdAt": 1794626319659,
-      "updatedAt": 1794626319659
-    },
-    {
-      "id": "mwfu6kpe7ur2w",
-      "photo": "photos/mwfu6kpe7ur2w.jpg",
-      "createdAt": 1794626335115,
-      "updatedAt": 1794626339556,
-      "deleted": true
-    },
-    {
-      "id": "mwfu6it2tao63",
-      "photo": "photos/mwfu6it2tao63.jpg",
-      "createdAt": 1794626332282,
-      "updatedAt": 1794626528949,
-      "deleted": true
-    },
-    {
-      "id": "mwfuabb8zyg3d",
-      "photo": "photos/mwfuabb8zyg3d.jpg",
-      "createdAt": 1794626509829,
-      "updatedAt": 1794645954733,
-      "deleted": true
-    },
-    {
-      "id": "mwfuadfifgj23",
-      "photo": "photos/mwfuadfifgj23.jpg",
-      "createdAt": 1794626512256,
-      "updatedAt": 1794645959477,
-      "deleted": true
-    },
-    {
-      "id": "mwfuaf998dp7m",
-      "photo": "photos/mwfuaf998dp7m.jpg",
-      "createdAt": 1794626515348,
-      "updatedAt": 1794626515348
-    },
-    {
-      "id": "mwfuahnnm23pg",
-      "photo": "photos/mwfuahnnm23pg.jpg",
-      "createdAt": 1794626517918,
-      "updatedAt": 1794626517918
-    },
-    {
-      "id": "mwfuajndfyizs",
-      "photo": "photos/mwfuajndfyizs.jpg",
-      "createdAt": 1794626520559,
-      "updatedAt": 1794626520559
     }
   ]
 }
