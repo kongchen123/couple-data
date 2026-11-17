@@ -966,7 +966,8 @@
       "start": "2026-11-11",
       "end": "2026-11-15",
       "createdAt": 1794906015294,
-      "updatedAt": 1794906015294
+      "updatedAt": 1794906022228,
+      "deleted": true
     }
   ],
   "wall": [
