@@ -86,7 +86,7 @@ header .logo { font-size: 26px; }
 header h1 { font-size: 19px; font-weight: 700; letter-spacing: 1px; color: var(--text-main); }
 header .sub { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
 /* ---- 全局同步状态点：绿=已同步 / 黄=待上传 / 红=异常 / 灰=未配 Token 或离线 ---- */
-.sync-dot { margin-left: auto; width: 28px; height: 28px; border: none; padding: 0; background: transparent; position: relative; flex-shrink: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.sync-dot { margin-left: auto; width: 44px; height: 44px; border: none; padding: 0; background: transparent; position: relative; flex-shrink: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .sync-dot::after { content: ''; position: absolute; left: 50%; top: 50%; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; background: #c4b3b9; transition: background .2s; }
 .sync-dot.ok::after { background: #35c46a; }
 .sync-dot.pending::after { background: #f0a63c; animation: dotPulse 1.4s ease-in-out infinite; }
@@ -94,7 +94,7 @@ header .sub { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
 .sync-dot:active { transform: scale(.9); }
 @keyframes dotPulse { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
 /* ---- 子页返回按钮：语音/经期/设置页显示，一级页隐藏 ---- */
-header .back-btn { display: none; width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--bg-soft); color: var(--primary); font-size: 20px; line-height: 1; cursor: pointer; flex-shrink: 0; align-items: center; justify-content: center; transition: transform .15s; }
+header .back-btn { display: none; width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--bg-soft); color: var(--primary); font-size: 20px; line-height: 1; cursor: pointer; flex-shrink: 0; align-items: center; justify-content: center; transition: transform .15s; }
 header .back-btn.show { display: flex; }
 header .back-btn:active { transform: scale(.9); }
 main { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 4px 14px 10px; max-width: 560px; width: 100%; margin: 0 auto; }
@@ -158,7 +158,7 @@ main { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 4
 .count-item .label { font-size: 12px; color: var(--text-sub); }
 .count-item .num { font-size: 16px; font-weight: 700; color: var(--primary); margin-top: 2px; }
 .quote { font-size: 13px; color: var(--text-quote); line-height: 1.7; font-style: italic; }
-.quote-refresh { margin-left: auto; width: 28px; height: 28px; border-radius: 50%; border: 1px solid #f3d6de; background: var(--bg-quote-btn); color: var(--primary); font-size: 15px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .2s; }
+.quote-refresh { margin-left: auto; width: 36px; height: 36px; border-radius: 50%; border: 1px solid #f3d6de; background: var(--bg-quote-btn); color: var(--primary); font-size: 15px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .2s; }
 .quote-refresh:hover, .quote-refresh:active { background: var(--bg-quote-btn-hover); }
 .quote-refresh.loading { animation: qspin .8s linear infinite; }
 @keyframes qspin { to { transform: rotate(360deg); } }
@@ -178,8 +178,8 @@ input:focus { border-color: #ff7e9d; }
 .btn:disabled { opacity: .5; }
 .btn.ghost, .btn.danger { background: var(--bg-card); border: 1.5px solid #ffc9d6; box-shadow: none; }
 .btn.ghost { color: #e9407a; }
-.btn.small { padding: 6px 12px; font-size: 12px; }
-.btn.danger { color: #e05070; padding: 4px 10px; font-size: 12px; }
+.btn.small { padding: 9px 12px; min-height: 38px; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; }
+.btn.danger { color: #e05070; padding: 8px 10px; min-height: 36px; font-size: 12px; }
 .photo-preview { position: relative; margin-top: 10px; display: none; }
 .photo-preview img { max-width: 120px; max-height: 120px; border-radius: 10px; border: 2px solid #ffd6e0; }
 .photo-preview .x { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%; background: #e05070; color: #fff; border: none; font-size: 12px; cursor: pointer; }
@@ -241,9 +241,9 @@ input:focus { border-color: #ff7e9d; }
 @keyframes tlNew { from { opacity: 0; transform: translateY(10px); } }
 .tl-item.new { animation: tlNew .4s ease; } /* 新写入的记录淡入落位 */
 .empty .ico { display: block; font-style: normal; font-size: 34px; margin-bottom: 6px; opacity: .9; }
-.x-del { border: none; background: none; color: #d9a3b1; cursor: pointer; padding: 6px; }
+.x-del { border: none; background: none; color: #d9a3b1; cursor: pointer; padding: 9px; }
 .tag-picker, .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-.chip { padding: 3px 10px; border-radius: 20px; font-size: 12px; border: 1.5px solid var(--border-chip); background: var(--bg-card); color: var(--text-quote); cursor: pointer; transition: background .2s, border-color .2s, color .2s; }
+.chip { padding: 7px 12px; min-height: 34px; border-radius: 20px; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; border: 1.5px solid var(--border-chip); background: var(--bg-card); color: var(--text-quote); cursor: pointer; transition: background .2s, border-color .2s, color .2s; }
 .chip.on { background: #ff8fa8; border-color: #ff8fa8; color: #fff; font-weight: 700; }
 .chip.tag-new { border-style: dashed; color: #c9a1ac; }
 .chip.tag-new.on { background: #fff0f4; border-color: #ff8fa8; color: #e9407a; }
@@ -286,7 +286,7 @@ input:focus { border-color: #ff7e9d; }
 .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .cal-head .ym { font-size: 14px; font-weight: 700; color: #e9407a; }
 .cal-head button { border: 1.5px solid var(--border-input); background: var(--bg-card); color: var(--primary); border-radius: 8px; padding: 4px 12px; font-size: 12px; cursor: pointer; }
-.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; touch-action: none; } /* 日历上按住拖选起止日期，禁掉默认触摸行为 */
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; touch-action: pan-y; } /* 只拦横向拖选，纵向滚动交还页面 */
 .cal-cell.pick { background: #ffd9e2; box-shadow: inset 0 0 0 1.5px #ff8fa8; } /* 点选/拖选预览高亮 */
 .cal-grid .wd { text-align: center; font-size: 11px; color: #c9b3bb; padding: 2px 0; }
 .cal-cell { aspect-ratio: 1; min-height: 32px; display: flex; align-items: center; justify-content: center; font-size: 12.5px; color: var(--text-cal); border-radius: 50%; }
@@ -339,6 +339,33 @@ input:focus { border-color: #ff7e9d; }
 body:has(#dpMask.show) .fab, body:has(#cfMask.show) .fab, body:has(#asMask.show) .fab, body:has(#tlEditMask.show) .fab, body:has(#tlComposeMask.show) .fab, body:has(#lightbox.show) .fab { opacity: 0; pointer-events: none; transform: translateY(6px) scale(.9); }
 /* 有 FAB 的页面给列表底部留白，避免遮挡最后一条记录的操作按钮 */
 #page-timeline .scroll-area, #page-wishes .scroll-area, #page-capsule .scroll-area { padding-bottom: 92px; }
+.sync-bar { display: none; width: 100%; max-width: 560px; margin: 0 auto; padding: 0 14px; }
+.sync-bar.show { display: block; }
+.sync-bar .inner { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 12px; font-size: 12px; background: #fff4e5; color: #9a5b00; border: 1px solid #ffd9a8; }
+.sync-bar.err .inner { background: #fdecef; color: #b3243f; border-color: #ffc4cf; }
+.sync-bar .inner button { margin-left: auto; border: none; background: rgba(0,0,0,.06); color: inherit; font-size: 12px; font-weight: 700; padding: 7px 12px; border-radius: 10px; cursor: pointer; flex-shrink: 0; }
+#uploadBar { position: fixed; left: 50%; bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 14px); transform: translateX(-50%) translateY(8px); display: flex; align-items: center; gap: 10px; padding: 9px 12px 9px 16px; border-radius: 22px; background: rgba(74,59,64,.94); color: #fff; font-size: 12.5px; z-index: 120; opacity: 0; visibility: hidden; transition: opacity .2s, transform .2s, visibility .2s; }
+#uploadBar.show { opacity: 1; visibility: visible; transform: translateX(-50%); }
+#uploadBar button { border: none; background: rgba(255,255,255,.18); color: #fff; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 999px; cursor: pointer; }
+.wall-item { cursor: pointer; }
+.wall-item time { position: absolute; left: 5px; bottom: 5px; font-size: 10px; line-height: 1; padding: 3px 6px; border-radius: 8px; background: rgba(0,0,0,.45); color: #fff; pointer-events: none; }
+.wall-item .sel-mark { position: absolute; right: 5px; top: 5px; width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(255,255,255,.9); background: rgba(0,0,0,.25); display: none; align-items: center; justify-content: center; color: #fff; font-size: 13px; }
+body.wall-selecting .wall-item .sel-mark { display: flex; }
+body.wall-selecting .wall-item.sel .sel-mark { background: #e9407a; border-color: #e9407a; }
+body.wall-selecting .wall-item.sel { outline: 3px solid #e9407a; outline-offset: -3px; }
+#wallSelBar { position: fixed; left: 50%; bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 14px); transform: translateX(-50%); display: none; align-items: center; gap: 10px; padding: 9px 12px 9px 16px; border-radius: 24px; background: rgba(74,59,64,.96); color: #fff; font-size: 12.5px; z-index: 95; box-shadow: 0 6px 20px rgba(0,0,0,.2); }
+#wallSelBar.show { display: flex; }
+#wallSelBar button { border: none; border-radius: 999px; padding: 7px 13px; font-size: 12px; font-weight: 700; cursor: pointer; }
+#wallSelBar .wsel-del { background: #e04545; color: #fff; }
+#wallSelBar .wsel-del:disabled { opacity: .45; }
+#wallSelBar .wsel-cancel { background: rgba(255,255,255,.18); color: #fff; }
+.setup-card { display: flex; flex-direction: column; gap: 8px; }
+.setup-card .setup-row { display: flex; align-items: center; gap: 10px; }
+.setup-card .setup-txt { flex: 1; min-width: 0; font-size: 12.5px; line-height: 1.5; color: var(--text-sub); }
+.pull-hint { display: flex; align-items: center; justify-content: center; gap: 6px; height: 0; overflow: hidden; color: var(--text-sub); font-size: 13px; transition: height .25s ease; }
+.pull-hint .ico { display: inline-block; transition: transform .25s; }
+.pull-hint.ready .ico { transform: rotate(180deg); }
+.pull-hint.loading .ico { animation: tlSpin .8s linear infinite; transition: none; }
 /* ---- 时间线下拉刷新指示器：默认高度 0 不可见，下拉时撑开 ---- */
 #tlPull { display: flex; align-items: center; justify-content: center; gap: 6px; height: 0; overflow: hidden; color: var(--text-sub); font-size: 13px; transition: height .25s ease; }
 #tlPull .ico { display: inline-block; transition: transform .25s; }
@@ -424,10 +451,15 @@ nav.tabbar { flex: none; background: var(--bg-card); display: flex; box-shadow: 
 nav.tabbar button { flex: 1; border: none; background: none; padding: 10px 0 9px; font-size: 11px; color: var(--text-sub); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; }
 nav.tabbar button .ico { font-size: 19px; }
 nav.tabbar button.on { color: var(--primary); font-weight: 700; }
-#lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.85); display: flex; align-items: center; justify-content: center; z-index: 100; cursor: zoom-out; opacity: 0; visibility: hidden; transition: opacity .25s, visibility .25s; }
+#lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.9); display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; visibility: hidden; transition: opacity .25s, visibility .25s; touch-action: none; overflow: hidden; }
 #lightbox.show { opacity: 1; visibility: visible; }
-#lightbox img { max-width: 94vw; max-height: 90vh; border-radius: 8px; transform: scale(.92); transition: transform .25s; }
-#lightbox.show img { transform: scale(1); }
+#lightbox img { max-width: 94vw; max-height: 84vh; border-radius: 8px; transform-origin: 50% 50%; will-change: transform; -webkit-user-select: none; user-select: none; -webkit-user-drag: none; }
+#lbPrev, #lbNext { position: absolute; top: 50%; transform: translateY(-50%); width: 46px; height: 46px; border: none; border-radius: 50%; background: rgba(255,255,255,.14); color: #fff; font-size: 24px; line-height: 1; cursor: pointer; display: none; align-items: center; justify-content: center; }
+#lbPrev { left: 8px; } #lbNext { right: 8px; }
+#lbPrev.show, #lbNext.show { display: flex; }
+#lbCount { position: absolute; top: calc(14px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); color: #fff; font-size: 13px; padding: 3px 12px; border-radius: 999px; background: rgba(255,255,255,.14); }
+#lbClose { position: absolute; top: calc(10px + env(safe-area-inset-top)); right: 12px; width: 40px; height: 40px; border: none; border-radius: 50%; background: rgba(255,255,255,.14); color: #fff; font-size: 20px; cursor: pointer; }
+#lbZoomTip { position: absolute; bottom: calc(66px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); color: rgba(255,255,255,.72); font-size: 11px; white-space: nowrap; pointer-events: none; }
 /* 常驻语音播放器：视觉隐藏但始终留在文档中，保证 play() 不被中断 */
 #voiceAudio { position: fixed; left: 0; bottom: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .tips { font-size: 12px; color: var(--text-sub); margin-top: 10px; line-height: 1.6; }
@@ -469,6 +501,10 @@ nav.tabbar button.on { color: var(--primary); font-weight: 700; }
 }
 input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
 .btn:focus-visible, .chip:focus-visible, .quote-refresh:focus-visible, nav.tabbar button:focus-visible, .cal-head button:focus-visible, .fab:focus-visible { outline: 2px solid var(--primary-light); outline-offset: 2px; }
+@media (prefers-color-scheme: dark) {
+  .sync-bar .inner { background: #3a2a1c; color: #ffcf8a; border-color: #5a4127; }
+  .sync-bar.err .inner { background: #3a1f26; color: #ffb3c0; border-color: #5a2a35; }
+}
 </style>
 </head>
 <body>
@@ -479,12 +515,18 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
     <h1 id="pageTitle">情侣小站</h1>
     <div class="sub" id="hSub">我 和 TA 的专属空间</div>
   </div>
-  <button class="sync-dot off" id="syncDot" onclick="go('settings')" aria-label="同步状态" title="同步状态"></button>
+  <button class="sync-dot off" id="syncDot" aria-label="同步状态：点按立即同步，长按打开设置" title="同步状态"></button>
 </header>
+<div class="sync-bar" id="syncBar"><div class="inner"><span id="syncBarTxt"></span><button type="button" onclick="syncNow()" id="syncBarAct">立即同步</button></div></div>
 
 <main>
   <!-- ============ 首页 ============ -->
   <section class="page" id="page-home">
+    <div class="card setup-card" id="setupHint" style="display:none">
+      <div class="setup-row"><span style="font-size:20px">🔑</span><b style="font-size:14px">还没连接云端同步</b></div>
+      <div class="setup-txt">填一个 GitHub Token，就能把你们的记录同步到私有数据文件；两台手机都配置后会自动合并。</div>
+      <div class="setup-row"><button class="btn small" onclick="go('settings', null, 'l')">去设置</button><button class="btn ghost small" onclick="dismissSetupHint()">以后再说</button></div>
+    </div>
     <div class="hero">
       <div class="names" id="hTitle">我 ♥ TA</div>
       <div class="days"><span id="hDays">—</span><small>天</small></div>
@@ -504,6 +546,7 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
     </div>
     <div class="card">
       <h2>📷 照片墙
+        <button class="quote-refresh" id="wallSelBtn" onclick="toggleWallSelect()" title="多选照片" aria-label="多选照片">☑︎</button>
         <button class="quote-refresh" onclick="wallPick()" title="添加照片" aria-label="添加照片">＋</button>
       </h2>
       <div class="wall-grid" id="wallGrid"></div>
@@ -515,7 +558,7 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
   <section class="page active" id="page-timeline">
     <div class="search-box"><input type="text" id="tlSearch" placeholder="🔍 搜索记录内容或作者…"></div>
     <div id="tlCount"></div>
-    <div class="scroll-area"><div id="tlPull"><span class="ico">↓</span><span class="txt">下拉刷新</span></div><div id="tlStats" class="tl-stats"></div><div id="tlList"></div></div>
+    <div class="scroll-area"><div id="tlStats" class="tl-stats"></div><div id="tlList"></div></div>
   </section>
 
   <!-- ============ 心愿 ============ -->
@@ -705,6 +748,8 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
   <button data-p="more" onclick="go('more', this)"><span class="ico">🧩</span><span class="label">更多</span></button>
 </nav>
 <!-- FAB：浮动主操作按钮（时间线/心愿/胶囊页显示），弹层或键盘出现时自动隐藏 -->
+<div id="wallSelBar"><span id="wallSelTxt">已选 0 张</span><button class="wsel-del" id="wallSelDel" onclick="deleteWallSelected()" disabled>删除</button><button class="wsel-cancel" onclick="exitWallSelect()">取消</button></div>
+<div id="uploadBar"><span id="uploadTxt">上传中…</span><button type="button" onclick="cancelUpload()">取消</button></div>
 <button class="fab" id="fab" onclick="fabAction()" aria-label="写一条记录">✍️</button>
 <div class="toast" id="toast"></div>
 <!-- 站内确认弹层：替代原生 confirm -->
@@ -749,12 +794,24 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
 <div id="tlEditPanel" role="dialog" aria-modal="true" aria-label="编辑记录">
   <h2>✏️ 编辑记录</h2>
   <textarea id="tlEditText" placeholder="记录你们的点点滴滴…"></textarea>
+  <div class="tag-picker" id="tlEditTagPicker"></div>
+  <div class="photo-preview" id="tlEditPreview" style="display:none"><img id="tlEditPreviewImg" alt=""><button class="x" onclick="tlEditClearPhoto()">✕</button></div>
   <div class="composer-row">
+    <label class="btn small ghost" style="display:inline-block">📷 换照片<input type="file" id="tlEditPhoto" accept="image/*" hidden></label>
+    <button class="btn small ghost" id="tlEditRemoveBtn" onclick="tlEditClearPhoto()">移除照片</button>
     <input type="date" id="tlEditDate" readonly onclick="openDatePicker('tlEditDate')">
     <button class="btn small" onclick="tlEditSave()">保存</button>
   </div>
 </div>
-<div id="lightbox" onclick="this.classList.remove('show')"><img id="lightboxImg" alt=""><button id="lbDel" onclick="event.stopPropagation(); delWallPhoto()">删除这张照片</button></div>
+<div id="lightbox" role="dialog" aria-modal="true" aria-label="照片预览" onclick="if (event.target.id === 'lightbox') closeLightbox()">
+  <img id="lightboxImg" alt="照片预览">
+  <button id="lbClose" aria-label="关闭" onclick="closeLightbox()">✕</button>
+  <div id="lbCount"></div>
+  <button id="lbPrev" aria-label="上一张" onclick="lbStep(-1)">‹</button>
+  <button id="lbNext" aria-label="下一张" onclick="lbStep(1)">›</button>
+  <button id="lbDel" onclick="delWallPhoto()">删除这张照片</button>
+  <div id="lbZoomTip">双击 / 双指缩放 · 左右滑动切换</div>
+</div>
 <!-- 自制日期选择面板：农历 + 法定假期标注（替代原生日期控件） -->
 <div id="dpMask" onclick="closeDatePicker()"></div>
 <div id="dpPanel" role="dialog" aria-label="选择日期">
@@ -1146,8 +1203,9 @@ function openDatePicker(id) {
   dpRender();
   $('dpMask').classList.add('show');
   $('dpPanel').classList.add('show');
+  ovPush('dp');
 }
-function closeDatePicker() { $('dpMask').classList.remove('show'); $('dpPanel').classList.remove('show'); dpTarget = null; dpYmOpen = false; }
+function closeDatePicker() { $('dpMask').classList.remove('show'); $('dpPanel').classList.remove('show'); dpTarget = null; dpYmOpen = false; ovPop('dp'); }
 function dpShift(n) { dpView.m += n; if (dpView.m < 0) { dpView.m = 11; dpView.y--; } else if (dpView.m > 11) { dpView.m = 0; dpView.y++; } dpYmOpen = false; dpRender(); }
 function dpGoToday() { const t = new Date(); dpView = { y: t.getFullYear(), m: t.getMonth() }; dpYmOpen = false; dpRender(); }
 /* ---- 年月选择视图：点标题展开/收起，选中年份可翻年，点月份直接跳转 ---- */
@@ -1199,12 +1257,12 @@ function dpPick(key) {
 }
 
 let toastTimer;
-function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2000); }
+function toast(msg, ms) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); const dur = ms || Math.min(4200, 1600 + String(msg || '').length * 45); toastTimer = setTimeout(() => t.classList.remove('show'), dur); }
 /* ---- 站内确认弹层（替代原生 confirm）+ 删除撤销 ---- */
 let cfCallback = null;
-function askConfirm(msg, cb) { cfCallback = cb; $('cfMsg').textContent = msg; $('cfMask').classList.add('show'); }
-function cfCancel(e) { if (e && e.target && e.target.id !== 'cfMask') return; $('cfMask').classList.remove('show'); cfCallback = null; }
-function cfOk() { const cb = cfCallback; $('cfMask').classList.remove('show'); cfCallback = null; if (cb) cb(); }
+function askConfirm(msg, cb) { cfCallback = cb; $('cfMsg').textContent = msg; $('cfMask').classList.add('show'); ovPush('confirm'); }
+function cfCancel(e) { if (e && e.target && e.target.id !== 'cfMask') return; $('cfMask').classList.remove('show'); cfCallback = null; ovPop('confirm'); }
+function cfOk() { const cb = cfCallback; $('cfMask').classList.remove('show'); cfCallback = null; ovPop('confirm'); if (cb) cb(); }
 let undoFn = null, undoTimer = null;
 function showUndo(msg, fn) {
   undoFn = fn; $('undoMsg').textContent = msg;
@@ -1213,6 +1271,65 @@ function showUndo(msg, fn) {
 }
 function hideUndo() { clearTimeout(undoTimer); $('undoToast').classList.remove('show'); undoFn = null; }
 function undoDelete() { const fn = undoFn; hideUndo(); if (fn) { fn(); toast('已撤销 ✅'); } }
+/* ================= 弹层栈：返回键 / Esc 先关弹层，焦点回到原处 ================= */
+const ovStack = [];
+const ovReturnFocus = {};
+const OV_DEFS = {
+  confirm: { panel: 'cfPanel' },
+  sheet: { panel: 'asPanel' },
+  compose: { panel: 'tlComposePanel', focus: '#tlText' },
+  edit: { panel: 'tlEditPanel', focus: '#tlEditText' },
+  dp: { panel: 'dpPanel' },
+  lightbox: { panel: 'lightbox' }
+};
+const OV_CLOSE = {
+  confirm: () => cfCancel(),
+  sheet: () => closeActionSheet(),
+  compose: () => tlComposeClose(),
+  edit: () => tlEditClose(),
+  dp: () => closeDatePicker(),
+  lightbox: () => closeLightbox()
+};
+function ovFocusables(panel) {
+  if (!panel) return [];
+  return [...panel.querySelectorAll('button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])')].filter(el => !el.disabled && el.offsetParent !== null);
+}
+function ovPush(id) {
+  if (ovStack.includes(id)) return;
+  ovReturnFocus[id] = document.activeElement;
+  ovStack.push(id);
+  const d = OV_DEFS[id] || {};
+  const panel = d.panel ? $(d.panel) : null;
+  setTimeout(() => {
+    if (ovStack[ovStack.length - 1] !== id) return;
+    const target = (d.focus && panel && panel.querySelector(d.focus)) || ovFocusables(panel)[0];
+    if (target) { try { target.focus({ preventScroll: true }); } catch (e) { try { target.focus(); } catch (e2) {} } }
+  }, 300);
+}
+function ovPop(id) {
+  const i = ovStack.lastIndexOf(id);
+  if (i >= 0) ovStack.splice(i, 1);
+  const el = ovReturnFocus[id];
+  delete ovReturnFocus[id];
+  if (el && el.focus && document.body.contains(el)) setTimeout(() => { try { el.focus({ preventScroll: true }); } catch (e) {} }, 60);
+}
+function ovCloseTop() {
+  if (!ovStack.length) return;
+  const id = ovStack[ovStack.length - 1];
+  if (OV_CLOSE[id]) OV_CLOSE[id]();
+}
+document.addEventListener('keydown', e => {
+  if (!ovStack.length) return;
+  const id = ovStack[ovStack.length - 1];
+  if (e.key === 'Escape') { e.preventDefault(); ovCloseTop(); return; }
+  if (e.key !== 'Tab') return;
+  const panel = $((OV_DEFS[id] || {}).panel);
+  const f = ovFocusables(panel);
+  if (!f.length) return;
+  const first = f[0], last = f[f.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
 
 /* ================= GitHub Contents API（与 src/api/github.js 同构） ================= */
 const GH_API = 'https://api.github.com';
@@ -1351,12 +1468,23 @@ function markPushOk(newSha) {
   persist(); renderSyncState();
   return true;
 }
-function markPushFail() {
-  S.syncError = '本机改动待上传，联网后自动重试';
+function markPushFail(text) {
+  S.syncError = text || '本机改动待上传，联网后自动重试';
   meta.pendingPush = true;
   persist(); renderSyncState();
   return false;
 }
+// 错误分类：把 401/403/网络 区分开，避免「Token 失效」被说成「离线」
+function sysErr(e) {
+  const m = (e && e.message) || '';
+  const code = Number((m.match(/HTTP (\d+)/) || [])[1]);
+  if (/缺少 GitHub Token/.test(m)) return { auth: true, text: '还没配置 Token，去设置填写后才能同步' };
+  if (code === 401) return { auth: true, text: 'Token 已失效，请到设置重新填写' };
+  if (code === 403) return { auth: false, text: 'GitHub 限流或被拒绝，稍后自动重试' };
+  if (code === 404) return { auth: true, text: '云端文件不存在，检查 Token 权限' };
+  return { auth: false, text: '网络异常，改动已存在本机，联网后自动重试' };
+}
+let pushRetryTimer = null;
 // 上传本机数据到云端；成功返回 true
 async function flushPush() {
   if (syncing) return false;
@@ -1380,9 +1508,15 @@ async function flushPush() {
     } else {
       console.error('上传失败：', e);
     }
-    return markPushFail();
+    return markPushFail(sysErr(e).text);
   } finally {
     syncing = false;
+    renderSyncDot();
+    // 上传在途时被新改动打断：排一次重试，避免改动一直滞留在本机
+    if (meta.pendingPush && ghCfg().token && navigator.onLine !== false) {
+      clearTimeout(pushRetryTimer);
+      pushRetryTimer = setTimeout(() => { if (meta.pendingPush && !syncing) flushPush().catch(() => {}); }, 8000);
+    }
   }
 }
 // 拉取云端最新并写入本地缓存；页面始终以本地缓存渲染
@@ -1405,18 +1539,21 @@ async function pullLatest(opts) {
   } catch (e) {
     console.error('拉取失败：', e);
     meta.pullState = 'error';
-    S.syncError = '当前离线，正在使用本地数据';
+    S.syncError = sysErr(e).text;
     persist(); renderSyncState();
-    if (!opts.silent) toast('拉取失败，继续使用本地数据 ⚠');
+    if (!opts.silent) toast('拉取失败：' + sysErr(e).text + ' ⚠');
     return { ok: false, changed: false, error: e };
   } finally {
     pulling = false;
     saveMeta();
+    renderSyncDot();
   }
 }
 // 进入应用 / 回到前台：先把本机改动推上去（若有），再自动拉取最新到本地
 async function syncOnEnter() {
   refreshCacheUI();
+  // 没配置 Token 时不做任何网络请求，避免启动就把「没配置」记成同步异常
+  if (!ghCfg().token) { renderSyncState(); return; }
   if (meta.pendingPush) {
     const pushed = await flushPush();
     if (!pushed) { meta.pullState = 'error'; saveMeta(); return; } // 推送失败先不拉取，避免覆盖本机改动
@@ -1733,27 +1870,71 @@ function onWallChange(e) {
   toast(`开始上传 ${files.length} 张照片…`);
   (async () => {
     let ok = 0, fail = 0;
-    for (const f of files) {
-      try {
-        const out = await compressToTarget(f, { maxSide: 1600, targetBytes: 260 * 1024 });
-        const id = uid();
-        const path = `photos/${id}.jpg`;
-        await ghPutBinary(path, out.dataUrl);
-        cachePhotoFromUpload(path, out.dataUrl); // 上传成功回填缓存，立即可见
-        addListItem('wall', { id, photo: path, createdAt: Date.now() });
-        ok++;
-      } catch (err) { console.warn('照片上传失败：', err); fail++; }
+    showUpload(`准备上传 ${files.length} 张…`);
+    try {
+      for (let i = 0; i < files.length; i++) {
+        if (uploadCancelled) break;
+        updateUpload(`上传中 ${i + 1}/${files.length}`);
+        const f = files[i];
+        try {
+          const out = await compressToTarget(f, { maxSide: 1600, targetBytes: 260 * 1024 });
+          const id = uid();
+          const path = `photos/${id}.jpg`;
+          await ghPutBinary(path, out.dataUrl);
+          cachePhotoFromUpload(path, out.dataUrl); // 上传成功回填缓存，立即可见
+          addListItem('wall', { id, photo: path, createdAt: Date.now() });
+          ok++;
+        } catch (err) { console.warn('照片上传失败：', err); fail++; }
+      }
+    } finally {
+      wallUploading = false;
+      hideUpload();
     }
-    wallUploading = false;
-    toast(fail ? `上传完成：成功 ${ok} 张、失败 ${fail} 张` : (ok > 1 ? `已添加 ${ok} 张照片 📷` : '已添加到照片墙 📷'));
+    if (uploadCancelled) toast(`已取消，本次上传 ${ok} 张`);
+    else toast(fail ? `上传完成：成功 ${ok} 张、失败 ${fail} 张` : (ok > 1 ? `已添加 ${ok} 张照片 📷` : '已添加到照片墙 📷'));
   })();
+}
+let wallSelectMode = false;
+const wallSelected = new Set();
+function wallTap(e, id) {
+  if (!wallSelectMode) { previewPhoto(e.currentTarget.querySelector('img'), id); return; }
+  if (wallSelected.has(id)) wallSelected.delete(id); else wallSelected.add(id);
+  e.currentTarget.classList.toggle('sel', wallSelected.has(id));
+  updateWallSelBar();
+}
+function updateWallSelBar() {
+  const txt = $('wallSelTxt'), del = $('wallSelDel');
+  if (txt) txt.textContent = '已选 ' + wallSelected.size + ' 张';
+  if (del) del.disabled = wallSelected.size === 0;
+}
+function toggleWallSelect() {
+  if (wallSelectMode) { exitWallSelect(); return; }
+  wallSelectMode = true;
+  document.body.classList.add('wall-selecting');
+  $('wallSelBar').classList.add('show');
+  updateWallSelBar();
+}
+function exitWallSelect() {
+  wallSelectMode = false; wallSelected.clear();
+  document.body.classList.remove('wall-selecting');
+  $('wallSelBar').classList.remove('show');
+  document.querySelectorAll('.wall-item.sel').forEach(el => el.classList.remove('sel'));
+  updateWallSelBar();
+}
+function deleteWallSelected() {
+  const ids = [...wallSelected]; if (!ids.length) return;
+  askConfirm('确定删除选中的 ' + ids.length + ' 张照片吗？', () => {
+    ids.forEach(id => delListItem('wall', id));
+    exitWallSelect();
+    toast('已删除 ' + ids.length + ' 张');
+  });
 }
 function renderWall() {
   const grid = $('wallGrid'); if (!grid) return;
   const list = [...S.wall].filter(w => !w.deleted).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   if (!list.length) { grid.innerHTML = '<div class="wall-empty">还没有照片<br>点右上角 ＋ 上传你们的合影吧</div>'; return; }
   grid.innerHTML = list.map(w =>
-    `<div class="wall-item"><img data-photo="${esc(w.photo)}" alt="照片墙照片" loading="lazy" decoding="async" onclick="previewPhoto(this,'${w.id}')"></div>`
+    `<div class="wall-item${wallSelected.has(w.id) ? ' sel' : ''}" data-id="${esc(w.id)}" onclick="wallTap(event,'${w.id}')"><img data-photo="${esc(w.photo)}" alt="照片墙照片" loading="lazy" decoding="async"><time>${esc(fmtTs(w.createdAt))}</time><span class="sel-mark">✓</span></div>`
   ).join('');
   // 惰性加载：与时间线照片同一套缓存策略（内存 → IndexedDB → GitHub）
   document.querySelectorAll('#wallGrid img[data-photo]').forEach(async img => {
@@ -2156,7 +2337,6 @@ let tlNewId = ''; // 刚发布记录的 id：渲染时加 new 类做入场动画
   list.addEventListener('touchstart', e => {
     lpStartX = e.touches[0].clientX; lpStartY = e.touches[0].clientY;
     const el = itemOf(e); if (!el) return;
-    showDel(el);
     lpFired = false;
     // 注意：长按尚未发生时不能上锁（touchstart 早于 main 滑屏 guard 执行），
     // 否则列表上任何左右滑动都会被 tlSwipeLock 挡掉，导致切页失效
@@ -2164,6 +2344,7 @@ let tlNewId = ''; // 刚发布记录的 id：渲染时加 new 类做入场动画
     lpTimer = setTimeout(() => {
       lpFired = true; tlSwipeLock = true; // 长按真正触发时才锁滑屏
       if (navigator.vibrate) { try { navigator.vibrate(10); } catch (err) { /* 忽略 */ } }
+      showDel(el);
       openActionSheet(el.dataset.id);
     }, 500);
   }, { passive: true });
@@ -2205,15 +2386,17 @@ async function addTimeline() {
   let photoPath = '';
   if (pendingPhoto) {
     uploading = true; $('tlAdd').disabled = true;
+    showUpload('正在上传照片…');
     try {
       photoPath = `photos/${id}.jpg`;
       await ghPutBinary(photoPath, pendingPhoto);
       cachePhotoFromUpload(photoPath, pendingPhoto); // 上传成功立刻回填缓存，自己刚发的照片不用再下载
     } catch (e) {
+      hideUpload();
       toast('照片上传失败，请检查网络 ❌');
       return;
     } finally {
-      uploading = false; $('tlAdd').disabled = false;
+      uploading = false; $('tlAdd').disabled = false; hideUpload();
     }
   }
   // 记录时刻自动取当前时间；日期仍可手动选（补记过去的事）；pw/ph 存压缩后宽高供列表比例占位
@@ -2221,38 +2404,179 @@ async function addTimeline() {
   tlNewId = id; // 标记新记录，渲染时加入场动画
   addListItem('timeline', { id, author: myName(), text: text || '📷 分享了一张照片', tag: tlTag, photo: photoPath, date: $('tlDate').value, time: hmOf(Date.now()), pw: dims.w || 0, ph: dims.h || 0 });
   pendingDims = null;
-  $('tlText').value = ''; tlTag = '日常'; renderTlTagPicker(); clearPhoto(); toast('已记录 ❤');
+  $('tlText').value = ''; tlTag = '日常'; renderTlTagPicker(); clearPhoto(); clearTlDraft(); toast('已记录 ❤');
   tlComposeClose(); // 发布成功后收起面板
 }
+/* 发布草稿：输入即存，误关或刷新后能恢复 */
+let draftTimer = null;
+function saveTlDraft() { try { const text = $('tlText').value; if (!text.trim()) { localStorage.removeItem('coupleTlDraft'); return; } localStorage.setItem('coupleTlDraft', JSON.stringify({ text: text, tag: tlTag, date: $('tlDate').value, at: Date.now() })); } catch (e) {} }
+function scheduleSaveTlDraft() { clearTimeout(draftTimer); draftTimer = setTimeout(saveTlDraft, 300); }
+function loadTlDraft() {
+  try {
+    const d = JSON.parse(localStorage.getItem('coupleTlDraft') || 'null');
+    if (!d || !(d.text || '').trim()) return false;
+    $('tlText').value = d.text;
+    if (d.date) $('tlDate').value = d.date;
+    if (d.tag && allTags().includes(d.tag)) { tlTag = d.tag; renderTlTagPicker(); }
+    return true;
+  } catch (e) { return false; }
+}
+function clearTlDraft() { try { localStorage.removeItem('coupleTlDraft'); } catch (e) {} }
 /* 发布面板开关：FAB 唤起；点遮罩/发布完成关闭 */
 function tlComposeOpen() {
+  if (!$('tlText').value) loadTlDraft();
   $('tlComposeMask').classList.add('show');
   $('tlComposePanel').classList.add('show');
   setTimeout(() => $('tlText').focus(), 280); // 等面板滑入完成再聚焦，避免键盘顶起时面板还在动画中
+  ovPush('compose');
 }
 function tlComposeClose(e) {
   if (e && e.target && e.target.id !== 'tlComposeMask') return; // 面板内部点击不关闭
+  saveTlDraft();
   $('tlComposeMask').classList.remove('show');
   $('tlComposePanel').classList.remove('show');
+  ovPop('compose');
 }
-const delTimeline = (id) => confirmDel('确定删除这条记录吗？', 'timeline', id);
+// 列表删除：直接删 + 5 秒撤销，替代「二次确认 → 撤销」的双重步骤
+function quickDel(key, id) {
+  const it = (S[key] || []).find(x => x.id === id && !x.deleted);
+  if (!it) return;
+  delListItem(key, id);
+  showUndo('已删除', () => {
+    const cur = (S[key] || []).find(x => x.id === id);
+    if (!cur) return;
+    touch(cur); cur.deleted = false;
+    if (cur.photo && Array.isArray(S.trash)) S.trash = S.trash.filter(t => t.path !== cur.photo);
+    commit(key, 'trash');
+  });
+}
+const delTimeline = (id) => quickDel('timeline', id);
 let curWallId = null; // 当前灯箱中预览的照片墙条目（非照片墙照片为 null，不显示删除按钮）
 async function previewPhoto(img, wallId) {
   const url = await getPhotoCached(img.getAttribute('data-photo'));
-  if (url) {
-    $('lightboxImg').src = url;
-    curWallId = wallId || null;
-    $('lbDel').classList.toggle('show', !!curWallId);
-    $('lightbox').classList.add('show');
-  }
+  if (!url) return;
+  $('lightboxImg').src = url;
+  curWallId = wallId || null;
+  lbList = wallId ? lbWallList() : [];
+  lbIndex = wallId ? lbList.findIndex(w => w.id === wallId) : -1;
+  lbChrome(); resetLbZoom();
+  $('lightbox').classList.add('show');
+  ovPush('lightbox');
 }
 function delWallPhoto() {
   if (!curWallId) return;
   const id = curWallId;
-  $('lightbox').classList.remove('show'); // 先关灯箱再弹确认，避免两层遮罩叠着
-  confirmDel('确定从照片墙删除这张照片吗？', 'wall', id);
+  closeLightbox(); // 先关灯箱再弹确认，避免两层遮罩叠着
+  quickDel('wall', id);
 }
+/* ================= 灯箱：双击/双指缩放、拖动、左右切换 ================= */
+let lbList = [], lbIndex = -1;
+let lbScale = 1, lbX = 0, lbY = 0;
+let lbStartDist = 0, lbStartScale = 1, lbStartMid = null, lbTouch = null, lbLastTap = 0;
+const lbImgEl = () => $('lightboxImg');
+const lbWallList = () => [...S.wall].filter(w => !w.deleted).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+function lbApply() {
+  const im = lbImgEl(); if (!im) return;
+  im.style.transform = 'translate(' + lbX + 'px,' + lbY + 'px) scale(' + lbScale + ')';
+  im.style.cursor = lbScale > 1 ? 'grab' : 'zoom-in';
+}
+function lbClampPan() {
+  const im = lbImgEl(); if (!im) return;
+  const w = im.clientWidth || 1, h = im.clientHeight || 1;
+  const mx = Math.max(0, (w * lbScale - w) / 2), my = Math.max(0, (h * lbScale - h) / 2);
+  lbX = Math.max(-mx, Math.min(mx, lbX));
+  lbY = Math.max(-my, Math.min(my, lbY));
+}
+function resetLbZoom() { lbScale = 1; lbX = 0; lbY = 0; lbApply(); }
+function lbZoomAt(clientX, clientY, next) {
+  const im = lbImgEl(); if (!im) return;
+  const r = im.getBoundingClientRect();
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  const k = next / lbScale;
+  lbX = (lbX - (clientX - cx)) * k + (clientX - cx);
+  lbY = (lbY - (clientY - cy)) * k + (clientY - cy);
+  lbScale = next; lbClampPan(); lbApply();
+}
+function lbChrome() {
+  const multi = lbList.length > 1;
+  $('lbPrev').classList.toggle('show', multi);
+  $('lbNext').classList.toggle('show', multi);
+  $('lbCount').textContent = multi ? (lbIndex + 1) + ' / ' + lbList.length : '';
+  $('lbDel').classList.toggle('show', !!curWallId);
+}
+async function lbStep(dir) {
+  if (lbList.length < 2) return;
+  lbIndex = (lbIndex + dir + lbList.length) % lbList.length;
+  const it = lbList[lbIndex];
+  const url = await getPhotoCached(it.photo);
+  if (!url) return;
+  lbImgEl().src = url;
+  curWallId = it.id;
+  lbChrome(); resetLbZoom();
+}
+function closeLightbox() {
+  const lb = $('lightbox'); if (lb) lb.classList.remove('show');
+  const im = $('lightboxImg'); if (im) { im.style.transform = ''; im.style.cursor = 'zoom-in'; }
+  curWallId = null; lbList = []; lbIndex = -1;
+  const c = $('lbCount'); if (c) c.textContent = '';
+  ovPop('lightbox');
+}
+(() => {
+  const lb = $('lightbox'); if (!lb) return;
+  lb.addEventListener('touchstart', e => {
+    if (e.touches.length === 2) {
+      const a = e.touches[0], b = e.touches[1];
+      lbStartDist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1;
+      lbStartScale = lbScale;
+      lbStartMid = { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 };
+      lbTouch = null;
+    } else if (e.touches.length === 1) {
+      const t = e.touches[0];
+      lbTouch = { x0: t.clientX, y0: t.clientY, t0: Date.now(), moved: false, baseX: lbX, baseY: lbY };
+    }
+  }, { passive: false });
+  lb.addEventListener('touchmove', e => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const a = e.touches[0], b = e.touches[1];
+      const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1;
+      const next = Math.max(1, Math.min(4, lbStartScale * dist / lbStartDist));
+      lbZoomAt(lbStartMid.x, lbStartMid.y, next);
+      return;
+    }
+    if (e.touches.length !== 1 || !lbTouch) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    const dx = t.clientX - lbTouch.x0, dy = t.clientY - lbTouch.y0;
+    if (Math.abs(dx) > 6 || Math.abs(dy) > 6) lbTouch.moved = true;
+    if (lbScale > 1.02) { lbX = lbTouch.baseX + dx; lbY = lbTouch.baseY + dy; lbClampPan(); lbApply(); }
+  }, { passive: false });
+  lb.addEventListener('touchend', e => {
+    if (e.touches.length) return;
+    const t = e.changedTouches[0];
+    const now = Date.now();
+    if (lbStartDist && lbScale <= 1.05) { lbStartDist = 0; if (lbScale < 1.02) resetLbZoom(); return; }
+    if (!lbTouch) return;
+    const dx = t.clientX - lbTouch.x0, dy = t.clientY - lbTouch.y0, dt = now - lbTouch.t0;
+    if (lbScale <= 1.02) {
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.2 && dt < 600) lbStep(dx < 0 ? 1 : -1);
+      else if (dy > 90 && Math.abs(dy) > Math.abs(dx) * 1.2) closeLightbox();
+      else if (!lbTouch.moved && now - lbLastTap < 300) { lbZoomAt(t.clientX, t.clientY, 2.4); lbLastTap = 0; }
+      else if (!lbTouch.moved) lbLastTap = now;
+    }
+    lbTouch = null;
+  }, { passive: false });
+  lb.addEventListener('dblclick', e => {
+    if (lbScale > 1.02) resetLbZoom(); else lbZoomAt(e.clientX, e.clientY, 2.4);
+  });
+})();
 
+/* ================= 上传进度条（照片上传中可取消，跨页面常驻一点） ================= */
+let uploadCancelled = false, uploadActive = false;
+function showUpload(msg) { uploadCancelled = false; uploadActive = true; const t = $('uploadTxt'); if (t) t.textContent = msg; $('uploadBar') && $('uploadBar').classList.add('show'); }
+function updateUpload(msg) { const t = $('uploadTxt'); if (t) t.textContent = msg; }
+function hideUpload() { uploadActive = false; $('uploadBar') && $('uploadBar').classList.remove('show'); }
+function cancelUpload() { if (!uploadActive) return; uploadCancelled = true; updateUpload('正在取消…'); }
 /* ================= 时间线动作面板（长按 / ⋯）：编辑 / 复制 / 删除 ================= */
 let lpTimer = null, lpFired = false; // 长按计时与触发标记
 function openActionSheet(id) {
@@ -2265,11 +2589,13 @@ function openActionSheet(id) {
     `<button class="as-item danger" onclick="asDel('${id}')"><span class="ico">🗑</span>删除记录</button>`;
   $('asMask').classList.add('show');
   $('asPanel').classList.add('show');
+  ovPush('sheet');
 }
 function closeActionSheet(e) {
   if (e && e.target && e.target.id !== 'asMask') return;
   $('asMask').classList.remove('show');
   $('asPanel').classList.remove('show');
+  ovPop('sheet');
 }
 function asDel(id) { closeActionSheet(); delTimeline(id); }
 async function tlCopy(id) {
@@ -2290,33 +2616,77 @@ async function tlCopy(id) {
   }
 }
 /* ---- 编辑面板：改文字 / 改日期，保存走统一 commit（时间戳更新，双端合并安全） ---- */
-let tlEditId = null;
+let tlEditId = null, tlEditTag = '', tlEditNewPhoto = null, tlEditRemove = false;
+function renderTlEditTagPicker() {
+  const tags = allTags();
+  $('tlEditTagPicker').innerHTML = tags.map(t => `<button class="chip ${tlEditTag === t ? 'on' : ''}" data-tag="${esc(t)}" onclick="pickTlEditTag(this.dataset.tag)">${esc(t)}</button>`).join('');
+}
+function pickTlEditTag(t) { tlEditTag = t; renderTlEditTagPicker(); }
 function tlEditOpen(id) {
   const it = S.timeline.find(x => x.id === id && !x.deleted);
   if (!it) return;
   closeActionSheet();
   tlEditId = id;
+  tlEditTag = it.tag || '日常';
+  tlEditNewPhoto = null; tlEditRemove = false;
   $('tlEditText').value = it.text || '';
   $('tlEditDate').value = it.date || fmtDay(new Date());
+  $('tlEditPreview').style.display = 'none';
+  $('tlEditRemoveBtn').style.display = it.photo ? 'inline-flex' : 'none';
+  renderTlEditTagPicker();
   $('tlEditMask').classList.add('show');
   $('tlEditPanel').classList.add('show');
+  ovPush('edit');
 }
 function tlEditClose(e) {
   if (e && e.target && e.target.id !== 'tlEditMask') return;
   $('tlEditMask').classList.remove('show');
   $('tlEditPanel').classList.remove('show');
-  tlEditId = null;
+  tlEditId = null; tlEditNewPhoto = null; tlEditRemove = false;
+  ovPop('edit');
 }
-function tlEditSave() {
+function tlEditClearPhoto() {
+  tlEditNewPhoto = null; tlEditRemove = true;
+  $('tlEditPreview').style.display = 'none';
+  toast('保存后会移除这张照片');
+}
+function onTlEditPhotoChange(e) {
+  const f = e.target.files && e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  compressToTarget(f, { maxSide: 1600, targetBytes: 320 * 1024 }).then(out => {
+    tlEditNewPhoto = out; tlEditRemove = false;
+    $('tlEditPreviewImg').src = out.dataUrl;
+    $('tlEditPreview').style.display = 'flex';
+  }).catch(() => toast('照片读取失败 ❌'));
+}
+async function tlEditSave() {
   if (!tlEditId) return;
   const it = S.timeline.find(x => x.id === tlEditId && !x.deleted);
   if (!it) { tlEditClose(); return; }
   const text = $('tlEditText').value.trim();
-  if (!text && !it.photo) { toast('写点什么吧，或保留原照片～'); return; }
-  it.text = text;
+  if (!text && !it.photo && !tlEditNewPhoto) { toast('写点什么吧，或保留原照片～'); return; }
+  if (tlEditNewPhoto) {
+    const path = `photos/${uid()}.jpg`;
+    showUpload('正在上传新照片…');
+    try {
+      await ghPutBinary(path, tlEditNewPhoto.dataUrl);
+      cachePhotoFromUpload(path, tlEditNewPhoto.dataUrl);
+      if (it.photo && Array.isArray(S.trash) && !S.trash.some(t => t.path === it.photo)) S.trash.push({ id: uid(), path: it.photo, at: Date.now(), updatedAt: Date.now() });
+      it.photo = path; it.pw = tlEditNewPhoto.w || 0; it.ph = tlEditNewPhoto.h || 0;
+    } catch (e) {
+      hideUpload();
+      toast('照片上传失败，稍后重试 ❌');
+      return;
+    } finally { hideUpload(); }
+  } else if (tlEditRemove && it.photo) {
+    const old = it.photo;
+    it.photo = ''; it.pw = 0; it.ph = 0;
+    if (Array.isArray(S.trash) && !S.trash.some(t => t.path === old)) S.trash.push({ id: uid(), path: old, at: Date.now(), updatedAt: Date.now() });
+  }
+  it.text = text; it.tag = tlEditTag;
   it.date = $('tlEditDate').value || it.date;
   touch(it);
-  commit('timeline');
+  commit('timeline', 'trash');
   tlEditClose();
   toast('已保存 ✏️');
 }
@@ -2405,7 +2775,7 @@ function addWish() {
   $('wishText').value = ''; newTag = ''; toast('心愿已加入 ✨');
 }
 function toggleWish(id) { const w = S.wishes.find(x => x.id === id); if (!w) return; touch(w); w.done = !w.done; commit('wishes'); if (w.done) toast('又完成一个心愿，恭喜！🎉'); }
-const delWish = (id) => confirmDel('确定删除这个心愿吗？', 'wishes', id);
+const delWish = (id) => quickDel('wishes', id);
 
 /* ================= 时间胶囊 ================= */
 function blurText(t) { return (t || '').replace(/[^\s]/g, '♥'); }
@@ -2426,7 +2796,7 @@ function addCapsule() {
   addListItem('capsules', { id: uid(), author: myName(), text, unlockAt: $('capDate').value, createdAt: Date.now() });
   $('capText').value = ''; toast('已封存 🔒，到期见');
 }
-const delCapsule = (id) => confirmDel('确定删除这个时间胶囊吗？', 'capsules', id);
+const delCapsule = (id) => quickDel('capsules', id);
 
 /* ================= 语音留言 ================= */
 let recording = false, recSeconds = 0, recorder = null, chunks = [], recTimer = null, stream = null;
@@ -2885,7 +3255,7 @@ function calCancelPick() {
     if (suppressClick) { suppressClick = false; e.stopPropagation(); e.preventDefault(); }
   }, true);
 })();
-const delPeriod = (id) => confirmDel('确定删除这条经期记录吗？', 'periods', id);
+const delPeriod = (id) => quickDel('periods', id);
 function calShift(n) { calM += n; if (calM < 0) { calM = 11; calY--; } else if (calM > 11) { calM = 0; calY++; } calPending = ''; calPick = null; hideCalConfirm(); renderCalendar(); }
 function renderCalendar() {
   $('calYm').textContent = `${calY}年${calM + 1}月`;
@@ -2979,6 +3349,7 @@ function saveGhToken() {
   catch (e) { toast('保存失败：浏览器禁用了本地存储（无痕模式？）'); return; }
   $('ghTokenIpt').value = '';
   tokenVerified = false;
+  S.syncError = ''; persist();
   renderGhTokenState(); renderSyncState();
   verifyGhToken();
 }
@@ -3081,13 +3452,48 @@ function renderSyncState() {
   renderSyncDot();
   const el = $('syncState'); if (!el) return;
   // 未配置 Token 时优先提示缺凭证，避免把「没配 Token」误报成「网络离线」
-  if (!ghCfg().token) { el.textContent = '未配置 Token，云端同步不可用'; return; }
-  if (S.syncError) { el.textContent = '同步异常：' + S.syncError; return; }
+  if (!ghCfg().token) { el.textContent = '未配置 Token，云端同步不可用'; renderSyncBar(); renderSetupHint(); return; }
+  if (S.syncError) { el.textContent = '同步异常：' + S.syncError; renderSyncBar(); renderSetupHint(); return; }
   const parts = [];
   if (S.lastSyncAt) parts.push('上次上传：' + new Date(S.lastSyncAt).toLocaleString());
   if (meta.lastPullAt) parts.push('上次拉取：' + new Date(meta.lastPullAt).toLocaleString());
   el.textContent = parts.length ? parts.join(' · ') : 'Token 已配置，等待首次同步';
+  renderSyncBar();
+  renderSetupHint();
 }
+// 同步状态条：待上传 / 异常常驻在 header 下方，不再只靠一个小圆点
+function renderSyncBar() {
+  const bar = $('syncBar'); if (!bar) return;
+  const txt = $('syncBarTxt'), act = $('syncBarAct');
+  let show = false, err = false, msg = '', label = '立即同步';
+  if (ghCfg().token) {
+    if (meta.pendingPush) { show = true; msg = S.syncError || '有改动待上传'; }
+    else if (S.syncError) { show = true; err = true; msg = S.syncError; label = S.syncError.indexOf('Token') >= 0 ? '去设置' : '重试'; }
+    else if (navigator.onLine === false) { show = true; msg = '当前离线，正在使用本机数据'; label = '知道了'; }
+  }
+  bar.classList.toggle('show', show);
+  bar.classList.toggle('err', err);
+  if (!show) return;
+  txt.textContent = msg;
+  act.textContent = label;
+  act.onclick = label === '去设置' ? () => go('settings', null, 'l') : (label === '知道了' ? () => bar.classList.remove('show') : () => syncNow());
+}
+async function syncNow() {
+  if (!ghCfg().token) { toast('先到「设置」填 Token 再同步 🔑'); go('settings', null, 'l'); return; }
+  if (syncing || pulling) { toast('正在同步，稍等一下…'); return; }
+  if (meta.pendingPush) { const ok = await flushPush(); if (!ok) { renderSyncBar(); return; } }
+  const r = await pullLatest({ silent: false });
+  renderSyncBar();
+  return r;
+}
+// 首次配置引导：没 Token 时在首页给一个明确入口
+function renderSetupHint() {
+  const el = $('setupHint'); if (!el) return;
+  let dismissed = false;
+  try { dismissed = localStorage.getItem('coupleSetupDismissed') === '1'; } catch (e) {}
+  el.style.display = (ghCfg().token || dismissed) ? 'none' : 'flex';
+}
+function dismissSetupHint() { try { localStorage.setItem('coupleSetupDismissed', '1'); } catch (e) {} renderSetupHint(); }
 
 /* ================= 本地缓存状态展示 ================= */
 // 时间戳 → 「今天 10:24 / 3月9日 10:24」
@@ -3138,7 +3544,7 @@ function addDay() {
   addListItem('customDays', { id: uid(), name, date: $('dayDate').value });
   $('dayName').value = ''; toast('已添加 📅');
 }
-const removeDay = (id) => confirmDel('确定删除这个纪念日吗？', 'customDays', id);
+const removeDay = (id) => quickDel('customDays', id);
 async function pullGh() {
   toast('拉取中…');
   const r = await pullLatest({ silent: false });
@@ -3167,6 +3573,12 @@ function pushHist(p) {
 // 子页返回：优先走历史栈（与物理返回键语义一致），无栈可退时直接回「更多」
 function goBack() { if (histDepth > 1) history.back(); else go('more', null, 'r'); }
 window.addEventListener('popstate', e => {
+  // 有弹层时：返回键只关最上层弹层，并把当前页的历史占位补回来
+  if (ovStack.length) {
+    ovCloseTop();
+    try { history.pushState({ p: currentPage() }, '', '#' + currentPage()); } catch (err) { /* 忽略 */ }
+    return;
+  }
   histDepth = Math.max(1, histDepth - 1);
   go((e.state && e.state.p) || 'timeline', null, '', { silent: true, restore: true });
 });
@@ -3193,6 +3605,7 @@ function go(p, btn, dir, opts) {
     return;
   }
   saveScroll(currentPage()); // 离开前记住滚动位置（页面 display:none 后会丢失）
+  if (p !== 'home' && typeof wallSelectMode !== 'undefined' && wallSelectMode) exitWallSelect();
   const target = $('page-' + p);
   // 同时清掉滑动跟手留下的内联 transform/transition，避免残留影响下次入场动画
   document.querySelectorAll('.page').forEach(el => { el.classList.remove('active', 'anim-l', 'anim-r'); el.style.transform = ''; el.style.transition = ''; });
@@ -3228,13 +3641,16 @@ function restoreScroll(p) {
   el.scrollTop = y;
   setTimeout(() => { if (activeScroller() === el) el.scrollTop = y; }, 60); // rAF 在部分 WebView 会被节流，短延时兜底（与 syncCountHeight 同策略）
 }
-/* ===== 时间线下拉刷新：仅触屏；scrollTop=0 时下拉出指示器，超过阈值松手触发 pullLatest ===== */
-(() => {
-  const area = document.querySelector('#page-timeline .scroll-area');
-  const pull = $('tlPull');
-  const ico = pull.querySelector('.ico');
-  const txt = pull.querySelector('.txt');
-  const THRESHOLD = 60; // 触发刷新的下拉高度（px）
+/* ===== 通用下拉刷新：时间线 / 心愿 / 胶囊 / 经期共用（顶部下拉，松手刷新） ===== */
+function enablePullRefresh(pageEl) {
+  const area = pageEl && pageEl.querySelector('.scroll-area');
+  if (!area) return;
+  const ind = document.createElement('div');
+  ind.className = 'pull-hint';
+  ind.innerHTML = '<span class="ico">↓</span><span class="txt">下拉刷新</span>';
+  area.insertBefore(ind, area.firstChild);
+  const txt = ind.querySelector('.txt');
+  const THRESHOLD = 60;
   let startY = 0, dist = 0, active = false, loading = false;
   area.addEventListener('touchstart', e => {
     if (loading || area.scrollTop > 0) return;
@@ -3243,33 +3659,34 @@ function restoreScroll(p) {
   area.addEventListener('touchmove', e => {
     if (!active || loading) return;
     dist = e.touches[0].clientY - startY;
-    if (dist <= 0) { pull.style.height = '0px'; pull.classList.remove('ready'); return; }
-    if (e.cancelable) e.preventDefault(); // 顶部继续下拉时拦掉浏览器原生回弹
-    const h = Math.min(dist * 0.5, 80); // 0.5 阻尼，封顶 80px
-    pull.style.transition = 'none';
-    pull.style.height = h + 'px';
-    pull.classList.toggle('ready', h >= THRESHOLD);
+    if (dist <= 0) { ind.style.height = '0px'; ind.classList.remove('ready'); return; }
+    if (e.cancelable) e.preventDefault();
+    const h = Math.min(dist * 0.5, 80);
+    ind.style.transition = 'none';
+    ind.style.height = h + 'px';
+    ind.classList.toggle('ready', h >= THRESHOLD);
     txt.textContent = h >= THRESHOLD ? '松开刷新' : '下拉刷新';
   }, { passive: false });
   const finish = async () => {
     if (!active || loading) return;
     active = false;
-    pull.style.transition = '';
-    if (dist > 0 && pull.offsetHeight >= THRESHOLD) {
+    ind.style.transition = '';
+    if (dist > 0 && ind.offsetHeight >= THRESHOLD) {
       loading = true;
-      pull.classList.remove('ready'); pull.classList.add('loading');
-      pull.style.height = '48px';
+      ind.classList.remove('ready'); ind.classList.add('loading');
+      ind.style.height = '48px';
       txt.textContent = '刷新中…';
-      await pullLatest({ silent: true }); // 拉取成功时 importData→renderTimeline 自动刷新列表
+      try { await syncOnEnter(); } catch (e) {}
       loading = false;
-      pull.classList.remove('loading');
+      ind.classList.remove('loading');
       txt.textContent = '下拉刷新';
     }
-    pull.style.height = '0px';
+    ind.style.height = '0px';
   };
   area.addEventListener('touchend', finish);
   area.addEventListener('touchcancel', finish);
-})();
+}
+['timeline', 'wishes', 'capsule', 'period'].forEach(p => enablePullRefresh($('page-' + p)));
 /* ===== 左右滑动切换页面 ===== */
 // 一级页 = 底部导航 5 页可左右滑；语音/经期/设置为子页，右滑固定返回「更多」
 const TAB_ORDER = ['home', 'timeline', 'wishes', 'capsule', 'more'];
@@ -3308,11 +3725,23 @@ onSwipe(document.querySelector('main'), {
 
 function renderAll() {
   renderHome(); renderTimeline(); renderWishes(); renderCapsules(); renderVoices(); renderPeriods(); renderSettings();
-  refreshCacheUI(); // 数据一变就同步刷新「本地缓存」卡片
+  refreshCacheUI(); renderSetupHint(); // 数据一变就同步刷新「本地缓存」卡片
 }
 
 $('tlPhoto').addEventListener('change', onPhotoChange);
+$('tlEditPhoto').addEventListener('change', onTlEditPhotoChange);
+$('tlText').addEventListener('input', scheduleSaveTlDraft);
+$('tlDate').addEventListener('change', scheduleSaveTlDraft);
 $('wallInput').addEventListener('change', onWallChange);
+// 同步点：点按立即同步，长按打开设置（手机没有右键菜单）
+(() => {
+  const b = $('syncDot'); if (!b) return;
+  let timer = null, isLong = false;
+  const cancel = () => { clearTimeout(timer); timer = null; };
+  b.addEventListener('pointerdown', () => { isLong = false; cancel(); timer = setTimeout(() => { isLong = true; go('settings', null, 'l'); }, 600); });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => b.addEventListener(ev, cancel));
+  b.addEventListener('click', e => { if (isLong) { isLong = false; e.preventDefault(); return; } syncNow(); });
+})();
 // 搜索防抖 150ms：避免每敲一个字符就全量重建 DOM + 重走照片缓存
 let tlSearchTimer = null;
 $('tlSearch').addEventListener('input', () => { clearTimeout(tlSearchTimer); tlSearchTimer = setTimeout(renderTimeline, 150); });
