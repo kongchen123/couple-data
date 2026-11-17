@@ -590,6 +590,19 @@
       "createdAt": 1794913508233,
       "updatedAt": 1794913533270,
       "deleted": true
+    },
+    {
+      "id": "mwkl6nabrhii7",
+      "author": "婷婷",
+      "text": "📷 分享了一张照片",
+      "tag": "日常",
+      "photo": "photos/mwkl6nabrhii7.jpg",
+      "date": "2026-11-14",
+      "time": "19:05",
+      "pw": 1200,
+      "ph": 1600,
+      "createdAt": 1794913553351,
+      "updatedAt": 1794913553351
     }
   ],
   "wishes": [
