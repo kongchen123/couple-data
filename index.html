@@ -296,6 +296,13 @@ input:focus { border-color: #ff7e9d; }
 .cal-cell.today { box-shadow: inset 0 0 0 2px #e9407a; }
 .cal-legend { display: flex; gap: 14px; font-size: 11px; color: var(--text-sub); margin-top: 8px; flex-wrap: wrap; }
 .cal-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
+/* 拖选待确认条：拖动只产生预览，必须点「保存」才写入，避免误触直接存记录 */
+.cal-confirm { display: none; align-items: center; gap: 8px; margin-top: 10px; padding: 8px 10px; border-radius: 10px; background: var(--bg-bar); animation: cfIn .18s ease-out; }
+.cal-confirm.show { display: flex; }
+.cal-confirm .txt { flex: 1; min-width: 0; font-size: 12px; font-weight: 600; color: #e9407a; line-height: 1.4; }
+.cal-confirm .btn { padding: 6px 12px; font-size: 12px; }
+@keyframes cfIn { from { opacity: 0; transform: translateY(-4px); } }
+.cal-hint { font-size: 11.5px; color: var(--text-faint); margin-top: 9px; line-height: 1.6; text-align: center; }
 .period-item { display: flex; align-items: center; gap: 8px; background: var(--bg-soft); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; font-size: 13px; }
 .period-item.ongoing { background: var(--pred-grad); }
 .period-item .info { flex: 1; min-width: 0; }
@@ -566,10 +573,6 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
 
   <!-- ============ 经期记录 ============ -->
   <section class="page" id="page-period">
-    <div class="card">
-      <h2>🌹 经期记录</h2>
-      <p class="tips">直接在下方日历上<b>点选</b>：先点开始日，再点结束日（再点同一天 = 进行中）；也可以<b>按住拖选</b>一段日期。记录两次以上会自动计算平均周期并预测下次经期</p>
-    </div>
     <div class="pred-card" id="perPred"></div>
     <div class="card">
       <div class="cal-head">
@@ -583,6 +586,12 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
         <span><i style="background:#ffe3ea"></i>预测</span>
         <span><i style="box-shadow:inset 0 0 0 2px #e9407a"></i>今天</span>
       </div>
+      <div class="cal-confirm" id="calConfirm">
+        <span class="txt" id="calConfirmTxt"></span>
+        <button class="btn small" onclick="calConfirmSave()">保存</button>
+        <button class="btn ghost small" onclick="calCancelPick()">取消</button>
+      </div>
+      <div class="cal-hint" id="calHint"></div>
     </div>
     <div class="scroll-area">
       <div class="card">
@@ -2769,9 +2778,10 @@ function dayState(ds) {
 /* ---- 日历点选 / 拖选记录经期（替代原表单） ---- */
 let calDrag = null;   // 按住拖选中的范围 { start, end }
 let calPending = '';  // 两步点选：已选的开始日，等待第二次点击
+let calPick = null;   // 拖选后待确认的区间 { start, end }（不点保存不会写入）
 // 高亮当前点选/拖选范围（日历重渲染 / 跨月导航后保持）
 function paintCalPick() {
-  const src = calDrag || (calPending ? { start: calPending, end: '' } : null);
+  const src = calPick || calDrag || (calPending ? { start: calPending, end: '' } : null);
   document.querySelectorAll('#calGrid .cal-cell[data-d]').forEach(c => {
     let on = false;
     if (src && src.start) {
@@ -2784,36 +2794,72 @@ function paintCalPick() {
 }
 // 提交一段经期：开始 = 结束（同一天两次）视为「进行中」，end 留空
 function commitCalPeriod(start, end) {
-  addListItem('periods', { id: uid(), start, end: start === end ? '' : end });
+  const id = uid();
+  addListItem('periods', { id, start, end: start === end ? '' : end });
   toast(start === end ? `已记录 🌹 ${start} 起，进行中` : `已记录 🌹 ${start} ~ ${end}`);
+  // 记错了不必先删：给一次撤销机会
+  showUndo('已记录经期', () => {
+    const it = (S.periods || []).find(x => x.id === id);
+    if (it) { touch(it); it.deleted = true; commit('periods'); }
+  });
 }
 // 两步点选：第一次点 = 开始日；第二次点 = 结束日（同一天 = 进行中）
 function handleCalTap(d) {
   if (!calPending) {
+    calPick = null; hideCalConfirm();
     calPending = d;
     paintCalPick();
     toast('已选开始日，再点结束日（同一天 = 进行中）');
   } else {
     const s = calPending < d ? calPending : d;
     const e = calPending < d ? d : calPending;
-    calPending = '';
+    calPending = ''; hideCalConfirm();
     commitCalPeriod(s, e);
   }
+}
+// 拖选确认条：拖动只产生预览区间，必须点「保存」才写入，避免手滑多出一条记录
+function showCalConfirm() {
+  const bar = $('calConfirm'); if (!bar || !calPick) return;
+  const n = diffDays(calPick.end, calPick.start) + 1;
+  $('calConfirmTxt').textContent = `${mdLabel(calPick.start)} ~ ${mdLabel(calPick.end)} · 共 ${n} 天`;
+  bar.classList.add('show');
+}
+function hideCalConfirm() { const bar = $('calConfirm'); if (bar) bar.classList.remove('show'); }
+function calConfirmSave() {
+  if (!calPick) return;
+  const s = calPick.start, e = calPick.end;
+  calPick = null; hideCalConfirm(); paintCalPick();
+  commitCalPeriod(s, e);
+}
+function calCancelPick() {
+  calPick = null; calPending = ''; hideCalConfirm(); paintCalPick();
+  toast('已取消');
 }
 (() => {
   const grid = $('calGrid');
   if (!grid) return;
   let suppressClick = false; // 拖选提交后吞掉紧随的 click，避免误入两步点选
+  let startX = 0, startY = 0, axis = null; // axis: 'x' 横向拖选 / 'y' 竖向（交还页面滚动）
+  const TRIGGER = 10; // 位移超过 10px 才判方向，普通点击不受影响
   const cellDate = (el) => { const c = el && el.closest ? el.closest('.cal-cell[data-d]') : null; return c ? c.dataset.d : ''; };
   const atPoint = (x, y) => cellDate(document.elementFromPoint(x, y));
   grid.addEventListener('pointerdown', e => {
     const d = cellDate(e.target);
     if (!d) return;
+    calPick = null; hideCalConfirm(); // 开始新选择时清掉上次的待确认区间
     calDrag = { start: d, end: '' };
+    startX = e.clientX; startY = e.clientY; axis = null;
     paintCalPick();
   });
   grid.addEventListener('pointermove', e => {
     if (!calDrag) return;
+    const dx = e.clientX - startX, dy = e.clientY - startY;
+    if (axis === null) {
+      // 竖向意图优先判定：宁可不选，也不要拦住页面滚动
+      if (Math.abs(dy) > TRIGGER && Math.abs(dy) >= Math.abs(dx)) { calDrag = null; paintCalPick(); return; }
+      if (Math.abs(dx) > TRIGGER) axis = 'x';
+    }
+    if (axis !== 'x') return;
     const d = atPoint(e.clientX, e.clientY);
     if (d && d !== calDrag.end) { calDrag.end = d; paintCalPick(); }
   });
@@ -2821,22 +2867,26 @@ function handleCalTap(d) {
   const finish = () => {
     if (!calDrag) return;
     const d = calDrag; calDrag = null;
-    if (d.end && d.end !== d.start) {
+    if (axis === 'x' && d.end && d.end !== d.start) {
       suppressClick = true;
-      commitCalPeriod(d.start < d.end ? d.start : d.end, d.start < d.end ? d.end : d.start);
+      const lo = d.start < d.end ? d.start : d.end;
+      const hi = d.start < d.end ? d.end : d.start;
+      calPick = { start: lo, end: hi };
+      showCalConfirm(); // 只预览，等用户点保存
     } else {
       handleCalTap(d.start); // 未拖动 = 普通点击，走两步式选择
     }
+    axis = null;
     paintCalPick();
   };
   window.addEventListener('pointerup', finish);
-  window.addEventListener('pointercancel', () => { calDrag = null; paintCalPick(); });
+  window.addEventListener('pointercancel', () => { calDrag = null; axis = null; paintCalPick(); });
   grid.addEventListener('click', e => {
     if (suppressClick) { suppressClick = false; e.stopPropagation(); e.preventDefault(); }
   }, true);
 })();
 const delPeriod = (id) => confirmDel('确定删除这条经期记录吗？', 'periods', id);
-function calShift(n) { calM += n; if (calM < 0) { calM = 11; calY--; } else if (calM > 11) { calM = 0; calY++; } renderCalendar(); }
+function calShift(n) { calM += n; if (calM < 0) { calM = 11; calY--; } else if (calM > 11) { calM = 0; calY++; } calPending = ''; calPick = null; hideCalConfirm(); renderCalendar(); }
 function renderCalendar() {
   $('calYm').textContent = `${calY}年${calM + 1}月`;
   const startWd = (new Date(calY, calM, 1).getDay() + 6) % 7; // 周一开头，与日期选择面板统一
@@ -2890,6 +2940,10 @@ function renderPeriods() {
     </div>`;
   }).join('') : '<div class="empty"><i class="ico">🌹</i>还没有经期记录<br>在上方日历点选日期即可记录</div>';
   const cnt = $('perCount'); if (cnt) cnt.textContent = ps.length ? ps.length + ' 条' : '';
+  const hint = $('calHint');
+  if (hint) hint.textContent = ps.length
+    ? '点两下选起止日，或左右拖动选一段（拖动后会先请你确认）'
+    : '点选开始日，再点结束日即可记录；也可以左右拖动选一段';
 }
 // 进行中的记录一键补填结束日（忘了填结束日时最常用）
 function endPeriodToday(id) {
