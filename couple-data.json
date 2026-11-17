@@ -588,7 +588,8 @@
       "pw": 1200,
       "ph": 1600,
       "createdAt": 1794913508233,
-      "updatedAt": 1794913508233
+      "updatedAt": 1794913533270,
+      "deleted": true
     }
   ],
   "wishes": [
@@ -1117,6 +1118,12 @@
       "path": "photos/mwkf6dfzba7gc.jpg",
       "at": 1794904124712,
       "updatedAt": 1794904124712
+    },
+    {
+      "id": "mwkl6a1ismuhg",
+      "path": "photos/mwkl5oqu4gnqu.jpg",
+      "at": 1794913533270,
+      "updatedAt": 1794913533270
     }
   ]
 }
