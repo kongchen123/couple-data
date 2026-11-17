@@ -549,6 +549,19 @@
       "ph": 450,
       "createdAt": 1794832364324,
       "updatedAt": 1794832364324
+    },
+    {
+      "id": "mwkf6dfzba7gc",
+      "author": "巩振",
+      "text": "有趣的地铁把手，测试下照片上传还会不会模糊",
+      "tag": "日常",
+      "photo": "photos/mwkf6dfzba7gc.jpg",
+      "date": "2026-11-17",
+      "time": "16:17",
+      "pw": 900,
+      "ph": 1600,
+      "createdAt": 1794903463010,
+      "updatedAt": 1794903463010
     }
   ],
   "wishes": [
@@ -918,5 +931,6 @@
       "createdAt": 1794626520559,
       "updatedAt": 1794626520559
     }
-  ]
+  ],
+  "trash": []
 }
