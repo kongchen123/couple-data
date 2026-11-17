@@ -122,7 +122,9 @@ main { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 4
 .scroll-area::-webkit-scrollbar { width: 4px; }
 .scroll-area::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 2px; }
 /* 首页/设置页内容本身较长，允许页内整体滚动（body 仍不滚） */
-#page-home.active, #page-settings.active { display: block; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+#page-home.active, #page-settings.active, #page-period.active { display: block; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+/* 经期页整体滚动：日历卡片高度固定，若列表用局部滚动会被挤成 0 高度（内容显示不出来） */
+#page-period .scroll-area { overflow: visible; flex: none; min-height: 0; padding-bottom: 24px; }
 /* 值得期待的日子：每页最多 4 个（两行），超过滑动翻页 */
 .count-pager { overflow: hidden; touch-action: pan-y; }
 .count-track { display: flex; width: 100%; align-items: flex-start; transition: transform .28s ease, height .25s ease; will-change: transform; }
@@ -294,10 +296,17 @@ input:focus { border-color: #ff7e9d; }
 .cal-cell.today { box-shadow: inset 0 0 0 2px #e9407a; }
 .cal-legend { display: flex; gap: 14px; font-size: 11px; color: var(--text-sub); margin-top: 8px; flex-wrap: wrap; }
 .cal-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
-.period-item { display: flex; align-items: center; gap: 10px; background: var(--bg-soft); border-radius: 12px; padding: 10px 14px; margin-bottom: 8px; font-size: 13px; }
+.period-item { display: flex; align-items: center; gap: 8px; background: var(--bg-soft); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; font-size: 13px; }
+.period-item.ongoing { background: var(--pred-grad); }
 .period-item .info { flex: 1; min-width: 0; }
 .period-item .range { font-weight: 700; color: #e9407a; }
-.period-item .sub { font-size: 11px; color: var(--text-sub); margin-top: 2px; }
+.period-item .sub { font-size: 11px; color: var(--text-sub); margin-top: 3px; line-height: 1.5; }
+.per-badge { display: inline-block; margin-left: 6px; font-size: 10px; font-weight: 600; color: #e9407a; background: rgba(233,64,122,.12); border-radius: 6px; padding: 1px 6px; vertical-align: 1px; }
+.per-act { flex: none; border: none; background: var(--bg-bar); color: #e9407a; font-size: 11px; padding: 7px 10px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+.per-act:active { background: var(--bg-active); }
+.per-del { flex: none; width: 26px; height: 26px; border: none; border-radius: 50%; background: transparent; color: var(--text-faint); font-size: 14px; line-height: 1; padding: 0; cursor: pointer; }
+.per-del:active { background: var(--bg-active); }
+.per-count { font-size: 12px; font-weight: 400; color: var(--text-sub); margin-left: auto; }
 .pred-card { background: var(--pred-grad); border-radius: var(--radius-item); padding: 12px 14px; margin-bottom: 10px; }
 .pred-card .big { font-size: 15px; font-weight: 700; color: #e9407a; }
 .pred-card .sub { font-size: 12px; color: var(--text-sub); margin-top: 4px; line-height: 1.6; }
@@ -575,7 +584,12 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
         <span><i style="box-shadow:inset 0 0 0 2px #e9407a"></i>今天</span>
       </div>
     </div>
-    <div class="scroll-area"><div id="perList"></div></div>
+    <div class="scroll-area">
+      <div class="card">
+        <h2>📋 历史记录 <span class="per-count" id="perCount"></span></h2>
+        <div id="perList"></div>
+      </div>
+    </div>
   </section>
 
   <!-- ============ 更多 ============ -->
@@ -2703,6 +2717,12 @@ let calY = new Date().getFullYear(), calM = new Date().getMonth();
 let _periodsCache = null;
 function invalidatePeriods() { _periodsCache = null; }
 const validPeriods = () => _periodsCache || (_periodsCache = (S.periods || []).filter(p => p && !p.deleted && p.start).sort((a, b) => a.start < b.start ? 1 : -1));
+// 日期显示：今年只显示「11月2日」，跨年补上年份，列表更易读
+const mdLabel = (ds) => {
+  const d = parseDay(ds); if (isNaN(d.getTime())) return ds || '';
+  const md = (d.getMonth() + 1) + '月' + d.getDate() + '日';
+  return d.getFullYear() === new Date().getFullYear() ? md : d.getFullYear() + '年' + md;
+};
 // 平均周期：取最近几次相邻开始日间隔，剔除 21~45 天之外的异常值；样本不足时用配置默认值
 function avgCycle() {
   const ps = validPeriods();
@@ -2850,10 +2870,35 @@ function renderPeriods() {
     sub = `预计 ${fmtDay(nx)} 前后开始 · 平均周期 ${avgCycle()} 天 · 经期约 ${avgLen()} 天`;
   }
   $('perPred').innerHTML = `<div class="big">${esc(head)}</div><div class="sub">${esc(sub)}</div>`;
-  $('perList').innerHTML = ps.length ? ps.map(p => {
-    const len = p.end ? diffDays(p.end, p.start) + 1 : 0;
-    return `<div class="period-item"><div class="info"><div class="range">${esc(p.start)}${p.end ? ' ~ ' + esc(p.end) : ' · 进行中'}</div><div class="sub">${len ? `共 ${len} 天` : '尚未填写结束日期'} · 记录于 ${fmtTs(p.createdAt)}</div></div><button class="btn danger" onclick="delPeriod('${p.id}')">删除</button></div>`;
-  }).join('') : '<div class="empty"><i class="ico">🌹</i>还没有经期记录<br>在日历上点选日期开始记录吧</div>';
+  // 列表：日期区间 + 本次天数 + 与上次间隔 + 记录时间；进行中可一键补填结束日
+  const todayDs = fmtDay(new Date());
+  $('perList').innerHTML = ps.length ? ps.map((p, i) => {
+    const ongoing = !p.end;
+    const len = diffDays(ongoing ? todayDs : p.end, p.start) + 1;
+    const prev = ps[i + 1];
+    const gap = prev ? diffDays(p.start, prev.start) : 0;
+    const bits = [ongoing ? `进行中 · 已 ${len} 天` : `共 ${len} 天`];
+    if (gap > 0) bits.push(`距上次 ${gap} 天`);
+    if (p.createdAt) bits.push(`记录于 ${mdLabel(fmtDay(new Date(p.createdAt)))}`);
+    return `<div class="period-item${ongoing ? ' ongoing' : ''}">
+      <div class="info">
+        <div class="range">${esc(mdLabel(p.start))}${p.end ? ' ~ ' + esc(mdLabel(p.end)) : ' 起'}<span class="per-badge">${ongoing ? '进行中' : len + ' 天'}</span></div>
+        <div class="sub">${esc(bits.join(' · '))}</div>
+      </div>
+      ${ongoing ? `<button class="per-act" onclick="endPeriodToday('${p.id}')">今天结束</button>` : ''}
+      <button class="per-del" onclick="delPeriod('${p.id}')" aria-label="删除">✕</button>
+    </div>`;
+  }).join('') : '<div class="empty"><i class="ico">🌹</i>还没有经期记录<br>在上方日历点选日期即可记录</div>';
+  const cnt = $('perCount'); if (cnt) cnt.textContent = ps.length ? ps.length + ' 条' : '';
+}
+// 进行中的记录一键补填结束日（忘了填结束日时最常用）
+function endPeriodToday(id) {
+  const p = (S.periods || []).find(x => x.id === id && !x.deleted);
+  if (!p) return;
+  const todayDs = fmtDay(new Date());
+  if (todayDs < p.start) { toast('开始日在未来，无法结束'); return; }
+  p.end = todayDs; touch(p); commit('periods');
+  toast('已补填结束日 🌹');
 }
 
 /* ================= 设置 ================= */
