@@ -561,7 +561,8 @@
       "pw": 900,
       "ph": 1600,
       "createdAt": 1794903463010,
-      "updatedAt": 1794903463010
+      "updatedAt": 1794904124712,
+      "deleted": true
     }
   ],
   "wishes": [
@@ -932,5 +933,12 @@
       "updatedAt": 1794626520559
     }
   ],
-  "trash": []
+  "trash": [
+    {
+      "id": "mwkfkmcoeckmt",
+      "path": "photos/mwkf6dfzba7gc.jpg",
+      "at": 1794904124712,
+      "updatedAt": 1794904124712
+    }
+  ]
 }
