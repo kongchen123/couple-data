@@ -980,7 +980,8 @@
       "start": "2026-11-26",
       "end": "2026-11-29",
       "createdAt": 1794906627759,
-      "updatedAt": 1794906627759
+      "updatedAt": 1794906635461,
+      "deleted": true
     }
   ],
   "wall": [
