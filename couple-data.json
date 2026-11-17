@@ -563,6 +563,19 @@
       "createdAt": 1794903463010,
       "updatedAt": 1794904124712,
       "deleted": true
+    },
+    {
+      "id": "mwkfnm9nmvs6c",
+      "author": "巩振",
+      "text": "📷 分享了一张照片",
+      "tag": "日常",
+      "photo": "photos/mwkfnm9nmvs6c.jpg",
+      "date": "2026-11-17",
+      "time": "16:31",
+      "pw": 1200,
+      "ph": 1600,
+      "createdAt": 1794904267698,
+      "updatedAt": 1794904267698
     }
   ],
   "wishes": [
