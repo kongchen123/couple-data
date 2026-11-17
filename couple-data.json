@@ -937,14 +937,16 @@
       "start": "2026-11-03",
       "end": "2026-11-16",
       "createdAt": 1794905882729,
-      "updatedAt": 1794905882729
+      "updatedAt": 1794906201191,
+      "deleted": true
     },
     {
       "id": "mwkgmrbzp7i5h",
       "start": "2026-11-03",
       "end": "2026-11-11",
       "createdAt": 1794905904095,
-      "updatedAt": 1794905904095
+      "updatedAt": 1794906198818,
+      "deleted": true
     },
     {
       "id": "mwkgmu7hyp7xs",
