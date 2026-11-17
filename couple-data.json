@@ -604,6 +604,19 @@
       "createdAt": 1794913553351,
       "updatedAt": 1794913574319,
       "deleted": true
+    },
+    {
+      "id": "mwkl7os7492q5",
+      "author": "婷婷",
+      "text": "📷 分享了一张照片",
+      "tag": "日常",
+      "photo": "photos/mwkl7os7492q5.jpg",
+      "date": "2026-11-14",
+      "time": "19:06",
+      "pw": 1200,
+      "ph": 1600,
+      "createdAt": 1794913601554,
+      "updatedAt": 1794913601554
     }
   ],
   "wishes": [
