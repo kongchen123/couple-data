@@ -1,9 +1,11 @@
-/* 情侣小站 Service Worker：离线可用 + 秒开
+/* 情侣小站 Service Worker：离线可用 + 秒开 + Web Push
    策略：
    - 页面导航：网络优先（保证能拿到最新版），断网回落缓存
    - 图标/manifest 等静态资源：缓存优先，后台静默更新
-   - 跨域请求（GitHub API、情话接口、照片）：完全不拦截，避免缓存脏数据 */
-const VERSION = 'v1';
+   - 跨域请求（GitHub API、情话接口、照片）：完全不拦截，避免缓存脏数据
+   - push 事件：显示通知（iOS 要求必须立即 showNotification，否则收回推送权限）
+   - notificationclick：优先聚焦已打开的同源窗口，否则新开 */
+const VERSION = 'v2';
 const CACHE = 'couple-shell-' + VERSION;
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png'];
 
@@ -63,4 +65,47 @@ self.addEventListener('fetch', (e) => {
       });
     })
   );
+});
+
+/* ================= Web Push ================= */
+// iOS 要求：收到 push 必须立即展示通知，否则 Safari 会撤销该站点的推送权限。
+// 因此这里同步拿到数据就 showNotification，不做任何异步等待。
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_) { d = {}; }
+  const title = d.title || 'TA 更新了小站 ❤';
+  const body = d.body || '点开看看有什么新内容';
+  const opts = {
+    body,
+    icon: './icons/icon-192.png',
+    tag: d.tag || 'couple-update',
+    renotify: true,
+    data: { url: d.url || './' },
+  };
+  e.waitUntil(self.registration.showNotification(title, opts));
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const data = e.notification.data || {};
+  const target = data.url || './';
+  e.waitUntil(
+    (async () => {
+      const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      for (const c of all) {
+        // 已有同源窗口就直接聚焦，不重复开新标签
+        if (c.url.indexOf(self.location.origin) === 0 && 'focus' in c) {
+          try { await c.focus(); } catch (_) {}
+          if (c.navigate && target !== './') { try { await c.navigate(target); } catch (_) {} }
+          return;
+        }
+      }
+      if (self.clients.openWindow) await self.clients.openWindow(target);
+    })()
+  );
+});
+
+// iOS 在部分情况下会先发 pushsubscriptionchange，这里仅记录，具体重订阅由页面下次打开时补
+self.addEventListener('pushsubscriptionchange', (e) => {
+  e.waitUntil(Promise.resolve());
 });

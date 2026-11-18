@@ -770,6 +770,19 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
       <div class="sync-state" id="ghTokenFp" style="word-break:break-all"></div>
       <div class="sync-state">Token 仅保存在本机浏览器（localStorage），不会写入代码仓库；重新生成后在此更新即可</div>
     </div>
+    <div class="card">
+      <h2>🔔 消息通知</h2>
+      <div class="cache-badge" id="notifyBadge">未开启</div>
+      <div class="notify-rows">
+        <div class="cache-row"><span class="k">本机身份</span><span class="v" id="notifyWho">—</span></div>
+        <div class="cache-row"><span class="k">通知通道</span><span class="v" id="notifyChannel">—</span></div>
+      </div>
+      <div class="btn-row tight">
+        <button class="btn small" id="notifyBtn" onclick="enablePush()">开启浏览器通知</button>
+        <button class="btn ghost small" onclick="disablePush()">关闭</button>
+      </div>
+      <p class="tips" id="notifyTips">开启后，TA 更新内容时这台设备会收到系统通知。iPhone 需先把本站「添加到主屏幕」，并从主屏幕图标打开本页。</p>
+    </div>
   </section>
 </main>
 
@@ -3613,7 +3626,188 @@ function askClearGhToken() {
   });
 }
 function renderSettings() {
-  renderWho(); renderSyncState(); renderDayList(); renderPhotoCacheRow(); renderGhTokenState(); renderRepoCfg();
+  renderWho(); renderSyncState(); renderDayList(); renderPhotoCacheRow(); renderGhTokenState(); renderRepoCfg(); renderNotifyState();
+}
+
+/* ================= Web Push 通知 =================
+   分工：
+     - iOS(TT)：Web Push（主）+ Bark（备），两条都开
+     - Android：ntfy
+   订阅信息统一存私有仓库的 push-subs.json，由 Actions 读取后逐个发送。
+   注意：该文件不在 workflow 的 paths 过滤里，写它不会误触发通知。 */
+
+// VAPID 公钥（可公开；私钥只存在 GitHub Secrets：VAPID_PRIVATE_KEY）
+const VAPID_PUBLIC_KEY = 'BHZ1eg0boh2Fu5YCJJcrc87kFmEqn9U_TAGDxUNVdEzZPw1IkM4y6M36Hm79xOYxXODbh6tvEpe5Pg_5HUVHkmc';
+const SUBS_PATH = 'push-subs.json';
+
+// base64url → Uint8Array（applicationServerKey 需要二进制）
+function urlB64ToUint8Array(base64String) {
+  const pad = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + pad).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  const out = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+
+// iOS 判断：必须在「添加到主屏幕」后的 standalone 模式下才有 Push API
+const isStandalone = () =>
+  window.navigator.standalone === true ||
+  (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+
+const pushSupported = () =>
+  'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+
+// 读取云端已有订阅，按 endpoint 去重后 upsert 本机这一条
+async function upsertSubscription(sub) {
+  let list = [];
+  let sha = null;
+  try {
+    const r = await ghGet(SUBS_PATH);
+    sha = r.sha;
+    if (r.data && Array.isArray(r.data.subs)) list = r.data.subs;
+  } catch (e) {
+    console.warn('读取 push-subs.json 失败（首次可忽略）', e);
+  }
+  const item = {
+    endpoint: sub.endpoint,
+    keys: { p256dh: sub.keys ? sub.keys.p256dh : '', auth: sub.keys ? sub.keys.auth : '' },
+    who: S.me,
+    device: isAndroid() ? 'android' : 'ios',
+    ua: navigator.userAgent.slice(0, 120),
+    updatedAt: Date.now(),
+  };
+  const idx = list.findIndex((x) => x && x.endpoint === sub.endpoint);
+  if (idx >= 0) list[idx] = item; else list.push(item);
+  // 只保留最近 10 条，防止无效订阅无限堆积
+  if (list.length > 10) list = list.slice(-10);
+  const newSha = await ghPut(SUBS_PATH, { subs: list }, sha);
+  return newSha;
+}
+
+async function enablePush() {
+  if (!pushSupported()) {
+    toast('这台设备的浏览器不支持通知（iPhone 需先「添加到主屏幕」）');
+    renderNotifyState();
+    return;
+  }
+  if (!isStandalone() && !isAndroid()) {
+    toast('iPhone 请先点「分享 → 添加到主屏幕」，再从主屏幕图标打开本页');
+    renderNotifyState();
+    return;
+  }
+  if (needToken()) return;
+
+  // 权限必须由用户手势触发，这里同步调用
+  let perm;
+  try {
+    perm = await Notification.requestPermission();
+  } catch (e) {
+    toast('请求通知权限失败：' + e.message);
+    return;
+  }
+  if (perm !== 'granted') {
+    toast(perm === 'denied' ? '通知权限被拒绝，请到系统设置里允许' : '未授予通知权限');
+    renderNotifyState();
+    return;
+  }
+
+  const badge = $('notifyBadge');
+  if (badge) { badge.className = 'cache-badge busy'; badge.textContent = '正在订阅…'; }
+
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+    }
+    await upsertSubscription(sub);
+    toast('✅ 已开启通知，TA 更新时会提醒你');
+  } catch (e) {
+    toast('订阅失败：' + e.message);
+    console.warn('push subscribe 失败', e);
+  }
+  renderNotifyState();
+}
+
+async function disablePush() {
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (!sub) { toast('本机未订阅'); renderNotifyState(); return; }
+    const endpoint = sub.endpoint;
+    await sub.unsubscribe();
+    // 从云端列表里移除这一条
+    if (ghCfg().token) {
+      try {
+        const r = await ghGet(SUBS_PATH);
+        if (r.data && Array.isArray(r.data.subs)) {
+          const list = r.data.subs.filter((x) => x && x.endpoint !== endpoint);
+          await ghPut(SUBS_PATH, { subs: list }, r.sha);
+        }
+      } catch (e) { console.warn('清理云端订阅失败', e); }
+    }
+    toast('已关闭通知');
+  } catch (e) {
+    toast('关闭失败：' + e.message);
+  }
+  renderNotifyState();
+}
+
+// 渲染通知卡片状态
+function renderNotifyState() {
+  const badge = $('notifyBadge');
+  const whoEl = $('notifyWho');
+  const chEl = $('notifyChannel');
+  const btn = $('notifyBtn');
+  const tips = $('notifyTips');
+
+  if (whoEl) whoEl.textContent = myName() + (isAndroid() ? '（安卓）' : '（iOS）');
+
+  const android = isAndroid();
+  if (chEl) chEl.textContent = android ? 'ntfy（App 推送）' : '浏览器通知（Web Push）+ Bark 备份';
+
+  if (!badge) return;
+
+  if (android) {
+    // 安卓走 ntfy，浏览器通知可能因缺 GMS 不可用，不在这里报错
+    badge.className = 'cache-badge ok';
+    badge.textContent = '使用 ntfy 接收通知';
+    if (btn) btn.style.display = 'none';
+    if (tips) tips.textContent = '安卓手机通过 ntfy App 接收通知，无需在浏览器里开启。安装 ntfy 并订阅指定 topic 即可。';
+    return;
+  }
+
+  if (btn) btn.style.display = '';
+
+  if (!pushSupported()) {
+    badge.className = 'cache-badge warn';
+    badge.textContent = '此环境不支持浏览器通知';
+    if (tips) tips.textContent = 'iPhone 需先「分享 → 添加到主屏幕」，再从主屏幕图标打开本页，才能开启通知。';
+    return;
+  }
+  if (!isStandalone()) {
+    badge.className = 'cache-badge warn';
+    badge.textContent = '请先添加到主屏幕';
+    if (tips) tips.textContent = 'iPhone 上请点 Safari 的「分享 → 添加到主屏幕」，之后从桌面图标打开本页再开启通知。';
+    return;
+  }
+  const perm = Notification.permission;
+  if (perm === 'granted') {
+    badge.className = 'cache-badge ok';
+    badge.textContent = '✅ 通知已开启';
+    if (tips) tips.textContent = 'TA 更新内容时，这台设备会收到系统通知；点通知可直接打开小站。';
+  } else if (perm === 'denied') {
+    badge.className = 'cache-badge warn';
+    badge.textContent = '通知权限被拒绝';
+    if (tips) tips.textContent = '请到 iPhone「设置 → 通知 → 情侣小站」里手动允许，再回来点开启。';
+  } else {
+    badge.className = 'cache-badge';
+    badge.textContent = '尚未开启';
+  }
 }
 /* ---- 「我们是谁」编辑：名字 / 在一起的日子 / 农历生日 / 本机身份 ---- */
 // 输入框回填时避开正在输入的控件，避免后台同步刷新打断编辑
