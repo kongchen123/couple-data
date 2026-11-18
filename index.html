@@ -1367,7 +1367,7 @@ document.addEventListener('keydown', e => {
 const GH_API = 'https://api.github.com';
 const ghUrl = (c, path) => `${GH_API}/repos/${c.owner}/${c.repo}/contents/${path}`;
 // 默认 GitHub 配置：仓库信息写死即可；Token 改为用户在设置页自行输入，仅存本机 localStorage，不再硬编码进代码
-const DEFAULT_GH = { owner: 'kongchen123', repo: 'couple-data', token: '', branch: '' };
+const DEFAULT_GH = { owner: 'kongchen123', repo: 'couple-data-private', token: '', branch: '' };
 // GitHub 配置：与本机 localStorage 中 coupleGithubConfig（GH_KEY）保存的 Token 等字段合并，缺省项回落 DEFAULT_GH
 const ghCfg = () => {
   let saved = {};
