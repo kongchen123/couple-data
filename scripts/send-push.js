@@ -147,6 +147,15 @@ function vapidHeader(endpoint, privateKeyB64u, publicKeyB64u, subject) {
 
 async function sendOne(sub) {
   const endpoint = sub.endpoint;
+  // 早期版本前端误把 sub.keys 当成存在（PushSubscription 上没有该属性），
+  // 存进云端的记录 p256dh/auth 是空串。这里给出可定位的报错，而不是笼统的「长度不对」。
+  const k = sub.keys || {};
+  if (!k.p256dh || !k.auth) {
+    throw new Error(
+      '订阅缺少 p256dh/auth 密钥（疑似旧版本写入的脏记录）；' +
+      '请在该设备上重新打开小站，或在设置页关闭通知后重新开启'
+    );
+  }
   const payload = JSON.stringify({
     title: TITLE,
     body: BODY,
