@@ -5,7 +5,9 @@
    - 跨域请求（GitHub API、情话接口、照片）：完全不拦截，避免缓存脏数据
    - push 事件：显示通知（iOS 要求必须立即 showNotification，否则收回推送权限）
    - notificationclick：优先聚焦已打开的同源窗口，否则新开 */
-const VERSION = 'v3';
+// 改 index.html 时务必同步改这里：否则老设备会继续跑缓存里的旧页面，
+// 表象是「数据不见了」（新旧版存储键不同），极易被误判成数据损坏。
+const VERSION = 'v4';
 const CACHE = 'couple-shell-' + VERSION;
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png'];
 
