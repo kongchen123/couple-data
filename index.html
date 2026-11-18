@@ -780,8 +780,10 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
       <div class="btn-row tight">
         <button class="btn small" id="notifyBtn" onclick="enablePush()">开启浏览器通知</button>
         <button class="btn ghost small" onclick="disablePush()">关闭</button>
+        <button class="btn ghost small" onclick="diagnosePush()">诊断</button>
       </div>
       <p class="tips" id="notifyTips">开启后，TA 更新内容时这台设备会收到系统通知。iPhone 需先把本站「添加到主屏幕」，并从主屏幕图标打开本页。</p>
+      <pre class="tips" id="notifyDiag" style="display:none;white-space:pre-wrap;word-break:break-all;font-size:12px;line-height:1.5"></pre>
     </div>
   </section>
 </main>
@@ -3776,7 +3778,7 @@ async function enablePush() {
 async function healSubscription() {
   if (!pushSupported()) return;
   if (!ghCfg().token) return;
-  if (!isAndroid() && !isStandalone()) return;
+  if (!isStandalone()) return;
   try {
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.getSubscription();
@@ -3820,6 +3822,119 @@ async function disablePush() {
   renderNotifyState();
 }
 
+// 通知诊断：直接调用真实 API，逐步输出结果。
+// 用途：判断这台设备（尤其国行安卓）能否真的订阅 Web Push。
+async function diagnosePush() {
+  const box = $('notifyDiag');
+  const lines = [];
+  const ok = (k, v) => lines.push('✅ ' + k + '：' + v);
+  const no = (k, v) => lines.push('❌ ' + k + '：' + v);
+  const info = (k, v) => lines.push('・' + k + '：' + v);
+
+  const show = () => {
+    if (!box) return;
+    box.style.display = 'block';
+    box.textContent = lines.join('\n');
+  };
+
+  lines.push('===== 通知诊断 =====');
+  info('UA', navigator.userAgent);
+  info('独立窗口(standalone)', isStandalone() ? '是' : '否');
+  info('判定平台', isAndroid() ? '安卓' : 'iOS');
+
+  if (!('Notification' in window)) { no('Notification API', '不存在'); show(); return; }
+  ok('Notification API', '存在');
+  info('权限状态', Notification.permission);
+
+  if (!('serviceWorker' in navigator)) { no('ServiceWorker', '不支持'); show(); return; }
+  ok('ServiceWorker', '支持');
+
+  if (!('PushManager' in window)) {
+    no('PushManager', '不支持（此浏览器无法收 Web Push）');
+    show(); return;
+  }
+  ok('PushManager', '支持');
+
+  lines.push('');
+  lines.push('--- 检查 Service Worker ---');
+  let reg = null;
+  try {
+    reg = await navigator.serviceWorker.getRegistration();
+    if (reg) ok('SW 已注册', reg.scope);
+    else info('SW 未注册', '等待 ready…');
+    reg = await navigator.serviceWorker.ready;
+    ok('SW 已就绪', reg.scope);
+  } catch (e) {
+    no('SW 就绪失败', e.name + ': ' + e.message);
+    show(); return;
+  }
+
+  lines.push('');
+  lines.push('--- 检查已有订阅 ---');
+  let sub = null;
+  try {
+    sub = await reg.pushManager.getSubscription();
+    if (sub) ok('已有订阅', sub.endpoint.slice(0, 60) + '…');
+    else info('暂无订阅', '将尝试新建');
+  } catch (e) {
+    no('读取订阅失败', e.name + ': ' + e.message);
+  }
+
+  if (!sub) {
+    lines.push('');
+    lines.push('--- 尝试真实订阅（关键步骤）---');
+    if (Notification.permission !== 'granted') {
+      info('权限未授予', '先点「开启浏览器通知」再诊断');
+      show(); return;
+    }
+    try {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+      ok('订阅成功', '你的设备**可以**接收 Web Push 通知');
+    } catch (e) {
+      no('订阅失败', e.name + ': ' + e.message);
+      lines.push('');
+      lines.push('--- 失败含义 ---');
+      const m = (e.message || '').toLowerCase();
+      if (m.indexOf('push service') >= 0 || m.indexOf('registration failed') >= 0 || m.indexOf('abort') >= 0) {
+        lines.push('这通常意味着推送服务（FCM）不可达。');
+        lines.push('国行安卓没有 Google 服务时必然如此，这是平台限制。');
+        lines.push('解决：改用 ntfy App 接收通知（本页下方有说明）。');
+      } else if (m.indexOf('denied') >= 0 || m.indexOf('permission') >= 0) {
+        lines.push('权限被拒绝。请到「设置 → 应用 → 浏览器 → 通知」里允许。');
+      } else {
+        lines.push('请把上面这行错误发给开发者排查。');
+      }
+      show(); return;
+    }
+  }
+
+  lines.push('');
+  lines.push('--- 订阅详情 ---');
+  const ep = sub.endpoint || '';
+  info('endpoint', ep.slice(0, 80) + (ep.length > 80 ? '…' : ''));
+  if (ep.indexOf('fcm.googleapis.com') >= 0) info('推送服务', 'FCM（Google）');
+  else if (ep.indexOf('mozilla.com') >= 0) info('推送服务', 'Mozilla autopush');
+  else if (ep.indexOf('windows.com') >= 0) info('推送服务', 'WNS（微软）');
+  else if (ep.indexOf('apple.com') >= 0) info('推送服务', 'APNs（苹果）');
+  else info('推送服务', '未知');
+
+  const k = readSubKeys(sub);
+  if (k && k.p256dh && k.auth) {
+    ok('密钥 p256dh', k.p256dh.length + ' 字符');
+    ok('密钥 auth', k.auth.length + ' 字符');
+  } else {
+    no('密钥', '缺失（无法加密，收不到通知）');
+  }
+
+  lines.push('');
+  lines.push('结论：本机可以接收 Web Push 通知。');
+  lines.push('若仍收不到，请检查系统「电池优化 / 自启动」是否限制了浏览器。');
+  show();
+}
+
 // 渲染通知卡片状态
 function renderNotifyState() {
   const badge = $('notifyBadge');
@@ -3831,42 +3946,44 @@ function renderNotifyState() {
   if (whoEl) whoEl.textContent = myName() + (isAndroid() ? '（安卓）' : '（iOS）');
 
   const android = isAndroid();
-  if (chEl) chEl.textContent = android ? 'ntfy（App 推送）' : '浏览器通知（Web Push）+ Bark 备份';
+  if (chEl) chEl.textContent = android
+    ? '浏览器通知（Web Push）· 点通知直接进 App'
+    : '浏览器通知（Web Push）+ Bark 备份';
 
   if (!badge) return;
-
-  if (android) {
-    // 安卓走 ntfy，浏览器通知可能因缺 GMS 不可用，不在这里报错
-    badge.className = 'cache-badge ok';
-    badge.textContent = '使用 ntfy 接收通知';
-    if (btn) btn.style.display = 'none';
-    if (tips) tips.textContent = '安卓手机通过 ntfy App 接收通知，无需在浏览器里开启。安装 ntfy 并订阅指定 topic 即可。';
-    return;
-  }
 
   if (btn) btn.style.display = '';
 
   if (!pushSupported()) {
     badge.className = 'cache-badge warn';
     badge.textContent = '此环境不支持浏览器通知';
-    if (tips) tips.textContent = 'iPhone 需先「分享 → 添加到主屏幕」，再从主屏幕图标打开本页，才能开启通知。';
+    if (tips) tips.textContent = android
+      ? '当前浏览器不支持通知。请用 Chrome 打开本站，或安装 ntfy App 订阅提醒作为替代。'
+      : 'iPhone 需先「分享 → 添加到主屏幕」，再从主屏幕图标打开本页，才能开启通知。';
     return;
   }
+  // 安卓也必须从桌面图标打开，点通知才会进 App 而不是浏览器
   if (!isStandalone()) {
     badge.className = 'cache-badge warn';
     badge.textContent = '请先添加到主屏幕';
-    if (tips) tips.textContent = 'iPhone 上请点 Safari 的「分享 → 添加到主屏幕」，之后从桌面图标打开本页再开启通知。';
+    if (tips) tips.textContent = android
+      ? '请把本站「添加到主屏幕」，之后从桌面图标打开再开启通知。这样点通知会直接进 App，不会跳浏览器。'
+      : 'iPhone 上请点 Safari 的「分享 → 添加到主屏幕」，之后从桌面图标打开本页再开启通知。';
     return;
   }
   const perm = Notification.permission;
   if (perm === 'granted') {
     badge.className = 'cache-badge ok';
     badge.textContent = '✅ 通知已开启';
-    if (tips) tips.textContent = 'TA 更新内容时，这台设备会收到系统通知；点通知可直接打开小站。';
+    if (tips) tips.textContent = android
+      ? 'TA 更新内容时，这台设备会收到系统通知；点通知会直接打开桌面上的小站 App。'
+      : 'TA 更新内容时，这台设备会收到系统通知；点通知可直接打开小站。';
   } else if (perm === 'denied') {
     badge.className = 'cache-badge warn';
     badge.textContent = '通知权限被拒绝';
-    if (tips) tips.textContent = '请到 iPhone「设置 → 通知 → 情侣小站」里手动允许，再回来点开启。';
+    if (tips) tips.textContent = android
+      ? '请到「设置 → 应用 → 情侣小站 → 通知」里允许，再回来点开启。'
+      : '请到 iPhone「设置 → 通知 → 情侣小站」里手动允许，再回来点开启。';
   } else {
     badge.className = 'cache-badge';
     badge.textContent = '尚未开启';
