@@ -505,6 +505,22 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
   .sync-bar .inner { background: #3a2a1c; color: #ffcf8a; border-color: #5a4127; }
   .sync-bar.err .inner { background: #3a1f26; color: #ffb3c0; border-color: #5a2a35; }
 }
+.photo-preview.multi { display: none; flex-wrap: wrap; gap: 8px; }
+.photo-preview.multi.show { display: flex; }
+.photo-preview.multi .thumb { position: relative; width: 84px; height: 84px; border-radius: 10px; overflow: hidden; border: 2px solid #ffd6e0; background: var(--bg-soft); }
+.photo-preview.multi .thumb img { width: 100%; height: 100%; object-fit: cover; max-width: none; max-height: none; border: none; border-radius: 0; display: block; }
+.photo-preview.multi .thumb .x { top: -7px; right: -7px; width: 24px; height: 24px; font-size: 13px; z-index: 2; }
+.tl-photos { display: grid; gap: 4px; margin-top: 8px; grid-template-columns: repeat(2, 1fr); border-radius: 12px; overflow: hidden; }
+.tl-photos.n3 { grid-template-columns: repeat(3, 1fr); }
+.tl-photos .ph { position: relative; aspect-ratio: 1; overflow: hidden; background: var(--bg-soft); cursor: zoom-in; }
+.tl-photos .ph img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .3s; display: block; }
+.tl-photos .ph img.loaded { opacity: 1; }
+.tl-photos .ph.more::after { content: '+' attr(data-more); position: absolute; inset: 0; background: rgba(0,0,0,.45); color: #fff; font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.voice-item { flex-wrap: wrap; }
+.voice-prog { flex: 0 0 100%; order: 9; display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer; }
+.voice-prog .track { position: relative; flex: 1; height: 6px; border-radius: 999px; background: rgba(233,64,122,.16); overflow: hidden; }
+.voice-prog .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: #e9407a; border-radius: 999px; }
+.voice-time { font-size: 11px; color: var(--text-sub); font-variant-numeric: tabular-nums; flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -726,6 +742,23 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
       <div class="sync-state" id="syncState"></div>
     </div>
     <div class="card">
+      <h2>🔗 数据仓库</h2>
+      <div class="inline-composer mb10">
+        <input type="text" id="repoOwner" placeholder="GitHub 用户名 / 组织" maxlength="60" autocomplete="off">
+        <input type="text" id="repoName" placeholder="仓库名" maxlength="80" autocomplete="off">
+      </div>
+      <div class="inline-composer mb10">
+        <input type="text" id="repoBranch" placeholder="分支（留空 = 默认分支）" maxlength="80" autocomplete="off">
+        <button class="btn small" onclick="saveRepoCfg()">保存</button>
+      </div>
+      <div class="btn-row tight">
+        <button class="btn ghost small" onclick="verifyRepoCfg()">测试连接</button>
+        <button class="btn ghost small" onclick="resetRepoCfg()">恢复默认仓库</button>
+      </div>
+      <div class="sync-state" id="repoCfgState"></div>
+      <p class="tips">换仓库会清掉旧仓库的 SHA 标记并停止自动上传，确认后到下方「本地数据」里点「拉取最新到本地」。改动前建议先导出备份。</p>
+    </div>
+    <div class="card">
       <h2>🔑 GitHub 同步 Token</h2>
       <div class="cache-badge warn" id="ghTokenBadge">Token 未配置</div>
       <input type="password" id="ghTokenIpt" placeholder="粘贴 GitHub Token（github_pat_ 开头）" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" style="width:100%">
@@ -758,7 +791,7 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
     <div id="cfMsg"></div>
     <div id="cfBtns">
       <button class="btn small ghost" onclick="cfCancel()">取消</button>
-      <button class="btn small danger" onclick="cfOk()">删除</button>
+      <button class="btn small danger" id="cfOkBtn" onclick="cfOk()">删除</button>
     </div>
   </div>
 </div>
@@ -784,10 +817,10 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
   </div>
   <div class="composer-row">
     <input type="date" id="tlDate" readonly onclick="openDatePicker('tlDate')">
-    <label class="btn small ghost" style="display:inline-block">📷 照片<input type="file" id="tlPhoto" accept="image/*" hidden></label>
+    <label class="btn small ghost" style="display:inline-block">📷 照片<input type="file" id="tlPhoto" accept="image/*" multiple hidden></label>
     <button class="btn small" id="tlAdd" onclick="addTimeline()">发布</button>
   </div>
-  <div class="photo-preview" id="tlPreview"><img id="tlPreviewImg" alt=""><button class="x" onclick="clearPhoto()">✕</button></div>
+  <div class="photo-preview multi" id="tlPreview"></div>
 </div>
 <!-- 时间线编辑面板：修改文字与日期 -->
 <div id="tlEditMask" onclick="tlEditClose(event)"></div>
@@ -795,10 +828,9 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
   <h2>✏️ 编辑记录</h2>
   <textarea id="tlEditText" placeholder="记录你们的点点滴滴…"></textarea>
   <div class="tag-picker" id="tlEditTagPicker"></div>
-  <div class="photo-preview" id="tlEditPreview" style="display:none"><img id="tlEditPreviewImg" alt=""><button class="x" onclick="tlEditClearPhoto()">✕</button></div>
+  <div class="photo-preview multi" id="tlEditPreview"></div>
   <div class="composer-row">
-    <label class="btn small ghost" style="display:inline-block">📷 换照片<input type="file" id="tlEditPhoto" accept="image/*" hidden></label>
-    <button class="btn small ghost" id="tlEditRemoveBtn" onclick="tlEditClearPhoto()">移除照片</button>
+    <label class="btn small ghost" style="display:inline-block">📷 添加照片<input type="file" id="tlEditPhoto" accept="image/*" multiple hidden></label>
     <input type="date" id="tlEditDate" readonly onclick="openDatePicker('tlEditDate')">
     <button class="btn small" onclick="tlEditSave()">保存</button>
   </div>
@@ -810,7 +842,7 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
   <button id="lbPrev" aria-label="上一张" onclick="lbStep(-1)">‹</button>
   <button id="lbNext" aria-label="下一张" onclick="lbStep(1)">›</button>
   <button id="lbDel" onclick="delWallPhoto()">删除这张照片</button>
-  <div id="lbZoomTip">双击 / 双指缩放 · 左右滑动切换</div>
+  <div id="lbZoomTip">双击 / 双指缩放 · 左右滑动切换 · 点按关闭</div>
 </div>
 <!-- 自制日期选择面板：农历 + 法定假期标注（替代原生日期控件） -->
 <div id="dpMask" onclick="closeDatePicker()"></div>
@@ -1260,7 +1292,7 @@ let toastTimer;
 function toast(msg, ms) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); const dur = ms || Math.min(4200, 1600 + String(msg || '').length * 45); toastTimer = setTimeout(() => t.classList.remove('show'), dur); }
 /* ---- 站内确认弹层（替代原生 confirm）+ 删除撤销 ---- */
 let cfCallback = null;
-function askConfirm(msg, cb) { cfCallback = cb; $('cfMsg').textContent = msg; $('cfMask').classList.add('show'); ovPush('confirm'); }
+function askConfirm(msg, cb, okLabel) { cfCallback = cb; $('cfMsg').textContent = msg; const b = $('cfOkBtn'); if (b) { b.textContent = okLabel || '删除'; b.className = okLabel ? 'btn small' : 'btn small danger'; } $('cfMask').classList.add('show'); ovPush('confirm'); }
 function cfCancel(e) { if (e && e.target && e.target.id !== 'cfMask') return; $('cfMask').classList.remove('show'); cfCallback = null; ovPop('confirm'); }
 function cfOk() { const cb = cfCallback; $('cfMask').classList.remove('show'); cfCallback = null; ovPop('confirm'); if (cb) cb(); }
 let undoFn = null, undoTimer = null;
@@ -1897,7 +1929,7 @@ function onWallChange(e) {
 let wallSelectMode = false;
 const wallSelected = new Set();
 function wallTap(e, id) {
-  if (!wallSelectMode) { previewPhoto(e.currentTarget.querySelector('img'), id); return; }
+  if (!wallSelectMode) { previewWallPhoto(id); return; }
   if (wallSelected.has(id)) wallSelected.delete(id); else wallSelected.add(id);
   e.currentTarget.classList.toggle('sel', wallSelected.has(id));
   updateWallSelBar();
@@ -2021,7 +2053,7 @@ async function renderQuote(force) {
 function refreshQuote() { renderQuote(true); }
 
 /* ================= 时间线 ================= */
-let pendingPhoto = null, pendingDims = null, uploading = false; // pendingDims：待上传照片压缩后的宽高
+let pendingPhotos = [], uploading = false; // 待上传照片：[{ dataUrl, w, h }]，最多 9 张
 /* ---------- 通用 Blob 持久缓存工厂：IndexedDB 存 Blob，照片/语音共用同一套实现 ----------
    open 永不回调（部分 WebView / 隐私模式）时 1.5s 超时降级为 null，调用方直接走网络 */
 function createBlobStore(dbName, label) {
@@ -2285,9 +2317,9 @@ function renderTimeline() {
       const who2 = S.name2 && t.author === S.name2;
       const long = (t.text || '').length > 120; // 约 6 行以上才提供折叠
       const isNew = t.id === tlNewId; // 刚发布的记录带入场动画
-      const hasText = !!t.text && t.text !== '📷 分享了一张照片'; // 纯图占位符不入正文
+      const hasText = !!t.text && !/^📷 分享/.test(t.text); // 纯图占位符不入正文
       // 单一模板：meta → del → text → photo，位置由 DOM 顺序决定，纯图卡不再翻转
-      return `<div class="tl-item${who2 ? ' who2' : ''}${isNew ? ' new' : ''}" data-id="${esc(t.id)}"><div class="meta"><span class="who">${esc(t.author)}</span>${t.tag ? `<span class="tl-tag">${esc(t.tag)}</span>` : ''}<span class="when">${esc(tlWhenLabel(t))}</span></div><button class="del" onclick="openActionSheet('${t.id}')" title="更多操作" aria-label="更多操作">⋯</button>${hasText ? `<div class="text${long ? ' clamp' : ''}">${linkify(t.text)}</div>${long ? `<button class="text-toggle" onclick="tlToggleText(this)">展开全文</button>` : ''}` : ''}${t.photo ? `<div class="photo-wrap${t.pw && t.ph ? '' : ' fit-contain'}" style="${t.pw && t.ph ? `aspect-ratio:${t.pw}/${t.ph}` : ''}" onclick="previewPhoto(this.querySelector('img'))"><img class="photo" src="" data-photo="${esc(t.photo)}" alt="${esc(t.author)}的照片" loading="lazy" decoding="async"></div>` : ''}</div>`;
+      return `<div class="tl-item${who2 ? ' who2' : ''}${isNew ? ' new' : ''}" data-id="${esc(t.id)}"><div class="meta"><span class="who">${esc(t.author)}</span>${t.tag ? `<span class="tl-tag">${esc(t.tag)}</span>` : ''}<span class="when">${esc(tlWhenLabel(t))}</span></div><button class="del" onclick="openActionSheet('${t.id}')" title="更多操作" aria-label="更多操作">⋯</button>${hasText ? `<div class="text${long ? ' clamp' : ''}">${linkify(t.text)}</div>${long ? `<button class="text-toggle" onclick="tlToggleText(this)">展开全文</button>` : ''}` : ''}${tlPhotosHtml(t)}</div>`;
     }).join('') + '</div>'
   ).join('');
   if (tlNewId) { tlNewId = ''; $('tlList').querySelector('.tl-item.new')?.addEventListener('animationend', function once() { this.classList.remove('new'); }, { once: true }); }
@@ -2365,32 +2397,47 @@ let tlNewId = ''; // 刚发布记录的 id：渲染时加 new 类做入场动画
   }, { passive: false });
   list.addEventListener('contextmenu', e => { const el = itemOf(e); if (el) { e.preventDefault(); openActionSheet(el.dataset.id); } });
 })();
+function renderPendingPhotos() {
+  const box = $('tlPreview'); if (!box) return;
+  box.classList.toggle('show', pendingPhotos.length > 0);
+  box.innerHTML = pendingPhotos.map((p, i) =>
+    `<div class="thumb"><img src="${p.dataUrl}" alt="待上传照片 ${i + 1}"><button class="x" onclick="removePendingPhoto(${i})" aria-label="移除这张">✕</button></div>`
+  ).join('');
+}
 async function onPhotoChange(e) {
-  const file = e.target.files[0]; e.target.value = ''; if (!file) return;
-  try {
-    const out = await compressToTarget(file, { maxSide: 1600, targetBytes: 320 * 1024 });
-    pendingPhoto = out.dataUrl;
-    pendingDims = { w: out.w, h: out.h }; // 压缩后尺寸随记录保存，列表按真实比例占位
-    $('tlPreviewImg').src = pendingPhoto; $('tlPreview').style.display = 'block';
-  } catch (err) {
-    console.warn('照片处理失败：', err);
-    toast('这张照片读取失败，换一张试试');
+  const files = [...(e.target.files || [])]; e.target.value = '';
+  if (!files.length) return;
+  const room = Math.max(0, 9 - pendingPhotos.length);
+  if (!room) { toast('一次最多 9 张照片'); return; }
+  if (files.length > room) toast('最多 9 张，多的先不处理');
+  for (const file of files.slice(0, room)) {
+    try {
+      const out = await compressToTarget(file, { maxSide: 1600, targetBytes: 320 * 1024 });
+      pendingPhotos.push({ dataUrl: out.dataUrl, w: out.w, h: out.h });
+      renderPendingPhotos();
+    } catch (err) { console.warn('照片处理失败：', err); toast('有照片读取失败，换一张试试'); }
   }
 }
-function clearPhoto() { pendingPhoto = null; pendingDims = null; $('tlPreview').style.display = 'none'; }
+function removePendingPhoto(i) { pendingPhotos.splice(i, 1); renderPendingPhotos(); }
+function clearPhoto() { pendingPhotos = []; renderPendingPhotos(); }
 async function addTimeline() {
   if (uploading) return;
   const text = $('tlText').value.trim();
-  if (!text && !pendingPhoto) { toast('写点什么或加张照片吧～'); return; }
+  if (!text && !pendingPhotos.length) { toast('写点什么或加张照片吧～'); return; }
   const id = uid();
-  let photoPath = '';
-  if (pendingPhoto) {
+  const paths = [];
+  if (pendingPhotos.length) {
     uploading = true; $('tlAdd').disabled = true;
-    showUpload('正在上传照片…');
+    showUpload(`正在上传 1/${pendingPhotos.length}…`);
     try {
-      photoPath = `photos/${id}.jpg`;
-      await ghPutBinary(photoPath, pendingPhoto);
-      cachePhotoFromUpload(photoPath, pendingPhoto); // 上传成功立刻回填缓存，自己刚发的照片不用再下载
+      for (let i = 0; i < pendingPhotos.length; i++) {
+        if (uploadCancelled) break;
+        updateUpload(`正在上传 ${i + 1}/${pendingPhotos.length}`);
+        const path = `photos/${id}${i === 0 ? '' : '-' + i}.jpg`;
+        await ghPutBinary(path, pendingPhotos[i].dataUrl);
+        cachePhotoFromUpload(path, pendingPhotos[i].dataUrl);
+        paths.push(path);
+      }
     } catch (e) {
       hideUpload();
       toast('照片上传失败，请检查网络 ❌');
@@ -2398,14 +2445,33 @@ async function addTimeline() {
     } finally {
       uploading = false; $('tlAdd').disabled = false; hideUpload();
     }
+    if (uploadCancelled) {
+      paths.forEach(p => { if (Array.isArray(S.trash) && !S.trash.some(t => t.path === p)) S.trash.push({ id: uid(), path: p, at: Date.now(), updatedAt: Date.now() }); });
+      commit('trash');
+      toast('已取消发布');
+      return;
+    }
   }
-  // 记录时刻自动取当前时间；日期仍可手动选（补记过去的事）；pw/ph 存压缩后宽高供列表比例占位
-  const dims = pendingDims || {};
-  tlNewId = id; // 标记新记录，渲染时加入场动画
-  addListItem('timeline', { id, author: myName(), text: text || '📷 分享了一张照片', tag: tlTag, photo: photoPath, date: $('tlDate').value, time: hmOf(Date.now()), pw: dims.w || 0, ph: dims.h || 0 });
-  pendingDims = null;
+  const first = pendingPhotos[0] || {};
+  tlNewId = id;
+  addListItem('timeline', { id, author: myName(), text: text || `📷 分享了 ${paths.length} 张照片`, tag: tlTag, photo: paths[0] || '', photos: paths, date: $('tlDate').value, time: hmOf(Date.now()), pw: first.w || 0, ph: first.h || 0 });
   $('tlText').value = ''; tlTag = '日常'; renderTlTagPicker(); clearPhoto(); clearTlDraft(); toast('已记录 ❤');
-  tlComposeClose(); // 发布成功后收起面板
+  tlComposeClose();
+}
+// 一条记录的照片列表：新数据用 photos 数组，旧数据回落到单张 photo
+function itemPhotos(t) { return Array.isArray(t.photos) && t.photos.length ? t.photos.filter(Boolean) : (t.photo ? [t.photo] : []); }
+// 时间线照片区：单张保持原比例大图；多张排成网格，最后一张可显示 +N
+function tlPhotosHtml(t) {
+  const photos = itemPhotos(t);
+  if (!photos.length) return '';
+  if (photos.length === 1) {
+    return `<div class="photo-wrap${t.pw && t.ph ? '' : ' fit-contain'}" style="${t.pw && t.ph ? `aspect-ratio:${t.pw}/${t.ph}` : ''}" onclick="previewPostPhoto('${t.id}',0)"><img class="photo" src="" data-photo="${esc(photos[0])}" alt="${esc(t.author)}的照片" loading="lazy" decoding="async"></div>`;
+  }
+  const show = photos.slice(0, 9);
+  const more = photos.length - show.length;
+  return '<div class="tl-photos' + (show.length >= 3 ? ' n3' : '') + '">' + show.map((p, i) =>
+    `<div class="ph${i === show.length - 1 && more > 0 ? ' more' : ''}"${i === show.length - 1 && more > 0 ? ` data-more="${more}"` : ''} onclick="previewPostPhoto('${t.id}',${i})"><img data-photo="${esc(p)}" alt="照片 ${i + 1}" loading="lazy" decoding="async"></div>`
+  ).join('') + '</div>';
 }
 /* 发布草稿：输入即存，误关或刷新后能恢复 */
 let draftTimer = null;
@@ -2452,16 +2518,34 @@ function quickDel(key, id) {
 }
 const delTimeline = (id) => quickDel('timeline', id);
 let curWallId = null; // 当前灯箱中预览的照片墙条目（非照片墙照片为 null，不显示删除按钮）
-async function previewPhoto(img, wallId) {
-  const url = await getPhotoCached(img.getAttribute('data-photo'));
-  if (!url) return;
+async function openLightbox(items, index) {
+  if (!items || !items.length) return;
+  lbList = items.slice();
+  lbIndex = Math.max(0, Math.min(items.length - 1, index || 0));
+  const it = lbList[lbIndex];
+  const url = await getPhotoCached(it.photo);
+  if (!url) { toast('照片加载失败 ❌'); return; }
   $('lightboxImg').src = url;
-  curWallId = wallId || null;
-  lbList = wallId ? lbWallList() : [];
-  lbIndex = wallId ? lbList.findIndex(w => w.id === wallId) : -1;
+  curWallId = it.wallId || null;
   lbChrome(); resetLbZoom();
   $('lightbox').classList.add('show');
   ovPush('lightbox');
+}
+function previewWallPhoto(wallId) {
+  const list = [...S.wall].filter(w => !w.deleted).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).map(w => ({ photo: w.photo, wallId: w.id }));
+  const i = list.findIndex(x => x.wallId === wallId);
+  if (i >= 0) openLightbox(list, i);
+}
+function previewPostPhoto(id, i) {
+  const it = S.timeline.find(x => x.id === id && !x.deleted);
+  if (!it) return;
+  openLightbox(itemPhotos(it).map(p => ({ photo: p })), i);
+}
+// 兼容旧调用：单张 / 照片墙
+function previewPhoto(img, wallId) {
+  if (wallId) return previewWallPhoto(wallId);
+  const p = img && img.getAttribute && img.getAttribute('data-photo');
+  if (p) openLightbox([{ photo: p }], 0);
 }
 function delWallPhoto() {
   if (!curWallId) return;
@@ -2471,10 +2555,10 @@ function delWallPhoto() {
 }
 /* ================= 灯箱：双击/双指缩放、拖动、左右切换 ================= */
 let lbList = [], lbIndex = -1;
+let lbTapTimer = null;
 let lbScale = 1, lbX = 0, lbY = 0;
 let lbStartDist = 0, lbStartScale = 1, lbStartMid = null, lbTouch = null, lbLastTap = 0;
 const lbImgEl = () => $('lightboxImg');
-const lbWallList = () => [...S.wall].filter(w => !w.deleted).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 function lbApply() {
   const im = lbImgEl(); if (!im) return;
   im.style.transform = 'translate(' + lbX + 'px,' + lbY + 'px) scale(' + lbScale + ')';
@@ -2498,6 +2582,8 @@ function lbZoomAt(clientX, clientY, next) {
   lbScale = next; lbClampPan(); lbApply();
 }
 function lbChrome() {
+  const it = lbList[lbIndex] || {};
+  curWallId = it.wallId || null;
   const multi = lbList.length > 1;
   $('lbPrev').classList.toggle('show', multi);
   $('lbNext').classList.toggle('show', multi);
@@ -2511,10 +2597,11 @@ async function lbStep(dir) {
   const url = await getPhotoCached(it.photo);
   if (!url) return;
   lbImgEl().src = url;
-  curWallId = it.id;
+  curWallId = it.wallId || null;
   lbChrome(); resetLbZoom();
 }
 function closeLightbox() {
+  clearTimeout(lbTapTimer); lbLastTap = 0;
   const lb = $('lightbox'); if (lb) lb.classList.remove('show');
   const im = $('lightboxImg'); if (im) { im.style.transform = ''; im.style.cursor = 'zoom-in'; }
   curWallId = null; lbList = []; lbIndex = -1;
@@ -2524,6 +2611,7 @@ function closeLightbox() {
 (() => {
   const lb = $('lightbox'); if (!lb) return;
   lb.addEventListener('touchstart', e => {
+    if (e.target.closest && e.target.closest('button')) return;
     if (e.touches.length === 2) {
       const a = e.touches[0], b = e.touches[1];
       lbStartDist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1;
@@ -2536,6 +2624,7 @@ function closeLightbox() {
     }
   }, { passive: false });
   lb.addEventListener('touchmove', e => {
+    if (e.target.closest && e.target.closest('button')) return;
     if (e.touches.length === 2) {
       e.preventDefault();
       const a = e.touches[0], b = e.touches[1];
@@ -2552,6 +2641,7 @@ function closeLightbox() {
     if (lbScale > 1.02) { lbX = lbTouch.baseX + dx; lbY = lbTouch.baseY + dy; lbClampPan(); lbApply(); }
   }, { passive: false });
   lb.addEventListener('touchend', e => {
+    if (e.target.closest && e.target.closest('button')) return;
     if (e.touches.length) return;
     const t = e.changedTouches[0];
     const now = Date.now();
@@ -2561,8 +2651,16 @@ function closeLightbox() {
     if (lbScale <= 1.02) {
       if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.2 && dt < 600) lbStep(dx < 0 ? 1 : -1);
       else if (dy > 90 && Math.abs(dy) > Math.abs(dx) * 1.2) closeLightbox();
-      else if (!lbTouch.moved && now - lbLastTap < 300) { lbZoomAt(t.clientX, t.clientY, 2.4); lbLastTap = 0; }
-      else if (!lbTouch.moved) lbLastTap = now;
+      else if (!lbTouch.moved) {
+        if (now - lbLastTap < 300) {
+          clearTimeout(lbTapTimer); lbLastTap = 0; lbTapTimer = null;
+          lbZoomAt(t.clientX, t.clientY, 2.4);
+        } else {
+          lbLastTap = now;
+          clearTimeout(lbTapTimer);
+          lbTapTimer = setTimeout(() => { lbLastTap = 0; lbTapTimer = null; closeLightbox(); }, 280);
+        }
+      }
     }
     lbTouch = null;
   }, { passive: false });
@@ -2616,23 +2714,44 @@ async function tlCopy(id) {
   }
 }
 /* ---- 编辑面板：改文字 / 改日期，保存走统一 commit（时间戳更新，双端合并安全） ---- */
-let tlEditId = null, tlEditTag = '', tlEditNewPhoto = null, tlEditRemove = false;
+let tlEditId = null, tlEditTag = '';
+let tlEditOrigPhotos = [], tlEditAdded = [], tlEditRemoved = new Set();
 function renderTlEditTagPicker() {
   const tags = allTags();
   $('tlEditTagPicker').innerHTML = tags.map(t => `<button class="chip ${tlEditTag === t ? 'on' : ''}" data-tag="${esc(t)}" onclick="pickTlEditTag(this.dataset.tag)">${esc(t)}</button>`).join('');
 }
 function pickTlEditTag(t) { tlEditTag = t; renderTlEditTagPicker(); }
+function renderTlEditPreview() {
+  const box = $('tlEditPreview'); if (!box) return;
+  const kept = tlEditOrigPhotos.filter(p => !tlEditRemoved.has(p));
+  const total = kept.length + tlEditAdded.length;
+  box.classList.toggle('show', total > 0);
+  box.innerHTML = kept.map(p =>
+    `<div class="thumb" data-photo="${esc(p)}"><img alt="已有照片"><button class="x" onclick="tlEditRemoveOrig(this)" aria-label="移除这张">✕</button></div>`
+  ).join('') + tlEditAdded.map((x, i) =>
+    `<div class="thumb"><img src="${x.dataUrl}" alt="新照片 ${i + 1}"><button class="x" onclick="tlEditRemoveAdded(${i})" aria-label="移除这张">✕</button></div>`
+  ).join('');
+  box.querySelectorAll('.thumb[data-photo]').forEach(async el => {
+    const url = await getPhotoCached(el.getAttribute('data-photo'));
+    const img = el.querySelector('img'); if (img && url) img.src = url;
+  });
+}
+function tlEditRemoveOrig(btn) {
+  const p = btn && btn.parentElement && btn.parentElement.getAttribute('data-photo');
+  if (p) { tlEditRemoved.add(p); renderTlEditPreview(); }
+}
+function tlEditRemoveAdded(i) { tlEditAdded.splice(i, 1); renderTlEditPreview(); }
 function tlEditOpen(id) {
   const it = S.timeline.find(x => x.id === id && !x.deleted);
   if (!it) return;
   closeActionSheet();
   tlEditId = id;
   tlEditTag = it.tag || '日常';
-  tlEditNewPhoto = null; tlEditRemove = false;
+  tlEditOrigPhotos = itemPhotos(it);
+  tlEditAdded = []; tlEditRemoved = new Set();
   $('tlEditText').value = it.text || '';
   $('tlEditDate').value = it.date || fmtDay(new Date());
-  $('tlEditPreview').style.display = 'none';
-  $('tlEditRemoveBtn').style.display = it.photo ? 'inline-flex' : 'none';
+  renderTlEditPreview();
   renderTlEditTagPicker();
   $('tlEditMask').classList.add('show');
   $('tlEditPanel').classList.add('show');
@@ -2642,47 +2761,53 @@ function tlEditClose(e) {
   if (e && e.target && e.target.id !== 'tlEditMask') return;
   $('tlEditMask').classList.remove('show');
   $('tlEditPanel').classList.remove('show');
-  tlEditId = null; tlEditNewPhoto = null; tlEditRemove = false;
+  tlEditId = null; tlEditOrigPhotos = []; tlEditAdded = []; tlEditRemoved = new Set();
   ovPop('edit');
 }
-function tlEditClearPhoto() {
-  tlEditNewPhoto = null; tlEditRemove = true;
-  $('tlEditPreview').style.display = 'none';
-  toast('保存后会移除这张照片');
-}
-function onTlEditPhotoChange(e) {
-  const f = e.target.files && e.target.files[0]; e.target.value = '';
-  if (!f) return;
-  compressToTarget(f, { maxSide: 1600, targetBytes: 320 * 1024 }).then(out => {
-    tlEditNewPhoto = out; tlEditRemove = false;
-    $('tlEditPreviewImg').src = out.dataUrl;
-    $('tlEditPreview').style.display = 'flex';
-  }).catch(() => toast('照片读取失败 ❌'));
+async function onTlEditPhotoChange(e) {
+  const files = [...(e.target.files || [])]; e.target.value = '';
+  if (!files.length) return;
+  const keptCount = tlEditOrigPhotos.filter(p => !tlEditRemoved.has(p)).length;
+  const room = Math.max(0, 9 - keptCount - tlEditAdded.length);
+  if (!room) { toast('一条记录最多 9 张照片'); return; }
+  for (const f of files.slice(0, room)) {
+    try {
+      const out = await compressToTarget(f, { maxSide: 1600, targetBytes: 320 * 1024 });
+      tlEditAdded.push({ dataUrl: out.dataUrl, w: out.w, h: out.h });
+      renderTlEditPreview();
+    } catch (err) { console.warn('照片处理失败：', err); toast('有照片读取失败'); }
+  }
 }
 async function tlEditSave() {
   if (!tlEditId) return;
   const it = S.timeline.find(x => x.id === tlEditId && !x.deleted);
   if (!it) { tlEditClose(); return; }
   const text = $('tlEditText').value.trim();
-  if (!text && !it.photo && !tlEditNewPhoto) { toast('写点什么吧，或保留原照片～'); return; }
-  if (tlEditNewPhoto) {
-    const path = `photos/${uid()}.jpg`;
-    showUpload('正在上传新照片…');
+  const kept = tlEditOrigPhotos.filter(p => !tlEditRemoved.has(p));
+  const removed = tlEditOrigPhotos.filter(p => tlEditRemoved.has(p));
+  const addedPaths = [];
+  if (tlEditAdded.length) {
+    showUpload(`正在上传 1/${tlEditAdded.length}…`);
     try {
-      await ghPutBinary(path, tlEditNewPhoto.dataUrl);
-      cachePhotoFromUpload(path, tlEditNewPhoto.dataUrl);
-      if (it.photo && Array.isArray(S.trash) && !S.trash.some(t => t.path === it.photo)) S.trash.push({ id: uid(), path: it.photo, at: Date.now(), updatedAt: Date.now() });
-      it.photo = path; it.pw = tlEditNewPhoto.w || 0; it.ph = tlEditNewPhoto.h || 0;
-    } catch (e) {
-      hideUpload();
-      toast('照片上传失败，稍后重试 ❌');
-      return;
-    } finally { hideUpload(); }
-  } else if (tlEditRemove && it.photo) {
-    const old = it.photo;
-    it.photo = ''; it.pw = 0; it.ph = 0;
-    if (Array.isArray(S.trash) && !S.trash.some(t => t.path === old)) S.trash.push({ id: uid(), path: old, at: Date.now(), updatedAt: Date.now() });
+      for (let i = 0; i < tlEditAdded.length; i++) {
+        if (uploadCancelled) break;
+        updateUpload(`正在上传 ${i + 1}/${tlEditAdded.length}`);
+        const path = `photos/${uid()}-${i}.jpg`;
+        await ghPutBinary(path, tlEditAdded[i].dataUrl);
+        cachePhotoFromUpload(path, tlEditAdded[i].dataUrl);
+        addedPaths.push(path);
+      }
+    } catch (e) { hideUpload(); toast('照片上传失败，稍后重试 ❌'); return; } finally { hideUpload(); }
+    if (uploadCancelled) { addedPaths.forEach(p => { if (!S.trash.some(t => t.path === p)) S.trash.push({ id: uid(), path: p, at: Date.now(), updatedAt: Date.now() }); }); toast('已取消保存'); return; }
   }
+  const photos = kept.concat(addedPaths);
+  if (!text && !photos.length) { toast('写点什么吧，或保留原照片～'); return; }
+  removed.forEach(p => { if (Array.isArray(S.trash) && !S.trash.some(t => t.path === p)) S.trash.push({ id: uid(), path: p, at: Date.now(), updatedAt: Date.now() }); });
+  it.photos = photos;
+  it.photo = photos[0] || '';
+  if (photos.length === 1 && kept.length === 1 && tlEditOrigPhotos[0] === kept[0]) { /* 保留原第一张的尺寸 */ }
+  else if (photos.length === 1 && addedPaths.length === 1) { it.pw = tlEditAdded[0].w || 0; it.ph = tlEditAdded[0].h || 0; }
+  else { it.pw = 0; it.ph = 0; }
   it.text = text; it.tag = tlEditTag;
   it.date = $('tlEditDate').value || it.date;
   touch(it);
@@ -2800,8 +2925,8 @@ const delCapsule = (id) => quickDel('capsules', id);
 
 /* ================= 语音留言 ================= */
 let recording = false, recSeconds = 0, recorder = null, chunks = [], recTimer = null, stream = null;
-let playingId = '', voiceLoadingId = '', recMime = '';
-const resetPlayState = () => { playingId = ''; voiceLoadingId = ''; };
+let playingId = '', voiceLoadingId = '', recMime = '', voicePaused = false;
+const resetPlayState = () => { playingId = ''; voiceLoadingId = ''; voicePaused = false; };
 const voiceUrlCache = new Map(); // 远端路径 -> Blob URL，避免重复下载
 /* ---------- 语音持久缓存：IndexedDB 存 Blob，第二次打开秒播（复用通用 createBlobStore 工厂） ---------- */
 const voiceStore = createBlobStore('coupleVoiceCache', '语音');
@@ -2895,6 +3020,31 @@ function voiceMime(v) {
 }
 // 常驻播放器（在 body 底部，不随列表重渲染销毁，避免 play() 被打断）
 function voicePlayer() { return $('voiceAudio'); }
+function voiceDurOf(v) {
+  const a = voicePlayer();
+  if (a && isFinite(a.duration) && a.duration > 0) return a.duration;
+  return (v && v.duration) || 0;
+}
+function updateVoiceProgress() {
+  const a = voicePlayer(); if (!a) return;
+  const v = S.voices.find(x => x.id === playingId);
+  const dur = voiceDurOf(v);
+  const cur = a.currentTime || 0;
+  const fill = $('voiceProgFill'), t = $('voiceTime'), bar = $('voiceProg');
+  const pct = dur ? Math.min(100, cur / dur * 100) : 0;
+  if (fill) fill.style.width = pct.toFixed(1) + '%';
+  if (t) t.textContent = fmtSec(Math.floor(cur)) + ' / ' + fmtSec(Math.floor(dur));
+  if (bar) bar.setAttribute('aria-valuenow', Math.round(pct));
+}
+function seekVoice(e) {
+  const a = voicePlayer(); if (!a || !playingId) return;
+  const v = S.voices.find(x => x.id === playingId);
+  const track = e.currentTarget.querySelector('.track') || e.currentTarget;
+  const r = track.getBoundingClientRect();
+  const pct = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+  const dur = voiceDurOf(v);
+  if (dur > 0) { try { a.currentTime = pct * dur; updateVoiceProgress(); } catch (err) { console.warn('跳转播放位置失败', err); } }
+}
 // 停止播放并同步列表 UI
 function stopVoice() {
   const a = voicePlayer();
@@ -2908,6 +3058,10 @@ function bindVoicePlayer() {
   if (!a || a.dataset.bound === '1') return;
   a.dataset.bound = '1';
   a.addEventListener('ended', () => { resetPlayState(); renderVoices(); });
+  a.addEventListener('timeupdate', updateVoiceProgress);
+  a.addEventListener('loadedmetadata', updateVoiceProgress);
+  a.addEventListener('play', () => { if (playingId) voicePaused = false; });
+  a.addEventListener('pause', () => { if (playingId) voicePaused = true; });
   a.addEventListener('error', () => {
     if (!a.getAttribute('src')) return;
     console.error('语音播放出错：', a.error && a.error.code, a.error && a.error.message);
@@ -2959,19 +3113,22 @@ async function onRecordStop() {
   const dur = Math.max(1, recSeconds); // 先固定时长，避免上传期间被下一次录音清零
   const reader = new FileReader();
   reader.onerror = () => { console.error('录音读取失败：', reader.error); toast('录音读取失败 ❌'); };
-  reader.onload = async ev => {
-    const id = uid();
-    toast('语音上传中…');
-    try {
-      const path = `voices/${id}.${ext}`;
-      await ghPutBinary(path, ev.target.result);
-      // mime 一并保存，回放时按真实格式解码
-      addListItem('voices', { id, by: myName(), audio: path, mime: mime, duration: dur, createdAt: Date.now() });
-      toast('语音已保存 ❤');
-    } catch (e) {
-      console.error('语音上传失败：', e);
-      toast('语音上传失败，请检查网络 ❌');
-    }
+  reader.onload = ev => {
+    const dataUrl = ev.target.result;
+    // 二次确认：录完先问一句，避免误触直接存进云端
+    askConfirm(`保存这段 ${fmtSec(dur)} 的语音吗？`, async () => {
+      const id = uid();
+      showUpload('语音上传中…');
+      try {
+        const path = `voices/${id}.${ext}`;
+        await ghPutBinary(path, dataUrl);
+        addListItem('voices', { id, by: myName(), audio: path, mime: mime, duration: dur, createdAt: Date.now() });
+        toast('语音已保存 ❤');
+      } catch (e) {
+        console.error('语音上传失败：', e);
+        toast('语音上传失败，请检查网络 ❌');
+      } finally { hideUpload(); }
+    }, '保存');
   };
   reader.readAsDataURL(blob);
 }
@@ -2984,19 +3141,26 @@ function renderVoices() {
   // 注意：列表里不再放 audio 元素，播放统一交给常驻播放器 #voiceAudio
   $('voiceList').innerHTML = list.map(v => {
     const isPlaying = playingId === v.id;
+    const isPaused = isPlaying && voicePaused;
     const isLoading = voiceLoadingId === v.id;
-    const ico = isLoading ? '⏳' : (isPlaying ? '⏸' : '▶');
-    const wave = isPlaying
+    const ico = isLoading ? '⏳' : (isPlaying ? (isPaused ? '▶' : '⏸') : '▶');
+    const wave = isPlaying && !isPaused
       ? '<div class="wave">' + Array.from({ length: 8 }, (_, i) => `<span class="bar" style="animation-delay:${(i * 0.07).toFixed(2)}s"></span>`).join('') + '</div>'
       : '';
+    const a = voicePlayer();
+    const dur = isPlaying ? ((a && isFinite(a.duration) && a.duration > 0) ? a.duration : (v.duration || 0)) : 0;
+    const cur = isPlaying && a ? (a.currentTime || 0) : 0;
+    const pct = dur ? Math.min(100, cur / dur * 100) : 0;
+    const prog = isPlaying ? `<div class="voice-prog" id="voiceProg" onclick="seekVoice(event)" role="slider" aria-label="播放进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}"><div class="track"><i class="fill" id="voiceProgFill" style="width:${pct.toFixed(1)}%"></i></div><span class="voice-time" id="voiceTime">${fmtSec(Math.floor(cur))} / ${fmtSec(Math.floor(dur))}</span></div>` : '';
     return `<div class="voice-item${isPlaying ? ' playing' : ''}">
-      <button class="play-btn${isLoading ? ' loading' : ''}" onclick="togglePlay('${v.id}')" aria-label="播放语音">${ico}</button>
+      <button class="play-btn${isLoading ? ' loading' : ''}" onclick="togglePlay('${v.id}')" aria-label="${isPaused ? '继续播放' : (isPlaying ? '暂停语音' : '播放语音')}">${ico}</button>
       <div class="voice-msg">
         <div class="who">${esc(v.by || '')}</div>
         <div class="sub">${fmtTs(v.createdAt)} · ${fmtSec(v.duration || 0)}</div>
       </div>
       ${wave}
       <button class="x-del" style="padding:4px" onclick="delVoice('${v.id}')">✕</button>
+      ${prog}
     </div>`;
   }).join('');
   // 停留在语音页时，渲染完顺手预取最近几条
@@ -3006,7 +3170,19 @@ function renderVoices() {
 async function togglePlay(id) {
   const a = voicePlayer();
   if (!a) { toast('播放器未就绪，请稍后再试'); return; }
-  if (playingId === id) { stopVoice(); return; }        // 再点一次 = 暂停
+  if (playingId === id) {
+    if (voicePaused) {
+      voicePaused = false;
+      const p = a.play();
+      if (p && typeof p.catch === 'function') p.catch(() => {});
+      renderVoices();
+    } else {
+      try { a.pause(); } catch (e) { /* 忽略 */ }
+      voicePaused = true;
+      renderVoices();
+    }
+    return;
+  }
   if (voiceLoadingId === id) return;                    // 正在下载，忽略连点
   const v = S.voices.find(x => x.id === id && !x.deleted);
   if (!v) { toast('这条语音已不存在'); return; }
@@ -3036,7 +3212,7 @@ async function togglePlay(id) {
   voiceLoadingId = '';
   // 下载期间可能被删除或再次点击，做个兜底
   if (!S.voices.some(x => x.id === id && !x.deleted)) { renderVoices(); return; }
-  playingId = id;
+  playingId = id; voicePaused = false;
   renderVoices();   // 只刷新列表 UI，播放器节点常驻，不会被移出文档
   try {
     a.src = url;
@@ -3381,6 +3557,53 @@ async function verifyGhToken() {
   // 只刷新指纹行，不整体重渲染——避免把上面设置的验证结果徽章覆盖回「已配置」状态
   const fpEl2 = $('ghTokenFp'); if (fpEl2) fpEl2.textContent = '本机已存：' + tokenFp(c.token);
 }
+/* ---- 数据仓库配置：owner / repo / branch 可改，Token 单独保存 ---- */
+function renderRepoCfg() {
+  const c = ghCfg();
+  const set = (id, v) => { const el = $(id); if (el && document.activeElement !== el) el.value = v == null ? '' : v; };
+  set('repoOwner', c.owner); set('repoName', c.repo); set('repoBranch', c.branch || '');
+  const st = $('repoCfgState');
+  if (st) st.textContent = '当前：' + c.owner + '/' + c.repo + (c.branch ? ' @ ' + c.branch : '（默认分支）');
+}
+function repoFields() {
+  return { owner: ($('repoOwner').value || '').trim(), repo: ($('repoName').value || '').trim(), branch: ($('repoBranch').value || '').trim() };
+}
+function saveRepoCfg() {
+  const f = repoFields();
+  if (!f.owner || !f.repo) { toast('用户名和仓库名都要填'); return; }
+  if (!/^[A-Za-z0-9_.-]+$/.test(f.owner) || !/^[A-Za-z0-9_.-]+$/.test(f.repo) || (f.branch && !/^[A-Za-z0-9_./-]+$/.test(f.branch))) { toast('只能包含字母、数字、. _ - /'); return; }
+  const old = ghCfg();
+  const changed = old.owner !== f.owner || old.repo !== f.repo || (old.branch || '') !== f.branch;
+  try { localStorage.setItem(GH_KEY, JSON.stringify(Object.assign({}, old, f))); }
+  catch (e) { toast('保存失败：浏览器禁用了本地存储'); return; }
+  if (changed) {
+    try { localStorage.removeItem(SHA_KEY); } catch (e) {}
+    meta.pendingPush = false; S.syncError = ''; persist(); saveMeta();
+    toast('已切换仓库，请点「拉取最新到本地」');
+  } else { toast('仓库配置已保存'); }
+  renderRepoCfg(); renderSyncState();
+}
+function resetRepoCfg() {
+  const c = ghCfg();
+  const changed = c.owner !== DEFAULT_GH.owner || c.repo !== DEFAULT_GH.repo || (c.branch || '') !== (DEFAULT_GH.branch || '');
+  try { localStorage.setItem(GH_KEY, JSON.stringify(Object.assign({}, c, { owner: DEFAULT_GH.owner, repo: DEFAULT_GH.repo, branch: DEFAULT_GH.branch }))); } catch (e) { toast('保存失败'); return; }
+  if (changed) { try { localStorage.removeItem(SHA_KEY); } catch (e) {} meta.pendingPush = false; saveMeta(); }
+  renderRepoCfg(); renderSyncState();
+  toast('已恢复默认仓库');
+}
+async function verifyRepoCfg() {
+  const f = repoFields();
+  const st = $('repoCfgState');
+  if (!f.owner || !f.repo) { toast('先填用户名和仓库名'); return; }
+  const c = ghCfg();
+  if (!c.token) { if (st) st.textContent = '先到下方填写 Token 才能测试访问'; toast('先填写 Token'); return; }
+  if (st) st.textContent = '正在检查仓库访问…';
+  try {
+    const r = await netFetch(`${GH_API}/repos/${f.owner}/${f.repo}`, { headers: auth(c.token) });
+    if (r.ok) { const d = await r.json(); if (st) st.textContent = '✅ 可访问：' + d.full_name + (d.private ? '（私有）' : '（公开）'); toast('仓库可访问 ✅'); }
+    else if (st) { st.textContent = '❌ 无法访问（HTTP ' + r.status + '），检查仓库名与 Token 权限'; toast('无法访问该仓库'); }
+  } catch (e) { if (st) st.textContent = '❌ 网络异常：' + e.message; toast('测试失败'); }
+}
 function askClearGhToken() {
   askConfirm('确定清除本机保存的 Token 吗？清除后云端同步将不可用，需重新填写', () => {
     try { localStorage.removeItem(GH_KEY); } catch (e) {}
@@ -3390,7 +3613,7 @@ function askClearGhToken() {
   });
 }
 function renderSettings() {
-  renderWho(); renderSyncState(); renderDayList(); renderPhotoCacheRow(); renderGhTokenState();
+  renderWho(); renderSyncState(); renderDayList(); renderPhotoCacheRow(); renderGhTokenState(); renderRepoCfg();
 }
 /* ---- 「我们是谁」编辑：名字 / 在一起的日子 / 农历生日 / 本机身份 ---- */
 // 输入框回填时避开正在输入的控件，避免后台同步刷新打断编辑
