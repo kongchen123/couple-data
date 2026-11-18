@@ -5,7 +5,7 @@
    - 跨域请求（GitHub API、情话接口、照片）：完全不拦截，避免缓存脏数据
    - push 事件：显示通知（iOS 要求必须立即 showNotification，否则收回推送权限）
    - notificationclick：优先聚焦已打开的同源窗口，否则新开 */
-const VERSION = 'v2';
+const VERSION = 'v3';
 const CACHE = 'couple-shell-' + VERSION;
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png'];
 
@@ -70,37 +70,90 @@ self.addEventListener('fetch', (e) => {
 /* ================= Web Push ================= */
 // iOS 要求：收到 push 必须立即展示通知，否则 Safari 会撤销该站点的推送权限。
 // 因此这里同步拿到数据就 showNotification，不做任何异步等待。
+// 把任意 URL 归一化成「相对 scope 的路径」。
+// iOS 上给 openWindow 传绝对 URL 会被当成外部链接路由到 Safari，
+// 传 scope 内的相对路径才有机会唤醒主屏 Web App。
+function toScopeRelative(raw) {
+  const fallback = './';
+  if (!raw) return fallback;
+  try {
+    const scope = self.registration.scope; // https://host/couple-data/
+    const base = new URL(scope);
+    const u = new URL(raw, scope);
+    if (u.origin !== base.origin) return fallback;
+    if (u.pathname.indexOf(base.pathname) !== 0) return fallback;
+    const rest = u.pathname.slice(base.pathname.length) + u.search + u.hash;
+    return rest ? './' + rest : fallback;
+  } catch (_) {
+    return fallback;
+  }
+}
+
 self.addEventListener('push', (e) => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch (_) { d = {}; }
   const title = d.title || 'TA 更新了小站 ❤';
   const body = d.body || '点开看看有什么新内容';
+  const target = toScopeRelative(d.url);
   const opts = {
     body,
     icon: './icons/icon-192.png',
+    // iOS 上 notification.data 偶发丢失，tag 反而可靠；
+    // 同时 tag 相同会覆盖旧通知，正好只保留最新一条。
     tag: d.tag || 'couple-update',
     renotify: true,
-    data: { url: d.url || './' },
+    data: {
+      url: target,
+      // 兜底：万一只剩 tag 可用，从 tag 里也能取回目标地址
+      urlFromTag: target,
+    },
   };
   e.waitUntil(self.registration.showNotification(title, opts));
 });
 
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
+
+  // iOS 上不调 preventDefault 的话，系统会用自己的方式处理点击
+  // （往往直接丢给 Safari），导致主屏 Web App 收不到这次导航。
+  if (e.preventDefault) e.preventDefault();
+
+  // iOS 上 notification.data 可能拿不到，三级兜底
   const data = e.notification.data || {};
-  const target = data.url || './';
+  const target = toScopeRelative(
+    data.url ||
+    (e.notification.tag && e.notification.tag.indexOf('./') === 0 ? e.notification.tag : null) ||
+    './'
+  );
+
   e.waitUntil(
     (async () => {
-      const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      const scope = self.registration.scope;
+      let all = [];
+      try {
+        all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      } catch (_) { all = []; }
+
+      // 优先复用已在运行的同源窗口（主屏 Web App 或已开的标签页）
       for (const c of all) {
-        // 已有同源窗口就直接聚焦，不重复开新标签
-        if (c.url.indexOf(self.location.origin) === 0 && 'focus' in c) {
-          try { await c.focus(); } catch (_) {}
-          if (c.navigate && target !== './') { try { await c.navigate(target); } catch (_) {} }
+        if (c.url.indexOf(scope) !== 0 && c.url.indexOf(self.location.origin) !== 0) continue;
+        try {
+          // 顺序很关键：先 navigate 再 focus。
+          // iOS 上先 focus 会让后续 navigate 丢失，这是已知的 WebKit 行为。
+          if (c.navigate && target !== './') await c.navigate(target);
+          if ('focus' in c) await c.focus();
           return;
+        } catch (_) { /* 换下一个 client 继续试 */ }
+      }
+
+      // 没有已运行窗口：用相对路径请求打开。
+      // scope 内的相对路径才有机会被 iOS 路由进主屏 Web App；
+      // 绝对 URL 会被当成外部链接交给默认浏览器。
+      if (self.clients.openWindow) {
+        try { await self.clients.openWindow(target); } catch (_) {
+          try { await self.clients.openWindow('./'); } catch (_) {}
         }
       }
-      if (self.clients.openWindow) await self.clients.openWindow(target);
     })()
   );
 });
