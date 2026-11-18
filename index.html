@@ -1616,6 +1616,8 @@ async function boot() {
   await syncOnEnter(); // 每次进入自动拉取最新数据写入本地
   // 云端孤儿照片延迟回收：删除满宽限期才真正删文件，且只在有网时后台静默做
   gcOrphans({ silent: true }).catch(e => console.warn('孤儿照片回收失败：', e));
+  // 订阅自愈：修复旧版本存下的空密钥记录（不阻塞启动）
+  healSubscription().catch(e => console.warn('订阅自愈失败：', e));
 }
 
 /* ================= 云端孤儿照片延迟回收 =================
@@ -3658,6 +3660,37 @@ const isStandalone = () =>
 const pushSupported = () =>
   'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 
+// PushSubscription 上没有 .keys 属性（那是 toJSON() 里的结构）。
+// 必须用 getKey()/toJSON() 显式取，否则采到空串，发送端加密会直接失败。
+function subKeyB64u(sub, name) {
+  try {
+    if (typeof sub.getKey === 'function') {
+      const buf = sub.getKey(name);
+      if (buf) {
+        let s = '';
+        const bytes = new Uint8Array(buf);
+        for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+        return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      }
+    }
+  } catch (e) {}
+  return '';
+}
+
+function readSubKeys(sub) {
+  let p256dh = '';
+  let auth = '';
+  try {
+    if (typeof sub.toJSON === 'function') {
+      const j = sub.toJSON();
+      if (j && j.keys) { p256dh = j.keys.p256dh || ''; auth = j.keys.auth || ''; }
+    }
+  } catch (e) {}
+  if (!p256dh) p256dh = subKeyB64u(sub, 'p256dh');
+  if (!auth) auth = subKeyB64u(sub, 'auth');
+  return { p256dh, auth };
+}
+
 // 读取云端已有订阅，按 endpoint 去重后 upsert 本机这一条
 async function upsertSubscription(sub) {
   let list = [];
@@ -3669,9 +3702,14 @@ async function upsertSubscription(sub) {
   } catch (e) {
     console.warn('读取 push-subs.json 失败（首次可忽略）', e);
   }
+  const k = readSubKeys(sub);
+  if (!k.p256dh || !k.auth) {
+    // 拿不到密钥就没法加密推送，直接报错而不是静默存空值
+    throw new Error('无法读取订阅密钥（p256dh/auth 为空），请关闭通知后重新开启');
+  }
   const item = {
     endpoint: sub.endpoint,
-    keys: { p256dh: sub.keys ? sub.keys.p256dh : '', auth: sub.keys ? sub.keys.auth : '' },
+    keys: { p256dh: k.p256dh, auth: k.auth },
     who: S.me,
     device: isAndroid() ? 'android' : 'ios',
     ua: navigator.userAgent.slice(0, 120),
@@ -3731,6 +3769,31 @@ async function enablePush() {
     console.warn('push subscribe 失败', e);
   }
   renderNotifyState();
+}
+
+// 自愈：本机已有订阅，但云端那条记录缺 p256dh/auth（旧版本 bug 留下的脏数据），
+// 就重新登记一次。页面每次打开自动跑，用户无需手动关闭再开启。
+async function healSubscription() {
+  if (!pushSupported()) return;
+  if (!ghCfg().token) return;
+  if (!isAndroid() && !isStandalone()) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (!sub) return;
+    let list = [];
+    try {
+      const r = await ghGet(SUBS_PATH);
+      if (r.data && Array.isArray(r.data.subs)) list = r.data.subs;
+    } catch (e) { return; }
+    const cur = list.find((x) => x && x.endpoint === sub.endpoint);
+    if (cur && cur.keys && cur.keys.p256dh && cur.keys.auth) return; // 正常，无需处理
+    await upsertSubscription(sub);
+    console.log('[notify] 已补全云端订阅密钥', cur ? '(修复旧记录)' : '(新增记录)');
+    toast('通知已就绪 ✅');
+  } catch (e) {
+    console.warn('[notify] 订阅自愈失败', e);
+  }
 }
 
 async function disablePush() {
