@@ -119,7 +119,12 @@ check('showNotification 与 push 在同一个同步块（iOS 要求）',
 check("有 notificationclick 监听", sw.includes("addEventListener('notificationclick'"));
 check('点击时优先聚焦已有窗口', sw.includes('clients.matchAll') && /focus\(\)/.test(sw));
 check('无窗口时 openWindow', sw.includes('openWindow'));
-check('缓存版本已升级到 v2', /const VERSION = 'v2'/.test(sw));
+// 版本号会随每次 sw.js 改动递增，断言不能钉死具体值，
+// 否则每次升级都要改测试（本次从 v2 → v3 就误报了）。
+// 只需保证：有 VERSION 常量、非初版 v1、且是 v 加数字的形式。
+const verM = sw.match(/const VERSION = 'v(\d+)'/);
+check('缓存版本已声明且不低于 v2', !!verM && Number(verM[1]) >= 2,
+  verM ? 'VERSION = v' + verM[1] : 'VERSION 未找到');
 check('跨域请求不拦截（避免缓存脏数据）', sw.includes("url.origin !== self.location.origin"));
 
 /* ---------- 9. urlB64ToUint8Array 实际转换 ---------- */
