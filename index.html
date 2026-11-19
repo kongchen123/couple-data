@@ -4,6 +4,44 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Ours love</title>
+<!--
+  区块地图（只写区块名，不写行号——行号会随改动漂移，请用编辑器搜索区块名定位）
+  ==========================================================================
+  【结构层】
+    head / PWA meta      页面元信息、manifest、主题色、深色模式声明
+    CSS 样式              全部内联样式（含深色模式变量、动效降级、焦点可见）
+    HTML 结构             header / 各页面 section / 各弹层容器
+  【基础层】
+    农历工具库            公历⇄农历、干支、生日规范化（自包含，见该块首 API 说明）
+    数据层                KEY / LIST_FIELDS / defaultData / save / mergeList
+    自制日期选择面板      openDatePicker / dpRender / 农历格 / 假期标红
+    弹层栈                返回键与 Esc 的关闭顺序、焦点归还
+    GitHub Contents API   ghGet / ghGetBinary / ghPut / ghDelete
+    同步                  本地优先：本地渲染 → 后台拉取 → 冲突重试
+    云端孤儿照片延迟回收  墓碑宽限期满后清理远端照片
+    通用 add/del          墓碑模式增删（含 5 秒撤销）
+  【页面层】
+    首页                  纪念日天数、倒数日、今日情话
+    照片墙                上传 / 多选 / 删除、灯箱入口
+    今日情话              在线接口 + 本地兜底
+    时间线                分月分组、搜索（含日期）、多图、草稿
+    灯箱                  双击 / 双指缩放、拖动、左右切换
+    上传进度条            照片上传中可取消，跨页面常驻
+    时间线动作面板        长按或 ⋯ 呼出：编辑 / 复制 / 删除
+    心愿                  列表 + 标签 + 进度
+    时间胶囊              未到期遮蔽 / 到期解锁
+    语音留言              录音、拖动进度、连播
+    经期记录 & 预测       日历标记 + 周期推算
+    设置                  仓库 / Token / 导出导入 / 回收站 / 推送
+  【系统层】
+    Web Push 通知         VAPID 订阅与推送接收
+    本地缓存状态展示      缓存命中率与占用
+    路由 & 渲染            go() / renderAll() / 各 renderXxx
+    滚动记忆              按页记录 scrollTop，返回时恢复
+    通用下拉刷新          时间线 / 心愿 / 胶囊 / 经期共用
+    左右滑动切换页面      横向手势 + 纵向滚动判定
+  ==========================================================================
+-->
 <!-- PWA：可添加到主屏幕 + 离线可用 -->
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#ffe4ec" media="(prefers-color-scheme: light)">
@@ -183,8 +221,12 @@ input:focus { border-color: #ff7e9d; }
 .photo-preview { position: relative; margin-top: 10px; display: none; }
 .photo-preview img { max-width: 120px; max-height: 120px; border-radius: 10px; border: 2px solid #ffd6e0; }
 .photo-preview .x { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%; background: #e05070; color: #fff; border: none; font-size: 12px; cursor: pointer; }
-.search-box { display: flex; gap: 8px; margin-bottom: 12px; }
-.search-box input { flex: 1; }
+.search-box { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; position: relative; }
+.search-box input { flex: 1; padding-right: 38px; } /* 给右侧清除按钮留位 */
+.search-clear { display: none; position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border: none; border-radius: 50%; background: var(--bg-input); color: var(--text-sub); font-size: 13px; line-height: 1; padding: 0; cursor: pointer; align-items: center; justify-content: center; }
+.search-clear::after { content: ""; position: absolute; inset: -8px; } /* 热区 44x44 */
+.search-clear.show { display: flex; }
+.search-clear:active { background: var(--border-chip); }
 /* ---- 时间线：单一卡片模板 meta → media → body，位置由 DOM 顺序决定，不再用 order/margin 覆盖 ---- */
 :root { --tl-gap: 12px; --tl-dot: 9px; --tl-dot-top: 17px; } /* 圆点竖直中心：对齐 meta 首行文字中线，轴线与圆点共用同一真值 */
 .tl-group { position: relative; padding-left: 18px; margin-bottom: 4px; }
@@ -204,7 +246,8 @@ input:focus { border-color: #ff7e9d; }
 .tl-item .when { font-size: 11px; color: var(--text-faint); flex-shrink: 0; }
 .tl-item .text { font-size: 14px; line-height: 1.65; white-space: pre-wrap; word-break: break-word; }
 .tl-item .text.clamp { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; } /* 长文本折叠，点「展开全文」放开 */
-.text-toggle { display: block; border: none; background: none; color: var(--primary); font-size: 12px; font-weight: 700; padding: 3px 0 0; cursor: pointer; }
+.text-toggle { display: block; border: none; background: none; color: var(--primary); font-size: 12px; font-weight: 700; padding: 11px 0 3px; margin-top: -8px; cursor: pointer; position: relative; } /* 上下内边距拑开热区到 44px，与 text 的 margin 抵消保持原视觉间距 */
+.text-toggle::after { content: ""; position: absolute; inset: 0; } /* 整行可点，含左右空白 */
 .tl-link, .capsule-item .tl-link { color: #e9407a; text-decoration: underline; text-underline-offset: 3px; word-break: break-all; }
 .tl-link:active { opacity: .6; }
 .tl-item .photo-wrap { position: relative; border-radius: 12px; overflow: hidden; background: var(--bg-soft); aspect-ratio: 4 / 3; max-height: 320px; cursor: zoom-in; } /* 比例占位：图片到达前高度已确定，列表不再跳动 */
@@ -237,20 +280,20 @@ input:focus { border-color: #ff7e9d; }
 #lbDel.show { display: inline-block; }
 #lbDel:active { background: rgba(255,255,255,.28); }
 .wall-empty { grid-column: 1 / -1; text-align: center; color: var(--text-sub); font-size: 13px; line-height: 2; padding: 16px 0; }
-/* 多选入口：贴在照片墙右上角的圆形小按钮，不占标题行、不挤压网格 */
+/* 多选入口：放在照片墙标题行右侧，与「＋」并排，不覆盖任何照片 */
 .wall-wrap { position: relative; }
+.wall-hd { gap: 8px; }
 .wall-sel-fab {
-  position: absolute; top: -2px; right: 0; z-index: 3;
-  width: 34px; height: 34px; border: none; border-radius: 50%;
-  background: rgba(255,255,255,.92); color: #e9407a; font-size: 15px; line-height: 1;
-  box-shadow: 0 3px 10px rgba(233,64,122,.22); cursor: pointer;
+  margin-left: auto;
+  width: 36px; height: 36px; border: 1px solid #f3d6de; border-radius: 50%;
+  background: var(--bg-quote-btn); color: var(--primary); font-size: 15px; line-height: 1; padding: 0;
+  cursor: pointer; flex: none;
   display: flex; align-items: center; justify-content: center;
-  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  transition: background .2s, transform .12s;
 }
+.wall-hd .quote-refresh { margin-left: 0; }
 .wall-sel-fab:active { transform: scale(.93); }
-body.wall-selecting .wall-sel-fab { background: #e9407a; color: #fff; }
-/* 多选态下把入口稍微移开，避免压住第一张照片的勾选点 */
-body.wall-selecting .wall-grid { padding-top: 2px; }
+body.wall-selecting .wall-sel-fab { background: #e9407a; color: #fff; border-color: #e9407a; }
 .tl-count { font-size: 11.5px; color: var(--text-sub); margin: -4px 0 8px 4px; } /* 搜索命中计数：显隐由 JS 内联控制 */
 @keyframes tlNew { from { opacity: 0; transform: translateY(10px); } }
 .tl-item.new { animation: tlNew .4s ease; } /* 新写入的记录淡入落位 */
@@ -436,11 +479,15 @@ body.wall-selecting .wall-item.sel { outline: 3px solid #e9407a; outline-offset:
 #tlPull.ready .ico { transform: rotate(180deg); } /* 达到阈值箭头翻转，暗示可松手 */
 #tlPull.loading .ico { animation: tlSpin .8s linear infinite; transition: none; }
 @keyframes tlSpin { to { transform: rotate(360deg); } }
-/* ---- 自制日期选择面板：底部弹层，格内公历+农历，假期标红 ---- */
-#dpMask { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 110; opacity: 0; visibility: hidden; transition: opacity .25s, visibility .25s; }
+/* ---- 自制日期选择面板：居中模态，格内公历+农历，假期标红 ----
+   为何用居中模态而不是底部弹层：它经常被底部的发布/编辑面板内部调用，
+   同类底部弹层会与宿主面板争底部空间（旧版 z-index 111 < 发布面板 113，
+   直接被压住，下旬日期与「今天/清除/取消」点不到）。居中不占底部空间，
+   小屏（如 iPhone SE 568px 高）也不会被面板+键盘挤爆。 */
+#dpMask { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 116; opacity: 0; visibility: hidden; transition: opacity .25s, visibility .25s; }
 #dpMask.show { opacity: 1; visibility: visible; }
-#dpPanel { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%) translateY(100%); width: 100%; max-width: 560px; background: var(--bg-card); border-radius: 18px 18px 0 0; padding: 14px 16px calc(12px + env(safe-area-inset-bottom)); z-index: 111; box-shadow: 0 -8px 30px rgba(0,0,0,.15); transition: transform .28s ease; }
-#dpPanel.show { transform: translateX(-50%) translateY(0); }
+#dpPanel { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%) scale(.92); opacity: 0; visibility: hidden; pointer-events: none; width: calc(100% - 36px); max-width: 420px; max-height: calc(100vh - 48px); max-height: calc(100dvh - 48px); overflow-y: auto; -webkit-overflow-scrolling: touch; background: var(--bg-card); border-radius: 18px; padding: 14px 16px 12px; z-index: 117; box-shadow: 0 12px 40px rgba(0,0,0,.24); transition: transform .22s ease, opacity .22s, visibility .22s; }
+#dpPanel.show { transform: translate(-50%, -50%) scale(1); opacity: 1; visibility: visible; pointer-events: auto; }
 .dp-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .dp-title { font-size: 15px; font-weight: 700; color: var(--text-main); font-variant-numeric: tabular-nums; border: none; background: none; cursor: pointer; padding: 4px 10px; border-radius: 8px; }
 .dp-title:active { background: var(--bg-soft); }
@@ -625,12 +672,12 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
       <div class="quote" id="quote">正在为你取一句情话…</div>
     </div>
     <div class="card">
-      <h2>📷 照片墙
+      <h2 class="wall-hd">📷 照片墙
+        <button class="wall-sel-fab" id="wallSelBtn" onclick="toggleWallSelect()" title="多选照片" aria-label="多选照片">☑︎</button>
         <button class="quote-refresh" onclick="wallPick()" title="添加照片" aria-label="添加照片">＋</button>
       </h2>
       <div class="wall-wrap">
         <div class="wall-grid" id="wallGrid"></div>
-        <button class="wall-sel-fab" id="wallSelBtn" onclick="toggleWallSelect()" title="多选照片" aria-label="多选照片">☑︎</button>
       </div>
       <input type="file" id="wallInput" accept="image/*" multiple style="display:none">
     </div>
@@ -638,8 +685,9 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
 
   <!-- ============ 时间线 ============ -->
   <section class="page active" id="page-timeline">
-    <div class="search-box"><input type="text" id="tlSearch" placeholder="🔍 搜索内容 / 作者 / 日期（如 2026-11）…"></div>
-    <div id="tlCount"></div>
+    <div class="search-box"><input type="text" id="tlSearch" placeholder="🔍 搜索内容 / 作者 / 日期（如 2026-11）…"><button class="search-clear" id="tlSearchClear" onclick="tlClearSearch()" title="清空搜索" aria-label="清空搜索" type="button">✕</button></div>
+    <div class="filter-bar" id="tlFilterBar"></div>
+    <div id="tlCount" class="tl-count"></div>
     <div class="scroll-area"><div id="tlStats" class="tl-stats"></div><div id="tlList"></div></div>
   </section>
 
@@ -973,6 +1021,21 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
  * 功能：公历 ⇄ 农历互转、农历中文名称、干支纪年、
  *       生日数据规范化、下一次农历生日推算
  * 支持范围：1900-01-31 ~ 2100-12-31
+ *
+ * 【自包含边界】本块不引用块外任何变量，可整块抽出为独立文件。
+ * 若抽出，需同时导出下面这 9 个符号（只有它们被块外引用）：
+ *   normalizeBirthday(v)        生日字段规范化（字符串/对象 → {y,m,d,leap}）
+ *   solarToLunar(date)          公历 Date → {year,month,day,isLeap}
+ *   nextLunarBirthday(bd,from)  下一次农历生日；闰月/三十自动回退
+ *   lunarMonthName(m,isLeap)    农历月份中文名（正/二/…/腊）
+ *   lunarDayName(d)             农历日期中文名（初一/十五/廿九）
+ *   ganzhiYear(y)               干支纪年（甲子…）
+ *   birthdayLabel(bd)           生日展示文案（公历/农历两种口径）
+ *   bdAutoConverted             标记：生日是否由公历自动转换而来
+ *   lunarMonthDays(y,m)         某农历月的天数（大小月判定）
+ * 其余符号（LUNAR_INFO / LUNAR_MONTH_CN / GAN_CN / ZHI_CN /
+ * lunarLeapMonth / lunarLeapDays / lunarYearDays / lunarToSolar）
+ * 仅供本块内部使用，外部无需引用。
  * ========================================================= */
 
 // 1900-2100 年农历数据表：Base64 紧凑编码，每年 3 字节（24 位）：
@@ -2452,7 +2515,7 @@ function renderTlStats() {
   const today = fmtDay(new Date());
   const thisMonth = today.slice(0, 7);
   const monthCount = items.filter(t => (t.date || '').slice(0, 7) === thisMonth).length;
-  const photoCount = items.filter(t => t.photo).length;
+  const photoCount = items.reduce((sum, t) => sum + itemPhotos(t).length, 0); // 统计真实照片张数，多图记录按张计
   // 连续记录天数：从今天（或昨天，给当天还没写的情况留余地）往回数有记录的日子
   const days = new Set(items.map(t => t.date).filter(Boolean));
   const probe = new Date();
@@ -2465,17 +2528,41 @@ function renderTlStats() {
     `<div class="tl-stat"><div class="num">${items.length}</div><div class="label">累计记录</div></div>` +
     `<div class="tl-stat"><div class="num">${photoCount}</div><div class="label">照片时刻</div></div>`;
 }
+// 时间线标签筛选（空字符串 = 全部），与心愿页的 chip 筛选同构
+let tlFilter = '';
+function renderTlFilterBar() {
+  const bar = $('tlFilterBar');
+  if (!bar) return;
+  const used = [...new Set((S.timeline || []).filter(t => !t.deleted && t.tag).map(t => t.tag))];
+  if (!used.length) { bar.innerHTML = ''; bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  if (tlFilter && !used.includes(tlFilter)) tlFilter = ''; // 标签被删或改名后自动归位
+  bar.innerHTML = ['', ...used].map(t =>
+    `<button class="chip ${tlFilter === t ? 'on' : ''}" data-tag="${esc(t)}" onclick="pickTlFilter(this.dataset.tag)">${t ? esc(t) : '全部'}</button>`
+  ).join('');
+}
+function pickTlFilter(t) { tlFilter = t || ''; renderTimeline(); }
 function renderTimeline() {
   renderTlStats(); // 统计卡不受搜索影响，始终展示全量数据
+  renderTlFilterBar();
   const kw = $('tlSearch').value.trim().toLowerCase();
+  $('tlSearchClear').classList.toggle('show', !!kw); // 有内容才显示✕
   const list = [...S.timeline].filter(t => !t.deleted)
+    .filter(t => !tlFilter || (t.tag || '') === tlFilter)
     .filter(t => !kw || (t.text || '').toLowerCase().includes(kw) || (t.author || '').toLowerCase().includes(kw) || (t.tag || '').toLowerCase().includes(kw) || (t.date || '').includes(kw) || tlDateSearchText(t.date).includes(kw))
     .sort((a, b) => ((b.date || '') + (tlTimeOf(b) || '00:00') + b.id).localeCompare((a.date || '') + (tlTimeOf(a) || '00:00') + a.id));
-  // 搜索命中计数：有搜索词时显示，避免「到底搜没搜到」的困惑
+  // 搜索命中计数：有搜索词或筛选时显示，避免「到底筛没筛到」的困惑
   const cnt = $('tlCount');
-  if (kw) { cnt.style.display = 'block'; cnt.textContent = `共 ${list.length} 条记录`; }
+  if (kw || tlFilter) {
+    cnt.style.display = 'block';
+    cnt.textContent = `${tlFilter ? '「' + tlFilter + '」' : ''}共 ${list.length} 条记录`;
+  }
   else cnt.style.display = 'none';
-  if (!list.length) { $('tlList').innerHTML = `<div class="empty"><i class="ico">${kw ? '🔍' : '✍️'}</i>${kw ? '没有匹配的记录<br><button class="btn small" onclick="tlClearSearch()">清除搜索</button>' : '还没有记录<br>写下第一条吧<br><button class="btn small" onclick="tlComposeOpen()">✍️ 写第一条</button>'}</div>`; return; }
+  if (!list.length) {
+    const filtered = !!kw || !!tlFilter;
+    $('tlList').innerHTML = `<div class="empty"><i class="ico">${filtered ? '🔍' : '✍️'}</i>${filtered ? '没有匹配的记录<br><button class="btn small" onclick="tlResetFilter()">清除筛选</button>' : '还没有记录<br>写下第一条吧<br><button class="btn small" onclick="tlComposeOpen()">✍️ 写第一条</button>'}</div>`;
+    return;
+  }
   // 列表已按日期倒序，同月记录必然相邻，直接顺序分组
   const groups = [];
   let cur = null;
@@ -2486,19 +2573,54 @@ function renderTimeline() {
       const long = (t.text || '').length > 120; // 约 6 行以上才提供折叠
       const isNew = t.id === tlNewId; // 刚发布的记录带入场动画
       const hasText = !!t.text && !/^📷 分享/.test(t.text); // 纯图占位符不入正文
+      // 是否真需要折叠：用 120 字粗筛，渲染后由 calibrateTlClamp 按真实溢出二次校准
       // 单一模板：meta → del → text → photo，位置由 DOM 顺序决定，纯图卡不再翻转
       return `<div class="tl-item${who2 ? ' who2' : ''}${isNew ? ' new' : ''}" data-id="${esc(t.id)}"><div class="meta"><span class="who">${esc(t.author)}</span>${t.tag ? `<span class="tl-tag">${esc(t.tag)}</span>` : ''}<span class="when">${esc(tlWhenLabel(t))}</span></div><button class="del" onclick="openActionSheet('${t.id}')" title="更多操作" aria-label="更多操作">⋯</button>${hasText ? `<div class="text${long ? ' clamp' : ''}">${linkify(t.text)}</div>${long ? `<button class="text-toggle" onclick="tlToggleText(this)">展开全文</button>` : ''}` : ''}${tlPhotosHtml(t)}</div>`;
     }).join('') + '</div>'
   ).join('');
   if (tlNewId) { tlNewId = ''; $('tlList').querySelector('.tl-item.new')?.addEventListener('animationend', function once() { this.classList.remove('new'); }, { once: true }); }
-  // 惰性加载照片：优先命中缓存，未命中才请求；兼容旧 data: URL；加载完成后淡入
+  calibrateTlClamp(); // 修正「展开全文」与真实截断不同步的问题
+  // 惰性加载照片：优先命中内存 LRU（同步，避免重搜索时反复 await），未命中才请求；兼容旧 data: URL；加载完成后淡入
   document.querySelectorAll('#tlList img[data-photo]').forEach(async img => {
     const p = img.getAttribute('data-photo');
+    const apply = (url) => { img.onload = () => img.classList.add('loaded'); img.src = url; if (img.complete) img.classList.add('loaded'); };
+    const memHit = photoCache.get(p);
+    if (memHit) { apply(memHit); return; } // 已在内存缓存：同步上屏，不再走 async
     const url = await getPhotoCached(p);
-    if (url) { img.onload = () => img.classList.add('loaded'); img.src = url; if (img.complete) img.classList.add('loaded'); }
+    if (url) apply(url);
   });
 }
-function tlClearSearch() { $('tlSearch').value = ''; renderTimeline(); }
+function tlClearSearch() { $('tlSearch').value = ''; $('tlSearchClear').classList.remove('show'); renderTimeline(); }
+// 清掉搜索与标签筛选，回到全量视图（空状态按钮用）
+function tlResetFilter() { $('tlSearch').value = ''; tlFilter = ''; renderTimeline(); }
+/* 「展开全文」校准：是否截断以实际溢出为准。
+   旧逻辑只看字数 >120，而 clamp 是 6 行，120 个中文字往往不到 6 行 →
+   按钮显示着但点下去毫无变化。这里临时解除 clamp 量真实高度，再决定去留。 */
+function calibrateTlClamp() {
+  document.querySelectorAll('#tlList .tl-item').forEach(item => {
+    const text = item.querySelector('.text');
+    if (!text) return;
+    let btn = item.querySelector('.text-toggle');
+    const wasClamped = text.classList.contains('clamp');
+    text.classList.remove('clamp'); // 解除后 scrollHeight 即全文高度
+    const lh = parseFloat(getComputedStyle(text).lineHeight) || 20;
+    const needClamp = text.scrollHeight > lh * 6 + 2; // 真实超过 6 行才需要折叠
+    if (!needClamp) {
+      if (btn) btn.remove(); // 实际不超行 → 按钮多余，去掉
+    } else {
+      text.classList.add('clamp');
+      if (!btn) { // 字数少但实际超行（多换行/长英文）→ 补一个按钮
+        btn = document.createElement('button');
+        btn.className = 'text-toggle';
+        btn.textContent = '展开全文';
+        btn.onclick = function () { tlToggleText(this); };
+        text.after(btn);
+      } else if (!wasClamped && btn.textContent.trim() === '收起') {
+        btn.textContent = '展开全文';
+      }
+    }
+  });
+}
 function tlToggleText(btn) {
   const text = btn.previousElementSibling;
   const clamped = text.classList.toggle('clamp');
@@ -3207,7 +3329,7 @@ function addCapsule() {
 const delCapsule = (id) => quickDel('capsules', id);
 
 /* ================= 语音留言 ================= */
-let recording = false, recSeconds = 0, recorder = null, chunks = [], recTimer = null, stream = null;
+let recording = false, recSeconds = 0, recStartAt = 0, recorder = null, chunks = [], recTimer = null, stream = null;
 let playingId = '', voiceLoadingId = '', recMime = '', voicePaused = false;
 const resetPlayState = () => { playingId = ''; voiceLoadingId = ''; voicePaused = false; };
 const voiceUrlCache = new Map(); // 远端路径 -> Blob URL，避免重复下载
@@ -3275,7 +3397,9 @@ function extOfMime(mime) {
   if (m.indexOf('wav') >= 0) return 'wav';
   return 'webm';
 }
-function fmtSec(s) { return `${Math.floor(s / 60)}:${pad(Math.floor(s % 60))}`; }
+function fmtSec(s) { s = Math.max(0, Number(s) || 0); return `${Math.floor(s / 60)}:${pad(Math.floor(s % 60))}`; }
+// 显示用时长：不足 1 秒的补到 1 秒，避免短语音显示成 0:00、进度条也不出来
+function fmtSecMin1(s) { return fmtSec(Math.max(1, s)); }
 // 通过文件头识别真实音频格式，兼容旧版把 m4a 存成 .webm 的记录
 function sniffAudioMime(bytes) {
   if (!bytes || bytes.length < 12) return '';
@@ -3308,6 +3432,28 @@ function voiceDurOf(v) {
   if (a && isFinite(a.duration) && a.duration > 0) return a.duration;
   return (v && v.duration) || 0;
 }
+// MediaRecorder 录出的 webm 往往不写时长元数据，a.duration 会是 Infinity。
+// 经典解法：seek 到一个极大值逼浏览器解完全文，再读 duration 就是真实时长。
+// 修好后进度条、总时长、“拖到底”才对得上（短语音尤其明显）。
+let voiceDurFixing = false;
+function fixVoiceDuration(a) {
+  if (!a || voiceDurFixing) return;
+  if (isFinite(a.duration) && a.duration > 0) return;
+  if (!a.getAttribute('src')) return;
+  voiceDurFixing = true;
+  const done = () => {
+    voiceDurFixing = false;
+    a.removeEventListener('timeupdate', onMove);
+    try { a.currentTime = 0; } catch (e) { /* 忽略 */ }
+    updateVoiceProgress();
+    renderVoices();
+  };
+  const onMove = () => { if (isFinite(a.duration) && a.duration > 0) done(); };
+  a.addEventListener('timeupdate', onMove);
+  try { a.currentTime = 1e101; } catch (e) { voiceDurFixing = false; return; }
+  // 兜底：某些浏览器不发 timeupdate，超时后自行收尾
+  setTimeout(() => { if (voiceDurFixing) done(); }, 1200);
+}
 function updateVoiceProgress() {
   const a = voicePlayer(); if (!a) return;
   const v = S.voices.find(x => x.id === playingId);
@@ -3316,7 +3462,7 @@ function updateVoiceProgress() {
   const fill = $('voiceProgFill'), t = $('voiceTime'), bar = $('voiceProg');
   const pct = dur ? Math.min(100, cur / dur * 100) : 0;
   if (fill) fill.style.width = pct.toFixed(1) + '%';
-  if (t) t.textContent = fmtSec(Math.floor(cur)) + ' / ' + fmtSec(Math.floor(dur));
+  if (t) t.textContent = fmtSec(cur) + ' / ' + fmtSecMin1(dur);
   if (bar) bar.setAttribute('aria-valuenow', Math.round(pct));
 }
 function seekVoice(e) {
@@ -3326,7 +3472,12 @@ function seekVoice(e) {
   const r = track.getBoundingClientRect();
   const pct = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
   const dur = voiceDurOf(v);
-  if (dur > 0) { try { a.currentTime = pct * dur; updateVoiceProgress(); } catch (err) { console.warn('跳转播放位置失败', err); } }
+  // duration 为 Infinity/NaN 时（webm 未写时长元数据）不能拿来计算跳转位置，
+  // 否则 currentTime 会被设成无效值，短语音上表现为进度条乱跳、时间显示错乱
+  if (isFinite(dur) && dur > 0) {
+    const target = Math.max(0, Math.min(dur - 0.05, pct * dur));
+    try { a.currentTime = target; updateVoiceProgress(); } catch (err) { console.warn('跳转播放位置失败', err); }
+  }
 }
 // 进度条拖动：按下后进入 scrub 模式，移动即跳转（原来只支持点一次）
 let voiceScrub = false;
@@ -3367,7 +3518,7 @@ function bindVoicePlayer() {
     else renderVoices();
   });
   a.addEventListener('timeupdate', updateVoiceProgress);
-  a.addEventListener('loadedmetadata', updateVoiceProgress);
+  a.addEventListener('loadedmetadata', () => { updateVoiceProgress(); fixVoiceDuration(a); });
   a.addEventListener('play', () => { if (playingId) voicePaused = false; });
   a.addEventListener('pause', () => { if (playingId) voicePaused = true; });
   a.addEventListener('error', () => {
@@ -3398,9 +3549,15 @@ async function toggleRecord() {
   recMime = recorder.mimeType || recMime || 'audio/webm';
   recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
   recorder.onstop = onRecordStop;
-  recorder.start(); recording = true; recSeconds = 0;
+  recorder.start(); recording = true; recSeconds = 0; recStartAt = performance.now();
   $('recBtn').classList.add('recording'); $('recTip').textContent = `录音中 ${fmtSec(0)} / ${fmtSec(MAX_SECONDS)}`;
-  recTimer = setInterval(() => { recSeconds++; $('recTip').textContent = `录音中 ${fmtSec(recSeconds)} / ${fmtSec(MAX_SECONDS)}`; if (recSeconds >= MAX_SECONDS) stopRecording(false); }, 1000);
+  // 用真实经过时间而非整秒自增：setInterval 会漏掉不足 1 秒的零头，
+  // 3.9 秒的录音会被记成 3 秒（短语音误差高达 25%，这正是 10 秒内进度条异常的主因之一）
+  recTimer = setInterval(() => {
+    recSeconds = (performance.now() - recStartAt) / 1000;
+    $('recTip').textContent = `录音中 ${fmtSec(recSeconds)} / ${fmtSec(MAX_SECONDS)}`;
+    if (recSeconds >= MAX_SECONDS) stopRecording(false);
+  }, 200);
 }
 function stopRecording(silent) {
   if (!recording) return;
@@ -3418,7 +3575,8 @@ async function onRecordStop() {
   chunks = [];
   if (!blob.size) { toast('没有录到声音，再试一次吧 🎤'); return; }
   const ext = extOfMime(mime);
-  const dur = Math.max(1, recSeconds); // 先固定时长，避免上传期间被下一次录音清零
+  // 以 JS 实测的录音时长兜底（MediaRecorder 的 webm 往往不写时长元数据，duration 会是 Infinity）
+  const dur = Math.max(0.1, (performance.now() - recStartAt) / 1000);
   const reader = new FileReader();
   reader.onerror = () => { console.error('录音读取失败：', reader.error); toast('录音读取失败 ❌'); };
   reader.onload = ev => {
@@ -3456,19 +3614,22 @@ function renderVoices() {
       ? '<div class="wave">' + Array.from({ length: 8 }, (_, i) => `<span class="bar" style="animation-delay:${(i * 0.07).toFixed(2)}s"></span>`).join('') + '</div>'
       : '';
     const a = voicePlayer();
-    const dur = isPlaying ? ((a && isFinite(a.duration) && a.duration > 0) ? a.duration : (v.duration || 0)) : 0;
+    const durSec = Math.max(0, Math.min(60, v.duration || 0));      // 录音时写入的时长（可能不足 1 秒）
+    const liveDur = (a && isFinite(a.duration) && a.duration > 0) ? a.duration : 0;  // 解码后的真实时长
+    // 优先用解码时长（准确）；拿不到时（webm 常见 Infinity）回退到已存时长，且至少 1 秒
+    const dur = isPlaying ? (liveDur || durSec || Math.max(1, Math.round(voiceDurOf(v)))) : 0;
     const cur = isPlaying && a ? (a.currentTime || 0) : 0;
     const pct = dur ? Math.min(100, cur / dur * 100) : 0;
-    const prog = isPlaying ? `<div class="voice-prog" id="voiceProg" onpointerdown="seekVoiceStart(event)" onpointermove="seekVoiceMove(event)" onpointerup="seekVoiceEnd(event)" onpointercancel="seekVoiceEnd(event)" onclick="seekVoice(event)" role="slider" aria-label="播放进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}"><div class="track"><i class="fill" id="voiceProgFill" style="width:${pct.toFixed(1)}%"></i></div><span class="voice-time" id="voiceTime">${fmtSec(Math.floor(cur))} / ${fmtSec(Math.floor(dur))}</span></div>` : '';
+    const prog = isPlaying ? `<div class="voice-prog" id="voiceProg" onpointerdown="seekVoiceStart(event)" onpointermove="seekVoiceMove(event)" onpointerup="seekVoiceEnd(event)" onpointercancel="seekVoiceEnd(event)" onclick="seekVoice(event)" role="slider" aria-label="播放进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}"><div class="track"><i class="fill" id="voiceProgFill" style="width:${pct.toFixed(1)}%"></i></div><span class="voice-time" id="voiceTime">${fmtSec(cur)} / ${fmtSecMin1(dur)}</span></div>` : '';
     // 未播放时用一条静态的时长比例条，让「多长」一眼可见（原来只有文字 0:12）
-    const durSec = Math.max(0, Math.min(60, Math.floor(v.duration || 0)));
+    // 不足 1 秒的短语音也要显示（原来 Math.floor 会把它们变成 0，整条进度条消失）
     const staticBar = (!isPlaying && durSec > 0)
-      ? `<div class="voice-static"><i style="width:${Math.min(100, durSec / 30 * 100).toFixed(0)}%"></i></div>`
+      ? `<div class="voice-static"><i style="width:${Math.min(100, Math.max(4, durSec / 30 * 100)).toFixed(1)}%"></i></div>`
       : '';
     return `<div class="voice-item${isPlaying ? ' playing' : ''}">
       <button class="play-btn${isLoading ? ' loading' : ''}" onclick="togglePlay('${v.id}')" aria-label="${isPaused ? '继续播放' : (isPlaying ? '暂停语音' : '播放语音')}">${ico}</button>
       <div class="voice-msg">
-        <div class="who">${esc(v.by || '')}<span class="dur">${fmtSec(durSec)}</span></div>
+        <div class="who">${esc(v.by || '')}<span class="dur">${fmtSecMin1(durSec)}</span></div>
         <div class="sub">${fmtTs(v.createdAt)}</div>
         ${staticBar}
       </div>
@@ -4656,11 +4817,31 @@ $('wallInput').addEventListener('change', onWallChange);
 // 搜索防抖 150ms：避免每敲一个字符就全量重建 DOM + 重走照片缓存
 let tlSearchTimer = null;
 $('tlSearch').addEventListener('input', () => { clearTimeout(tlSearchTimer); tlSearchTimer = setTimeout(renderTimeline, 150); });
-$('tlText').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addTimeline(); } });
+// Esc 快速清空搜索（桌面端习惯，移动端不影响）
+$('tlSearch').addEventListener('keydown', e => {
+  if (e.key === 'Escape' && $('tlSearch').value) { e.preventDefault(); tlClearSearch(); }
+});
+// 时间线正文：Enter 换行；Ctrl/Cmd+Enter 发布。
+// 中文输入法选词时按 Enter 不能触发发布（isComposing / keyCode 229）
+$('tlText').addEventListener('keydown', e => {
+  if (e.isComposing || e.keyCode === 229) return;
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); addTimeline(); }
+});
+// 编辑面板：同上方规则，Enter 换行、Ctrl/Cmd+Enter 保存
+document.addEventListener('keydown', e => {
+  if (e.target && e.target.id === 'tlEditText') {
+    if (e.isComposing || e.keyCode === 229) return;
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); tlEditSave(); }
+  }
+});
 $('wishText').addEventListener('keydown', e => { if (e.key === 'Enter') addWish(); });
 $('tagInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); confirmAddTag(); } });
 $('tlTagInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); confirmAddTlTag(); } });
-$('capText').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.ctrlKey) { e.preventDefault(); addCapsule(); } });
+// 时间胶囊正文：同上，Enter 换行，Ctrl/Cmd+Enter 封存
+$('capText').addEventListener('keydown', e => {
+  if (e.isComposing || e.keyCode === 229) return;
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); addCapsule(); }
+});
 $('dayName').addEventListener('keydown', e => { if (e.key === 'Enter') addDay(); });
 $('whoBd1').addEventListener('change', () => updateBdCur('whoBd1'));
 $('whoBd2').addEventListener('change', () => updateBdCur('whoBd2'));
