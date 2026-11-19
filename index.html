@@ -1564,16 +1564,37 @@ async function ghGet(path) {
   }
   return { data: JSON.parse(decB64(d.content)), sha: d.sha };
 }
+// 单个文件的并发冲突重试次数：Contents API 每次 PUT 都会新建 commit 并更新分支 ref，
+// 同一分支上的并发写入必然撞锁（409/422），必须重取 sha 后重试
+const GHPUT_RETRY = 4;
 async function ghPut(path, content, sha, isBinary) {
   if (needToken()) throw new Error('缺少 GitHub Token');
   const c = ghCfg();
   // commit message 带设备来源标识，供 GitHub Actions 判断该通知谁（from=android → 通知 iOS，反之亦然）
   const deviceTag = isAndroid() ? 'android' : 'ios';
-  const body = { message: `sync from=${deviceTag} me=${S.me} at=${new Date().toISOString()}`, content: isBinary ? content : encB64(JSON.stringify(content, null, 2)), branch: c.branch || undefined };
-  if (sha) body.sha = sha;
-  const r = await netFetch(ghUrl(c, path), { method: 'PUT', headers: auth(c.token), body: JSON.stringify(body) });
-  if (!r.ok) throw new Error('HTTP ' + r.status);
-  return (await r.json()).content.sha;
+  const payload = isBinary ? content : encB64(JSON.stringify(content, null, 2));
+  let useSha = sha;
+  let lastErr = null;
+  for (let attempt = 0; attempt <= GHPUT_RETRY; attempt++) {
+    const body = { message: `sync from=${deviceTag} me=${S.me} at=${new Date().toISOString()}`, content: payload, branch: c.branch || undefined };
+    if (useSha) body.sha = useSha;
+    const r = await netFetch(ghUrl(c, path), { method: 'PUT', headers: auth(c.token), body: JSON.stringify(body) });
+    if (r.ok) return (await r.json()).content.sha;
+    // 409/422 = 分支 ref 已被别的请求推进，或文件已存在而没带 sha
+    if ((r.status === 409 || r.status === 422) && attempt < GHPUT_RETRY) {
+      lastErr = new Error('HTTP ' + r.status);
+      // 指数退避 + 抖动，避免多个 worker 同时重试再次撞车
+      await new Promise(res => setTimeout(res, 220 * Math.pow(2, attempt) + Math.random() * 260));
+      try {
+        const fresh = await netFetch(ghUrl(c, path) + '?ref=' + (c.branch || ''), { headers: auth(c.token) });
+        if (fresh.status === 404) useSha = null;               // 文件不存在 → 不带 sha 新建
+        else if (fresh.ok) useSha = (await fresh.json()).sha;  // 已存在 → 带上最新 sha
+      } catch (e) { /* 取 sha 失败就沿用原值再试一次 */ }
+      continue;
+    }
+    throw new Error('HTTP ' + r.status);
+  }
+  throw lastErr || new Error('HTTP 409');
 }
 async function ghPutBinary(path, dataUrl) { return ghPut(path, dataUrl.split(',')[1], null, true); }
 // 删除云端文件（用于孤儿照片延迟回收）：先取 sha 再 DELETE，文件已不存在视为已完成
@@ -2781,12 +2802,20 @@ async function addTimeline() {
     try {
       const slots = pendingPhotos.map((ph, i) => ({ ph, i, path: `photos/${id}${i === 0 ? '' : '-' + i}.jpg` }));
       const slotPaths = new Array(slots.length).fill('');
-      await uploadManyWithProgress(slots, async (s) => {
+      const res = await uploadManyWithProgress(slots, async (s) => {
         await ghPutBinary(s.path, s.ph.dataUrl);
         cachePhotoFromUpload(s.path, s.ph.dataUrl);
         slotPaths[s.i] = s.path;   // 按下标落位，并发完成顺序不影响结果
       }, '正在上传');
-      // 并发下可能中间有失败的，压掉空位；顺序仍是上传前的选择顺序
+      // 有失败就不半途发布：让用户重试，避免照片被默丢失
+      if (res && res.fail) {
+        // 已成功的几张先回收，避免占着仓库空间成为孤儿文件
+        slotPaths.forEach(p => { if (p && Array.isArray(S.trash) && !S.trash.some(t => t.path === p)) S.trash.push({ id: uid(), path: p, at: Date.now(), updatedAt: Date.now() }); });
+        if (S.trash.length) commit('trash');
+        toast(`有 ${res.fail} 张照片上传失败，请重试 ❌`);
+        return;
+      }
+      // 按上传前的选择顺序收集（理论上不会有空位了，保留兼容）
       slotPaths.forEach(v => { if (v) paths.push(v); });
     } catch (e) {
       hideUpload();
@@ -3029,27 +3058,39 @@ function closeLightbox() {
 
 /* ================= 上传进度条（照片上传中可取消，跨页面常驻一点） ================= */
 let uploadCancelled = false, uploadActive = false;
-// 并发上传：一次最多 3 个（不同 path、不同文件，GitHub 不会冲突），
-// 比逐张串行快 3 倍左右，且仍然保留「取消」能力
-const UPLOAD_CONCURRENCY = 3;
+// 上传并发度固定为 1（串行）。
+// 原因：GitHub Contents API 的 PUT 是「新建 commit + 推进分支 ref」，属于分支级写锁，
+// 并发写同一分支会大量 409 冲突；实测并发 3 张时只有 1 张能成功，其余被静默丢弃。
+// ghPut 内部另有 409/422 退避重试，作为网络抖动或跨设备同时上传时的兜底。
+const UPLOAD_CONCURRENCY = 1;
 async function uploadManyWithProgress(items, onOne, label) {
   const total = items.length;
-  let done = 0, fail = 0;
+  let done = 0, fail = 0, firstErr = null;
   const queue = items.slice();
   const worker = async () => {
     for (;;) {
       if (uploadCancelled) return;
       const item = queue.shift();
       if (!item) return;
-      try { await onOne(item); } catch (e) { console.warn('上传失败：', e); fail++; }
+      let tries = 0;
+      const MAX_TRIES = 3;
+      while (tries < MAX_TRIES) {
+        try { await onOne(item); break; }
+        catch (e) {
+          tries++;
+          console.warn('上传失败（第 ' + tries + ' 次）：', e);
+          if (tries >= MAX_TRIES) { fail++; if (!firstErr) firstErr = e; }
+          else await new Promise(res => setTimeout(res, 300 * tries));
+        }
+      }
       done++;
-      if (typeof updateUpload === 'function') updateUpload(`${label || '正在上传'} ${done}/${total}`);
+      if (typeof updateUpload === 'function') updateUpload(`${label || '正在上传'} ${done}/${total}${fail ? `（失败 ${fail}）` : ''}`);
     }
   };
   const workers = [];
   for (let i = 0; i < Math.min(UPLOAD_CONCURRENCY, total); i++) workers.push(worker());
   await Promise.all(workers);
-  return { done, fail, cancelled: uploadCancelled };
+  return { done, fail, firstErr, cancelled: uploadCancelled };
 }
 function showUpload(msg) { uploadCancelled = false; uploadActive = true; const t = $('uploadTxt'); if (t) t.textContent = msg; $('uploadBar') && $('uploadBar').classList.add('show'); }
 function updateUpload(msg) { const t = $('uploadTxt'); if (t) t.textContent = msg; }
@@ -3187,11 +3228,18 @@ async function tlEditSave() {
     try {
       const slotList = tlEditAdded.map((it2, i) => ({ it: it2, i, path: `photos/${uid()}-${i}.jpg` }));
       const slotAdded = new Array(slotList.length).fill('');
-      await uploadManyWithProgress(slotList, async (s) => {
+      const res = await uploadManyWithProgress(slotList, async (s) => {
         await ghPutBinary(s.path, s.it.dataUrl);
         cachePhotoFromUpload(s.path, s.it.dataUrl);
         slotAdded[s.i] = s.path;
       }, '正在上传');
+      // 有失败就不半途保存：避免照片被默丢失
+      if (res && res.fail) {
+        slotAdded.forEach(p => { if (p && Array.isArray(S.trash) && !S.trash.some(t => t.path === p)) S.trash.push({ id: uid(), path: p, at: Date.now(), updatedAt: Date.now() }); });
+        if (S.trash.length) commit('trash');
+        toast(`有 ${res.fail} 张照片上传失败，请重试 ❌`);
+        return;
+      }
       slotAdded.forEach(v => { if (v) addedPaths.push(v); });
     } catch (e) { hideUpload(); toast('照片上传失败，稍后重试 ❌'); return; } finally { hideUpload(); }
     if (uploadCancelled) { addedPaths.forEach(p => { if (!S.trash.some(t => t.path === p)) S.trash.push({ id: uid(), path: p, at: Date.now(), updatedAt: Date.now() }); }); toast('已取消保存'); return; }
