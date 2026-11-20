@@ -295,6 +295,8 @@ input:focus { border-color: #ff7e9d; }
 .wall-sel-fab:active { transform: scale(.93); }
 body.wall-selecting .wall-sel-fab { background: #e9407a; color: #fff; border-color: #e9407a; }
 .tl-count { font-size: 11.5px; color: var(--text-sub); margin: -4px 0 8px 4px; } /* 搜索命中计数：显隐由 JS 内联控制 */
+.tl-sentinel { height: 1px; } /* 分批渲染哨兵：滚到它附近就追加下一批 */
+.tl-more-tip { text-align: center; font-size: 12px; color: var(--text-sub); padding: 10px 0 16px; }
 @keyframes tlNew { from { opacity: 0; transform: translateY(10px); } }
 .tl-item.new { animation: tlNew .4s ease; } /* 新写入的记录淡入落位 */
 .empty .ico { display: block; font-style: normal; font-size: 34px; margin-bottom: 6px; opacity: .9; }
@@ -1935,7 +1937,13 @@ const commit = (...keys) => {
   else keys.forEach(k => (RENDERERS[k] || []).forEach(fn => fn()));
   schedulePush();
 };
-function addListItem(key, item) { if (!item.createdAt) item.createdAt = Date.now(); touch(item); S[key].push(item); commit(key); }
+function addListItem(key, item) {
+  if (!item.createdAt) item.createdAt = Date.now();
+  touch(item); S[key].push(item);
+  // 时间线：命中无筛选视图时只插一个节点，避免 500 条时重建整表（~30ms）
+  if (key === 'timeline' && tlIncrementalInsert(item)) tlSkipRender = 1;
+  commit(key);
+}
 // 释放一条记录名下的全部照片（时间线一条最多 9 张，旧数据是单张 photo）
 function releaseItemPhotos(it) {
   const all = itemPhotos(it);
@@ -1954,7 +1962,10 @@ function delListItem(key, id) {
   const it = S[key].find(x => x.id === id); if (!it) return;
   // 时间线/照片墙：照片可能有多张，必须逐张释放，否则第 2 张起会变成永不回收的孤儿文件
   if (key === 'timeline' || key === 'wall') releaseItemPhotos(it);
-  touch(it); it.deleted = true; commit(key, 'trash');
+  touch(it); it.deleted = true;
+  // 时间线：只摘掉对应节点；该月空了连月份头一起删
+  if (key === 'timeline' && tlIncrementalRemove(it)) tlSkipRender = 1;
+  commit(key, 'trash');
 }
 // 确认后删除，并提供 5 秒撤销（墓碑反标记即可恢复）
 function confirmDel(msg, key, id) {
@@ -2563,7 +2574,192 @@ function renderTlFilterBar() {
   ).join('');
 }
 function pickTlFilter(t) { tlFilter = t || ''; renderTimeline(); }
+/* ===== 时间线分批渲染 + 增量渲染 =====
+   500 条记录一次 innerHTML 约 34ms（手机 70~130ms），改成：
+   ① 首屏只渲染 TL_PAGE 条，滚到哨兵附近再追加下一批；
+   ② 增/删/改直接在 DOM 上动单个节点，不重建整表。
+   tlUnits 是「月份头 + 记录」的线性数组，也是插入定位的唯一真值来源。 */
+const TL_PAGE = 30;
+let tlUnits = [];          // [{m:'2026-11'} | {t:item}]
+let tlRenderPos = 0;       // 已渲染到 tlUnits 的第几项
+let tlRenderedCount = 0;   // 上次渲染的行数（重渲染保持展开量，避免滚动位置跳变）
+let tlGroupEl = null;      // 当前正在追加的 .tl-group
+let tlObserver = null;
+let tlSkipRender = 0;      // 增量渲染已改好 DOM 时置 1，renderTimeline 见到就跳过
+let tlLastSig = '';        // 上次的筛选特征：变化时把展开量收回首屏
+
+function tlKeyOf(t) { return (t.date || '') + (tlTimeOf(t) || '00:00') + t.id; }
+
+// 单条记录模板：meta → del → text → photo，位置由 DOM 顺序决定
+function tlItemHtml(t) {
+  const who2 = S.name2 && t.author === S.name2;
+  const long = (t.text || '').length > 120; // 约 6 行以上才给折叠按钮（实际由 calibrateTlClamp 按真实溢出校准）
+  const isNew = t.id === tlNewId; // 刚发布的记录带入场动画
+  const hasText = !!t.text && !/^📷 分享/.test(t.text); // 纯图占位符不入正文
+  return `<div class="tl-item${who2 ? ' who2' : ''}${isNew ? ' new' : ''}" data-id="${esc(t.id)}"><div class="meta"><span class="who">${esc(t.author)}</span>${t.tag ? `<span class="tl-tag">${esc(t.tag)}</span>` : ''}<span class="when">${esc(tlWhenLabel(t))}</span></div><button class="del" onclick="openActionSheet('${t.id}')" title="更多操作" aria-label="更多操作">⋯</button>${hasText ? `<div class="text${long ? ' clamp' : ''}">${linkify(t.text)}</div>${long ? `<button class="text-toggle" onclick="tlToggleText(this)">展开全文</button>` : ''}` : ''}${tlPhotosHtml(t)}</div>`;
+}
+
+function tlFindItemEl(root, id) {
+  if (!root) return null;
+  const els = root.querySelectorAll('.tl-item');
+  for (let i = 0; i < els.length; i++) if (els[i].getAttribute('data-id') === id) return els[i];
+  return null;
+}
+
+function tlStdNode(t) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = tlItemHtml(t);
+  return tmp.firstElementChild;
+}
+
+// 照片惰性加载：优先命中内存 LRU（同步上屏，避免重复搜索时反复 await）
+function tlLoadPhotos(nodes) {
+  (nodes || []).forEach(node => {
+    node.querySelectorAll('img[data-photo]').forEach(async img => {
+      const p = img.getAttribute('data-photo');
+      const apply = (url) => { img.onload = () => img.classList.add('loaded'); img.src = url; if (img.complete) img.classList.add('loaded'); };
+      const memHit = photoCache.get(p);
+      if (memHit) { apply(memHit); return; }
+      const url = await getPhotoCached(p);
+      if (url) apply(url);
+    });
+  });
+}
+
+// 渲染接下来的 n 项（首次调用传较大值以保持上次的展开量）
+function tlRenderBatch(n) {
+  const root = $('tlList');
+  if (!root) return;
+  const oldWrap = root.querySelector('.tl-sentinel-wrap');
+  if (oldWrap) oldWrap.remove();
+  if (tlObserver) { tlObserver.disconnect(); tlObserver = null; }
+  const end = Math.min(tlRenderPos + (n || TL_PAGE), tlUnits.length);
+  const frag = document.createDocumentFragment();
+  const newNodes = [];
+  for (; tlRenderPos < end; tlRenderPos++) {
+    const u = tlUnits[tlRenderPos];
+    if (u.m !== undefined) {
+      tlGroupEl = document.createElement('div');
+      tlGroupEl.className = 'tl-group';
+      tlGroupEl.innerHTML = '<div class="group-month">🗓 ' + esc(tlMonthLabel(u.m)) + '</div>';
+      frag.appendChild(tlGroupEl);
+    } else {
+      const node = tlStdNode(u.t);
+      if (!node) continue;
+      if (!tlGroupEl) { tlGroupEl = document.createElement('div'); tlGroupEl.className = 'tl-group'; frag.appendChild(tlGroupEl); }
+      tlGroupEl.appendChild(node);
+      newNodes.push(node);
+    }
+  }
+  root.appendChild(frag);
+  tlRenderedCount = tlRenderPos;
+  calibrateTlClamp(newNodes); // 只校准本批新节点，不全表重扫
+  tlLoadPhotos(newNodes);
+  // 还有未渲染的：挂哨兵，滚到附近自动追加（避免一次性建完 4000+ 节点）
+  if (tlRenderPos < tlUnits.length) {
+    const wrap = document.createElement('div');
+    wrap.className = 'tl-sentinel-wrap';
+    wrap.innerHTML = '<div class="tl-more-tip">下滑加载更多…</div><div class="tl-sentinel"></div>';
+    root.appendChild(wrap);
+    if ('IntersectionObserver' in window) {
+      tlObserver = new IntersectionObserver(es => {
+        if (!es.some(e => e.isIntersecting)) return;
+        if (tlObserver) { tlObserver.disconnect(); tlObserver = null; }
+        tlRenderBatch();
+      }, { root: root.closest('.scroll-area') || null, rootMargin: '400px 0px' });
+      tlObserver.observe(wrap.querySelector('.tl-sentinel'));
+    } else { tlRenderBatch(); }
+  }
+}
+
+/* 增量插入：命中当前视图时只造一个节点，避免整表重建（500 条时 30ms → 约 1ms） */
+function tlIncrementalInsert(t) {
+  const root = $('tlList');
+  if (!root || !tlUnits.length) return false;
+  if (tlFilter || ($('tlSearch').value || '').trim()) return false; // 有筛选：交给全量渲染保证正确
+  const key = tlKeyOf(t);
+  const m = (t.date || '').slice(0, 7) || '未知时间';
+  let groupPos = -1;
+  for (let i = 0; i < tlUnits.length; i++) { if (tlUnits[i].m === m) { groupPos = i; break; } }
+  if (groupPos >= 0) {
+    // 同月分组已存在：在组内按时间倒序找插入点
+    let at = groupPos + 1;
+    while (at < tlUnits.length && tlUnits[at].t && tlKeyOf(tlUnits[at].t) > key) at++;
+    if (at >= tlRenderPos) { tlUnits.splice(at, 0, { t }); return true; } // 未渲染区：只改数组
+    const monthIdx = tlUnits.slice(0, groupPos).filter(u => u.m !== undefined).length;
+    const groupEl = root.querySelectorAll('.tl-group')[monthIdx];
+    if (!groupEl) return false;
+    const nextUnit = tlUnits[at];
+    const ref = nextUnit && nextUnit.t ? tlFindItemEl(groupEl, nextUnit.t.id) : null;
+    tlUnits.splice(at, 0, { t });
+    tlRenderPos++;
+    const node = tlStdNode(t);
+    if (!node) return false;
+    groupEl.insertBefore(node, ref);
+    tlRenderedCount = tlRenderPos; // 与已渲染量保持一致（跨筛选切回时按此恢复展开量）
+    calibrateTlClamp([node]); tlLoadPhotos([node]);
+    return true;
+  }
+  // 新月份：需要连月份头一起建组
+  let at = 0;
+  for (let i = 0; i < tlUnits.length; i++) { if (tlUnits[i].m !== undefined && tlUnits[i].m < m) { at = i; break; } at = i + 1; }
+  if (at >= tlRenderPos) { tlUnits.splice(at, 0, { m }, { t }); return true; }
+  const monthIdx = tlUnits.slice(0, at).filter(u => u.m !== undefined).length;
+  const node = tlStdNode(t);
+  if (!node) return false;
+  const g = document.createElement('div');
+  g.className = 'tl-group';
+  g.innerHTML = '<div class="group-month">🗓 ' + esc(tlMonthLabel(m)) + '</div>';
+  g.appendChild(node);
+  tlUnits.splice(at, 0, { m }, { t });
+  tlRenderPos += 2;
+  const groups = root.querySelectorAll('.tl-group');
+  root.insertBefore(g, groups[monthIdx] || null);
+  tlRenderedCount = tlRenderPos;
+  calibrateTlClamp([node]); tlLoadPhotos([node]);
+  return true;
+}
+
+/* 增量删除：只摘掉对应节点；该月空了连月份头一起删 */
+function tlIncrementalRemove(it) {
+  const root = $('tlList');
+  if (!root) return false;
+  const idx = tlUnits.findIndex(u => u.t && u.t.id === it.id);
+  if (idx < 0) return false; // 不在当前视图：交给全量渲染
+  const el = idx < tlRenderPos ? tlFindItemEl(root, it.id) : null;
+  const groupEl = el ? el.closest('.tl-group') : null;
+  const gIdx = groupEl ? Array.prototype.indexOf.call(root.querySelectorAll('.tl-group'), groupEl) : -1;
+  tlUnits.splice(idx, 1);
+  if (idx < tlRenderPos) {
+    tlRenderPos--;
+    if (el) el.remove();
+    if (groupEl && !groupEl.querySelector('.tl-item')) {
+      groupEl.remove();
+      let mi = -1, seen = -1;
+      for (let i = 0; i < tlUnits.length; i++) { if (tlUnits[i].m !== undefined) { seen++; if (seen === gIdx) { mi = i; break; } } }
+      if (mi >= 0 && mi < tlRenderPos) { tlUnits.splice(mi, 1); tlRenderPos--; }
+    }
+    tlRenderedCount = tlRenderPos;
+  }
+  return true;
+}
+
+/* 增量更新：只换这一条的内容（日期变了会改变排序，由调用方回退到全量） */
+function tlIncrementalUpdate(it) {
+  const root = $('tlList');
+  if (!root) return false;
+  const el = tlFindItemEl(root, it.id);
+  if (!el) return false;
+  const node = tlStdNode(it);
+  if (!node) return false;
+  el.replaceWith(node);
+  calibrateTlClamp([node]); tlLoadPhotos([node]);
+  return true;
+}
+
 function renderTimeline() {
+  // 增量渲染已改好 DOM：统计卡仍需刷新（它算的是全量数据），列表则不重建
+  if (tlSkipRender) { tlSkipRender = 0; renderTlStats(); return; }
   renderTlStats(); // 统计卡不受搜索影响，始终展示全量数据
   renderTlFilterBar();
   const kw = $('tlSearch').value.trim().toLowerCase();
@@ -2580,36 +2776,28 @@ function renderTimeline() {
   }
   else cnt.style.display = 'none';
   if (!list.length) {
+    tlUnits = []; tlRenderPos = 0; tlRenderedCount = 0; tlLastSig = '';
+    if (tlObserver) { tlObserver.disconnect(); tlObserver = null; }
     const filtered = !!kw || !!tlFilter;
     $('tlList').innerHTML = `<div class="empty"><i class="ico">${filtered ? '🔍' : '✍️'}</i>${filtered ? '没有匹配的记录<br><button class="btn small" onclick="tlResetFilter()">清除筛选</button>' : '还没有记录<br>写下第一条吧<br><button class="btn small" onclick="tlComposeOpen()">✍️ 写第一条</button>'}</div>`;
     return;
   }
   // 列表已按日期倒序，同月记录必然相邻，直接顺序分组
-  const groups = [];
-  let cur = null;
-  list.forEach(t => { const m = (t.date || '').slice(0, 7) || '未知时间'; if (!cur || cur.m !== m) { cur = { m, items: [] }; groups.push(cur); } cur.items.push(t); });
-  $('tlList').innerHTML = groups.map(g =>
-    `<div class="tl-group"><div class="group-month">🗓 ${esc(tlMonthLabel(g.m))}</div>` + g.items.map(t => {
-      const who2 = S.name2 && t.author === S.name2;
-      const long = (t.text || '').length > 120; // 约 6 行以上才提供折叠
-      const isNew = t.id === tlNewId; // 刚发布的记录带入场动画
-      const hasText = !!t.text && !/^📷 分享/.test(t.text); // 纯图占位符不入正文
-      // 是否真需要折叠：用 120 字粗筛，渲染后由 calibrateTlClamp 按真实溢出二次校准
-      // 单一模板：meta → del → text → photo，位置由 DOM 顺序决定，纯图卡不再翻转
-      return `<div class="tl-item${who2 ? ' who2' : ''}${isNew ? ' new' : ''}" data-id="${esc(t.id)}"><div class="meta"><span class="who">${esc(t.author)}</span>${t.tag ? `<span class="tl-tag">${esc(t.tag)}</span>` : ''}<span class="when">${esc(tlWhenLabel(t))}</span></div><button class="del" onclick="openActionSheet('${t.id}')" title="更多操作" aria-label="更多操作">⋯</button>${hasText ? `<div class="text${long ? ' clamp' : ''}">${linkify(t.text)}</div>${long ? `<button class="text-toggle" onclick="tlToggleText(this)">展开全文</button>` : ''}` : ''}${tlPhotosHtml(t)}</div>`;
-    }).join('') + '</div>'
-  ).join('');
-  if (tlNewId) { tlNewId = ''; $('tlList').querySelector('.tl-item.new')?.addEventListener('animationend', function once() { this.classList.remove('new'); }, { once: true }); }
-  calibrateTlClamp(); // 修正「展开全文」与真实截断不同步的问题
-  // 惰性加载照片：优先命中内存 LRU（同步，避免重搜索时反复 await），未命中才请求；兼容旧 data: URL；加载完成后淡入
-  document.querySelectorAll('#tlList img[data-photo]').forEach(async img => {
-    const p = img.getAttribute('data-photo');
-    const apply = (url) => { img.onload = () => img.classList.add('loaded'); img.src = url; if (img.complete) img.classList.add('loaded'); };
-    const memHit = photoCache.get(p);
-    if (memHit) { apply(memHit); return; } // 已在内存缓存：同步上屏，不再走 async
-    const url = await getPhotoCached(p);
-    if (url) apply(url);
+  // 拼成 tlUnits（月份头 + 记录交错的线性序列），分批渲染与增量插入共用这一份结构
+  const sig = (kw || '') + '\u0001' + (tlFilter || '');
+  const keepCount = (sig === tlLastSig && tlRenderedCount > 0) ? tlRenderedCount : TL_PAGE; // 筛选未变则保持已展开量
+  tlLastSig = sig;
+  tlUnits = [];
+  let curM = null;
+  list.forEach(t => {
+    const m = (t.date || '').slice(0, 7) || '未知时间';
+    if (m !== curM) { tlUnits.push({ m }); curM = m; }
+    tlUnits.push({ t });
   });
+  tlRenderPos = 0; tlGroupEl = null; tlRenderedCount = 0;
+  $('tlList').innerHTML = '';
+  tlRenderBatch(keepCount);
+  if (tlNewId) { tlNewId = ''; $('tlList').querySelector('.tl-item.new')?.addEventListener('animationend', function once() { this.classList.remove('new'); }, { once: true }); }
 }
 function tlClearSearch() { $('tlSearch').value = ''; $('tlSearchClear').classList.remove('show'); renderTimeline(); }
 // 清掉搜索与标签筛选，回到全量视图（空状态按钮用）
@@ -2617,8 +2805,11 @@ function tlResetFilter() { $('tlSearch').value = ''; tlFilter = ''; renderTimeli
 /* 「展开全文」校准：是否截断以实际溢出为准。
    旧逻辑只看字数 >120，而 clamp 是 6 行，120 个中文字往往不到 6 行 →
    按钮显示着但点下去毫无变化。这里临时解除 clamp 量真实高度，再决定去留。 */
-function calibrateTlClamp() {
-  document.querySelectorAll('#tlList .tl-item').forEach(item => {
+function calibrateTlClamp(scope) {
+  // scope：只校准指定节点（分批渲染/增量插入传新节点，避免全表扫描）；不传则扫全部
+  const root = scope ? null : $('tlList');
+  const nodes = scope || (root ? root.querySelectorAll('.tl-item') : []);
+  nodes.forEach(item => {
     const text = item.querySelector('.text');
     if (!text) return;
     let btn = item.querySelector('.text-toggle');
@@ -2796,9 +2987,15 @@ async function addTimeline() {
   if (!text && !pendingPhotos.length) { toast('写点什么或加张照片吧～'); return; }
   const id = uid();
   const paths = [];
-  if (pendingPhotos.length) {
+  // 点击反馈先行：先把面板收起来，上传在后台跑。
+  // 串行上传 3 张要 3~9 秒，让界面干等着会像卡死。
+  const draftTag = tlTag;
+  const draftDate = $('tlDate').value;
+  const photoCount = pendingPhotos.length;
+  if (photoCount) {
+    tlComposeClose(); // 先关面板（内部会存草稿，失败时重新打开能恢复文字）
     uploading = true; $('tlAdd').disabled = true;
-    showUpload(`正在上传 1/${pendingPhotos.length}…`);
+    showUpload(`正在上传 1/${photoCount}…`);
     try {
       const slots = pendingPhotos.map((ph, i) => ({ ph, i, path: `photos/${id}${i === 0 ? '' : '-' + i}.jpg` }));
       const slotPaths = new Array(slots.length).fill('');
@@ -2813,6 +3010,7 @@ async function addTimeline() {
         slotPaths.forEach(p => { if (p && Array.isArray(S.trash) && !S.trash.some(t => t.path === p)) S.trash.push({ id: uid(), path: p, at: Date.now(), updatedAt: Date.now() }); });
         if (S.trash.length) commit('trash');
         toast(`有 ${res.fail} 张照片上传失败，请重试 ❌`);
+        tlComposeOpen(); // 重新打开面板：文字从草稿恢复，待传照片仍在内存
         return;
       }
       // 按上传前的选择顺序收集（理论上不会有空位了，保留兼容）
@@ -2820,6 +3018,7 @@ async function addTimeline() {
     } catch (e) {
       hideUpload();
       toast('照片上传失败，请检查网络 ❌');
+      tlComposeOpen();
       return;
     } finally {
       uploading = false; $('tlAdd').disabled = false; hideUpload();
@@ -2830,12 +3029,15 @@ async function addTimeline() {
       toast('已取消发布');
       return;
     }
+  } else {
+    tlComposeClose();
   }
   const first = pendingPhotos[0] || {};
   tlNewId = id;
-  addListItem('timeline', { id, author: myName(), text: text || `📷 分享了 ${paths.length} 张照片`, tag: tlTag, photo: paths[0] || '', photos: paths, date: $('tlDate').value, time: hmOf(Date.now()), pw: first.w || 0, ph: first.h || 0 });
+  addListItem('timeline', { id, author: myName(), text: text || `📷 分享了 ${paths.length} 张照片`, tag: draftTag, photo: paths[0] || '', photos: paths, date: draftDate, time: hmOf(Date.now()), pw: first.w || 0, ph: first.h || 0 });
   $('tlText').value = ''; tlTag = '日常'; renderTlTagPicker(); clearPhoto(); clearTlDraft(); toast('已记录 ❤');
-  tlComposeClose();
+  // 日期回到今天：否则连续写第二条时会沿用上一条的日期（不报错，但记错时间）
+  $('tlDate').value = fmtDay(new Date());
 }
 // 一条记录的照片列表：新数据用 photos 数组，旧数据回落到单张 photo
 function itemPhotos(t) { return Array.isArray(t.photos) && t.photos.length ? t.photos.filter(Boolean) : (t.photo ? [t.photo] : []); }
@@ -2892,6 +3094,8 @@ function quickDel(key, id) {
     if (!cur) return;
     touch(cur); cur.deleted = false;
     if (cur.photo && Array.isArray(S.trash)) S.trash = S.trash.filter(t => t.path !== cur.photo);
+    // 撤销时若节点已被摘掉，同样只插回一个节点，不重建整表
+    if (key === 'timeline' && tlIncrementalInsert(cur)) tlSkipRender = 1;
     commit(key, 'trash');
   });
 }
@@ -3253,8 +3457,11 @@ async function tlEditSave() {
   else if (photos.length === 1 && addedPaths.length === 1) { it.pw = tlEditAdded[0].w || 0; it.ph = tlEditAdded[0].h || 0; }
   else { it.pw = 0; it.ph = 0; }
   it.text = text; it.tag = tlEditTag;
+  const dateChanged = ($('tlEditDate').value || it.date) !== it.date;
   it.date = $('tlEditDate').value || it.date;
   touch(it);
+  // 日期没变：只换这一条的节点；日期变了要重排，交给全量渲染
+  if (!dateChanged && tlIncrementalUpdate(it)) tlSkipRender = 1;
   commit('timeline', 'trash');
   tlEditClose();
   toast('已保存 ✏️');
