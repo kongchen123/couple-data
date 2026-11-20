@@ -1551,6 +1551,36 @@ function bytesToB64(bytes) {
   return btoa(bin);
 }
 const decB64 = (b) => decodeURIComponent(escape(atob(b.replace(/\n/g, ''))));
+// base64 → 字节数组（不能走 decB64：那是按 UTF-8 文本解码的，二进制会坏）
+function b64ToBytes(b64) {
+  const bin = atob((b64 || '').replace(/\n/g, ''));
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+/* 云端数据用 gzip 存：不是为了省流量，而是为了绕开 Contents API 单文件 1MB 的写入硬上限。
+   实测 500 条记录：缩进明文 171.6KB → 紧凑 127.6KB → gzip 后 9.9KB（7.7%），
+   容量从约 2900 条提到约 5 万条。落盘仍是 couple-data.json，内容变成 gzip 二进制。 */
+async function gzipText(text) {
+  const raw = new TextEncoder().encode(text);
+  if (typeof CompressionStream !== 'function') return raw; // 老环境退回明文，读取端能识别
+  const stream = new Blob([raw]).stream().pipeThrough(new CompressionStream('gzip'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+async function gunzipText(bytes) {
+  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+  return await new Response(stream).text();
+}
+// 靠 magic bytes 识别新旧两种格式（0x1F 0x8B = gzip），老文件不用迁移、新写入自动转 gzip
+async function decodePayload(bytes) {
+  if (bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b) {
+    if (typeof DecompressionStream !== 'function') {
+      throw new Error('当前浏览器不支持解压，请更新系统后再试');
+    }
+    return await gunzipText(bytes);
+  }
+  return new TextDecoder().decode(bytes);
+}
 
 async function ghGet(path) {
   if (needToken()) throw new Error('缺少 GitHub Token');
@@ -1560,21 +1590,45 @@ async function ghGet(path) {
   if (r.status === 404) return { data: null, sha: null };
   if (!r.ok) throw new Error('HTTP ' + r.status);
   const d = await r.json();
-  if (!d.content) { // >1MB 文件 raw 模式重取
+  // 文件超过 1MB 时 JSON 接口不返回 content，改用 raw 模式直接取字节
+  let bytes;
+  if (!d.content) {
     const raw = await netFetch(url, { headers: Object.assign(auth(c.token), { 'Accept': 'application/vnd.github.raw' }) });
-    return { data: JSON.parse(await raw.text()), sha: d.sha };
+    bytes = new Uint8Array(await raw.arrayBuffer());
+  } else {
+    bytes = b64ToBytes(d.content);
   }
-  return { data: JSON.parse(decB64(d.content)), sha: d.sha };
+  return { data: JSON.parse(await decodePayload(bytes)), sha: d.sha };
 }
 // 单个文件的并发冲突重试次数：Contents API 每次 PUT 都会新建 commit 并更新分支 ref，
 // 同一分支上的并发写入必然撞锁（409/422），必须重取 sha 后重试
 const GHPUT_RETRY = 4;
+// Contents API 单文件写入硬上限 1MB（按 base64 编码后计）；超过就在本地拦住，不要让请求白跑
+const MAX_CONTENT_BYTES = 1024 * 1024;
+const BUDGET_WARN_BYTES = 900 * 1024;
+let budgetWarned = false; // 每次会话只提醒一次，避免每次保存都弹
 async function ghPut(path, content, sha, isBinary) {
   if (needToken()) throw new Error('缺少 GitHub Token');
   const c = ghCfg();
   // commit message 带设备来源标识，供 GitHub Actions 判断该通知谁（from=android → 通知 iOS，反之亦然）
   const deviceTag = isAndroid() ? 'android' : 'ios';
-  const payload = isBinary ? content : encB64(JSON.stringify(content, null, 2));
+  let payload;
+  if (isBinary) {
+    payload = content;
+  } else {
+    // 紧凑序列化（不带缩进）+ gzip：缩进对数据文件毫无价值，却让体积大 35%
+    const gz = await gzipText(JSON.stringify(content));
+    payload = bytesToB64(gz);
+    // base64 会把体积抬到 4/3，这里按最终上传体积判断
+    const uploadBytes = payload.length;
+    if (uploadBytes > MAX_CONTENT_BYTES) {
+      throw new Error('PAYLOAD_TOO_LARGE ' + uploadBytes);
+    }
+    if (uploadBytes > BUDGET_WARN_BYTES && !budgetWarned) {
+      budgetWarned = true;
+      toast('数据已接近云端上限，建议导出备份并清理旧记录 ⚠');
+    }
+  }
   let useSha = sha;
   let lastErr = null;
   for (let attempt = 0; attempt <= GHPUT_RETRY; attempt++) {
@@ -1583,16 +1637,24 @@ async function ghPut(path, content, sha, isBinary) {
     const r = await netFetch(ghUrl(c, path), { method: 'PUT', headers: auth(c.token), body: JSON.stringify(body) });
     if (r.ok) return (await r.json()).content.sha;
     // 409/422 = 分支 ref 已被别的请求推进，或文件已存在而没带 sha
-    if ((r.status === 409 || r.status === 422) && attempt < GHPUT_RETRY) {
-      lastErr = new Error('HTTP ' + r.status);
-      // 指数退避 + 抖动，避免多个 worker 同时重试再次撞车
-      await new Promise(res => setTimeout(res, 220 * Math.pow(2, attempt) + Math.random() * 260));
-      try {
-        const fresh = await netFetch(ghUrl(c, path) + '?ref=' + (c.branch || ''), { headers: auth(c.token) });
-        if (fresh.status === 404) useSha = null;               // 文件不存在 → 不带 sha 新建
-        else if (fresh.ok) useSha = (await fresh.json()).sha;  // 已存在 → 带上最新 sha
-      } catch (e) { /* 取 sha 失败就沿用原值再试一次 */ }
-      continue;
+    if (r.status === 409 || r.status === 422) {
+      // 422 不止一种含义：sha 不匹配可以重试，文件过大重试多少次都没用
+      // （url 这条路径上是 1MB 硬上限，且重试会重复上传三张 1MB，白白耗流量）
+      let msg = '';
+      try { msg = ((await r.json()).message || ''); } catch (e) { /* 响应体不是 JSON */ }
+      if (/too large/i.test(msg)) throw new Error('PAYLOAD_TOO_LARGE');
+      if (attempt < GHPUT_RETRY) {
+        lastErr = new Error('HTTP ' + r.status);
+        // 指数退避 + 抖动，避免多个 worker 同时重试再次撞车
+        await new Promise(res => setTimeout(res, 220 * Math.pow(2, attempt) + Math.random() * 260));
+        try {
+          const fresh = await netFetch(ghUrl(c, path) + '?ref=' + (c.branch || ''), { headers: auth(c.token) });
+          if (fresh.status === 404) useSha = null;               // 文件不存在 → 不带 sha 新建
+          else if (fresh.ok) useSha = (await fresh.json()).sha;  // 已存在 → 带上最新 sha
+        } catch (e) { /* 取 sha 失败就沿用原值再试一次 */ }
+        continue;
+      }
+      throw new Error('HTTP ' + r.status);
     }
     throw new Error('HTTP ' + r.status);
   }
@@ -1756,6 +1818,8 @@ function markPushFail(text) {
 function sysErr(e) {
   const m = (e && e.message) || '';
   const code = Number((m.match(/HTTP (\d+)/) || [])[1]);
+  if (/PAYLOAD_TOO_LARGE/.test(m)) return { auth: false, text: '数据总量已超过云端单文件上限，请导出备份后清理旧记录' };
+  if (/不支持解压/.test(m)) return { auth: false, text: '当前系统不支持解压云端数据，请更新系统版本' };
   if (/缺少 GitHub Token/.test(m)) return { auth: true, text: '还没配置 Token，去设置填写后才能同步' };
   if (code === 401) return { auth: true, text: 'Token 已失效，请到设置重新填写' };
   if (code === 403) return { auth: false, text: 'GitHub 限流或被拒绝，稍后自动重试' };
@@ -1929,8 +1993,22 @@ const RENDERERS = {
   periods: [renderPeriods],
   wall: [renderWall],
 };
+// 墓碑保留 30 天：必须大于另一台设备最长的离线时间，否则离线设备上线会把已删记录又合并回来
+const TOMB_TTL = 30 * 24 * 60 * 60 * 1000;
+// 清理已删记录的墓碑。以前只有 trash 有 7 天窗口，其余列表的 deleted=true 记录会永久留在
+// buildPayload() 里，删得越多上传的 payload 越大——这是「数据只增不减」的根源
+function pruneTombstones() {
+  const now = Date.now();
+  const alive = (x) => x && (x.deleted !== true || now - (x.updatedAt || 0) < TOMB_TTL);
+  LIST_FIELDS.forEach(k => {
+    if (k === 'trash') return; // 孤儿回收队列自己的 7 天窗口会清理，不能在这里动
+    if (Array.isArray(S[k])) S[k] = S[k].filter(alive);
+  });
+  if (Array.isArray(S.tags)) S.tags = S.tags.filter(alive); // tags 不在 LIST_FIELDS 里
+}
 // 数据变更统一收口：落本地缓存 + 按需重渲染 + 防抖上传（不传 key 时全量渲染，供远端同步等场景使用）
 const commit = (...keys) => {
+  pruneTombstones();
   persist();
   invalidatePeriods();
   if (!keys.length) renderAll();
