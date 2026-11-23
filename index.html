@@ -328,6 +328,37 @@ body.wall-selecting .wall-sel-fab { background: #e9407a; color: #fff; border-col
 .wish-g-od { font-size: 10px; font-weight: 700; color: #c9707f; background: #fdeff1; border-radius: 6px; padding: 1px 6px; }
 .wish-item.overdue { opacity: .72; }
 .wish-roll { border: none; background: none; color: var(--primary); font-size: 11px; font-weight: 700; padding: 6px 4px; cursor: pointer; flex-shrink: 0; }
+/* ---- 心愿页：压缩上方占位，把空间还给列表 ---- */
+.wish-top-card { padding: 9px 13px; margin-bottom: 7px; }
+.wp-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 7px; }
+.wp-title { display: flex; align-items: baseline; gap: 5px; min-width: 0; }
+.wp-ico { font-size: 13px; line-height: 1; transform: translateY(1px); }
+.wp-frac { display: inline-flex; align-items: baseline; font-variant-numeric: tabular-nums; letter-spacing: -.2px; }
+.wp-frac b { font-size: 17px; font-weight: 800; color: var(--primary); line-height: 1; }
+.wp-frac i { font-style: normal; font-size: 12px; color: var(--text-faint); margin: 0 1px; }
+.wp-frac em { font-style: normal; font-size: 13px; font-weight: 600; color: var(--text-sub); }
+.wp-word { font-size: 11px; color: var(--text-faint); margin-left: 1px; }
+.wp-right { display: flex; align-items: center; gap: 9px; flex: none; }
+.wp-pct { font-size: 11.5px; font-weight: 800; color: var(--primary); background: var(--bg-active); border-radius: 999px; padding: 2px 8px; font-variant-numeric: tabular-nums; line-height: 1.35; }
+.wish-top-card .progress-bar { margin-top: 0; height: 5px; border-radius: 3px; background: var(--bg-bar); box-shadow: inset 0 1px 1px rgba(233,64,122,.07); }
+.wish-top-card .progress-bar i { border-radius: 3px; background: var(--bar-grad); }
+.wish-top-card .wish-progress-line { margin-top: 0; font-size: 10.5px; flex: none; justify-content: flex-end; color: var(--text-faint); gap: 7px; }
+.wish-top-card .wish-progress-line b { font-weight: 700; color: var(--text-sub); }
+.wp-dot { color: var(--text-dim); margin: 0 2px; }
+.wp-pct.zero { color: var(--text-faint); background: var(--bg-soft); }
+.wish-top-card .composer { margin-top: 9px; margin-bottom: 0; }
+.wish-top-card .inline-composer { margin-bottom: 0; gap: 6px; }
+.wish-top-card .inline-composer input[type="text"] { flex: 1 1 0; min-width: 0; padding: 8px 11px; font-size: 13.5px; }
+.wish-more-btn { flex: none; padding: 8px 9px !important; line-height: 1; font-size: 13px !important; }
+.wish-more-btn.open { background: rgba(233,64,122,.1); color: #e9407a; }
+.wish-more-btn.has-pick { color: #e9407a; font-weight: 700; }
+/* 选项区：默认折叠，展开时下方滑出 */
+.wish-opts { display: none; margin-top: 9px; }
+.wish-opts.open { display: block; }
+.wish-top-card .period-bar { margin-bottom: 8px; }
+.wish-top-card .tag-picker { margin-bottom: 0; }
+.wish-top-card .tag-editor { margin-top: 8px; margin-bottom: 0; }
+#page-wishes .filter-bar { margin-bottom: 8px; }
 .wp-year { width: 100%; border: 1.5px solid var(--border-chip); background: var(--bg-card); color: var(--text-cal); border-radius: 10px; padding: 9px 0; font-size: 13px; cursor: pointer; margin-bottom: 8px; }
 .wp-year.on { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 700; }
 .capsule-item { position: relative; background: var(--bg-soft); border-radius: var(--radius-item); padding: 12px 14px; margin-bottom: 10px; }
@@ -656,6 +687,11 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
 .exam-kp .t { font-size: 14px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
 .exam-kp .b { font-size: 12px; color: var(--text-sub); line-height: 1.55; margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .exam-hot { font-size: 9px; font-weight: 700; color: #e9407a; background: #ffe3ea; border-radius: 6px; padding: 1px 5px; }
+/* 已掌握：整体淡化 + 前置勾选，扫一眼就能分清哪些还没看 */
+.exam-kp.known { opacity: .55; }
+.exam-kp.known .t { color: var(--text-sub); }
+.exam-kp-done { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border-radius: 50%; background: #34c759; color: #fff; font-size: 10px; font-weight: 700; flex: none; }
+.exam-note-inline { font-size: 11px; color: var(--text-faint); }
 .exam-grid { display: grid; grid-template-columns: 42px repeat(5, 1fr); gap: 3px; }
 .exam-grid .gh { text-align: center; font-size: 10px; color: var(--text-sub); padding: 2px 0 4px; }
 .exam-grid .ah { display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: var(--primary); }
@@ -807,27 +843,32 @@ button.exam-cell { width: 100%; cursor: pointer; }
 
   <!-- ============ 心愿 ============ -->
   <section class="page" id="page-wishes">
-    <div class="card">
-      <h2>💫 心愿进度</h2>
-      <div class="row-between">
-        <span>已完成 <b id="wishDone" class="accent">0</b> / <span id="wishTotal">0</span></span>
-        <b id="wishPercent" class="accent">0%</b>
+    <div class="card wish-top-card">
+      <div class="wp-head">
+        <div class="wp-title">
+          <span class="wp-ico" aria-hidden="true">💫</span>
+          <span class="wp-frac"><b id="wishDone">0</b><i>/</i><em id="wishTotal">0</em></span>
+          <span class="wp-word">完成</span>
+        </div>
+        <div class="wp-right">
+          <span class="wish-progress-line" id="wishPeriodLine"></span>
+          <span class="wp-pct" id="wishPercent">0%</span>
+        </div>
       </div>
       <div class="progress-bar"><i id="wishBar" style="width:0%"></i></div>
-      <div class="wish-progress-line" id="wishPeriodLine"></div>
-    </div>
-    <div class="card">
-      <h2>✨ 许个心愿</h2>
       <div class="composer inline-composer">
-        <input type="text" id="wishText" placeholder="想一起做的事…">
+        <input type="text" id="wishText" placeholder="✨ 许个心愿…">
         <button class="btn small" onclick="addWish()">加入</button>
+        <button class="btn small ghost wish-more-btn" id="wishMoreBtn" onclick="toggleWishOpts()" title="更多选项" aria-label="更多选项">⌄</button>
       </div>
-      <div class="period-bar" id="wishPeriodBar"></div>
-      <div class="tag-picker" id="tagPicker"></div>
-      <div class="tag-editor" id="tagEditor" style="display:none">
-        <input type="text" id="tagInput" maxlength="6" placeholder="标签名，最多 6 个字">
-        <button class="btn small" onclick="confirmAddTag()">添加</button>
-        <button class="btn small ghost" onclick="toggleTagEditor(false)">取消</button>
+      <div class="wish-opts" id="wishOpts">
+        <div class="period-bar" id="wishPeriodBar"></div>
+        <div class="tag-picker" id="tagPicker"></div>
+        <div class="tag-editor" id="tagEditor" style="display:none">
+          <input type="text" id="tagInput" maxlength="6" placeholder="标签名，最多 6 个字">
+          <button class="btn small" onclick="confirmAddTag()">添加</button>
+          <button class="btn small ghost" onclick="toggleTagEditor(false)">取消</button>
+        </div>
       </div>
     </div>
     <div class="filter-bar" id="filterBar"></div>
@@ -3959,6 +4000,8 @@ function renderWishes() {
   $('wishDone').textContent = done; $('wishTotal').textContent = act.length;
   const pct = act.length ? Math.round(done / act.length * 100) : 0;
   $('wishPercent').textContent = pct + '%'; $('wishBar').style.width = pct + '%';
+  const pctEl = $('wishPercent');
+  if (pctEl) pctEl.classList.toggle('zero', pct === 0);
   const curM = wpCurMonth(), curY = String(new Date().getFullYear());
   const rate = arr => arr.filter(w => w.done).length + '/' + arr.length;
   const mAct = act.filter(w => w.period === curM);
@@ -3967,7 +4010,7 @@ function renderWishes() {
   if (mAct.length) line.push('本月 <b>' + rate(mAct) + '</b>');
   if (yAct.length) line.push('今年 <b>' + rate(yAct) + '</b>');
   const hasAnyPeriod = act.some(w => wpIsValid(w.period));
-  $('wishPeriodLine').innerHTML = line.length ? line.join(' · ') : (hasAnyPeriod ? '本月还没有安排' : '还没有带时间节点的心愿');
+  $('wishPeriodLine').innerHTML = line.length ? line.join('<span class="wp-dot">·</span>') : (hasAnyPeriod ? '本月还没有安排' : '还没有带时间节点的心愿');
 
   /* 写心愿时选时间段：本月 / 今年 / 不限期 三个快捷键 + 其它年份月份 */
   const chips = [
@@ -3991,6 +4034,7 @@ function renderWishes() {
   ).join('');
   $('tagPicker').innerHTML = defaultChips + customChips +
     `<button class="chip tag-new ${tagEditing ? 'on' : ''}" onclick="toggleTagEditor()">＋ 自定义</button>`;
+  syncWishMoreHint();
 
   // 筛选条只显示「真的被用过」的标签，按标签顺序排列
   const used = [...new Set(S.wishes.filter(w => !w.deleted && w.tag).map(w => w.tag))];
@@ -4125,6 +4169,26 @@ function addWish() {
   if (!text) { toast('先写一个心愿吧～'); return; }
   addListItem('wishes', { id: uid(), text, tag: newTag, done: false, period: wpIsValid(newPeriod) ? newPeriod : '', createdAt: Date.now() });
   $('wishText').value = ''; newTag = ''; toast('心愿已加入 ✨');
+}
+/* 输入区选项（时间节点 / 标签）默认收起，把高度让给列表 */
+function toggleWishOpts(force) {
+  const box = $('wishOpts'), btn = $('wishMoreBtn');
+  if (!box || !btn) return;
+  const open = typeof force === 'boolean' ? force : !box.classList.contains('open');
+  box.classList.toggle('open', open);
+  btn.classList.toggle('open', open);
+  btn.textContent = open ? '⌃' : '⌄';
+  if (open) renderWishes();
+}
+/* 折叠时把当前选中的时间/标签提示在按钮上，避免选了看不到 */
+function syncWishMoreHint() {
+  const btn = $('wishMoreBtn');
+  if (!btn) return;
+  const parts = [];
+  if (wpIsValid(newPeriod)) parts.push(wpLabel(newPeriod));
+  if (newTag) parts.push(newTag);
+  btn.classList.toggle('has-pick', parts.length > 0);
+  btn.title = parts.length ? '已选：' + parts.join(' · ') : '更多选项';
 }
 function toggleWish(id) { const w = S.wishes.find(x => x.id === id); if (!w) return; touch(w); w.done = !w.done; commit('wishes'); if (w.done) toast('又完成一个心愿，恭喜！🎉'); }
 const delWish = (id) => quickDel('wishes', id);

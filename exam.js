@@ -14,6 +14,16 @@ let examView = 'hub';
 let examKpKw = '';
 let examQuiz = null;
 let examCalc = null;
+/* 已掌握标记：{ kp01: 1 }，存本机 examCfg，不进情侣同步 */
+let examKnown = (() => { const k = examCfg.known; return (k && typeof k === 'object') ? k : {}; })();
+const examIsKnown = (id) => !!examKnown[id];
+function examToggleKnown(id) {
+  if (!id) return;
+  if (examKnown[id]) delete examKnown[id]; else examKnown[id] = 1;
+  examCfg.known = examKnown;
+  examSaveCfg();
+}
+const examKnownCount = () => Object.keys(examKnown).filter(id => examKpById(id)).length;
 
 const examSaveCfg = () => { try { localStorage.setItem(EXAM_CFG_KEY, JSON.stringify(examCfg)); } catch (e) { /* 忽略 */ } };
 const examShuffle = (a) => { const x = a.slice(); for (let i = x.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = x[i]; x[i] = x[j]; x[j] = t; } return x; };
@@ -57,18 +67,21 @@ function examHtmlHub() {
     <button class="exam-tile" onclick="examGo('kp')"><span class="ico">📚</span><b>知识点</b><span>${EXAM_KP.length} 条高频考点</span></button>
     <button class="exam-tile" onclick="examGo('itto')"><span class="ico">🧩</span><b>ITTO</b><span>${examIttoDetailCount()}/${EXAM_ITTO.length} 个过程明细</span></button>
     <button class="exam-tile" onclick="examGo('calc')"><span class="ico">🧮</span><b>计算题</b><span>挣值分析 · 随机出题</span></button>
-    <button class="exam-tile" onclick="examGo('bank')"><span class="ico">📝</span><b>刷题</b><span>题库下一版导入</span></button>
+    <button class="exam-tile" onclick="examGo('bank')"><span class="ico">📝</span><b>刷题</b><span>ITTO 自测 · 随机 3 题</span></button>
   </div>
   <p class="exam-note">内容还在校对：ITTO 先录了高频过程，知识点后续按教材补全；刷题和更多计算题型下一版。</p>`;
 }
 
 function examHead(title, right) {
-  return `<div class="exam-head"><button class="exam-back" onclick="examBack()">‹ 返回</button><span class="exam-h2">${esc(title)}</span><span class="exam-count">${esc(right || '')}</span></div>`;
+  /* 主标题已由全局 pageTitle 显示，这里不再重复写一遍，只保留“‹ 返回”和右侧计数。
+     hub 页不画返回（全局 backBtn 已能回到「更多」），避免点了没反应。 */
+  const back = examView === 'hub' ? '' : '<button class="exam-back" onclick="examBack()">‹ 返回</button>';
+  return `<div class="exam-head">${back}<span class="exam-count">${esc(right || '')}</span></div>`;
 }
 
 /* ---------------- 知识点 ---------------- */
 function examHtmlKp() {
-  return examHead('知识点', EXAM_KP.length + ' 条') +
+  return examHead('知识点', examKnownCount() + '/' + EXAM_KP.length + ' 已掌握') +
     `<div class="exam-search"><input type="text" id="examKpSearch" placeholder="搜知识点 / 关键词…" value="${esc(examKpKw)}" oninput="examKpInput(this.value)"></div>
      <div id="examKpList"></div>`;
 }
@@ -76,13 +89,16 @@ function examHtmlKp() {
 function examRenderKpList() {
   const box = $('examKpList');
   if (!box) return;
+  /* 计数在这里统一刷新：标记/取消/搜索都走这个函数，头部不会与列表脱节 */
+  const head = document.querySelector('#page-exam .exam-count');
+  if (head) head.textContent = examKnownCount() + '/' + EXAM_KP.length + ' 已掌握';
   const kw = examKpKw.trim().toLowerCase();
   const list = EXAM_KP.filter(k => !kw || (k.area + k.title + k.body + (k.memo || '')).toLowerCase().indexOf(kw) >= 0);
   if (!list.length) { box.innerHTML = '<div class="empty">没有匹配的知识点</div>'; return; }
   const areaOrder = (a) => { const i = EXAM_AREAS.indexOf(a); return i < 0 ? 99 : i; };
   const areas = [...new Set(list.map(k => k.area))].sort((a, b) => areaOrder(a) - areaOrder(b));
   box.innerHTML = areas.map(a => `<div class="exam-kp-area">${esc(a)}</div>` + list.filter(k => k.area === a).map(k =>
-    `<button class="exam-kp" onclick="examOpenKp('${k.id}')"><div class="t">${esc(k.title)}${k.hot ? '<span class="exam-hot">高频</span>' : ''}</div><div class="b">${esc(k.body)}</div></button>`
+    `<button class="exam-kp${examIsKnown(k.id) ? ' known' : ''}" onclick="examOpenKp('${k.id}')"><div class="t">${examIsKnown(k.id) ? '<span class="exam-kp-done">✓</span>' : ''}${esc(k.title)}${k.hot ? '<span class="exam-hot">高频</span>' : ''}</div><div class="b">${esc(k.body)}</div></button>`
   ).join('')).join('');
 }
 
@@ -91,9 +107,27 @@ function examKpInput(v) { examKpKw = v; examRenderKpList(); }
 function examOpenKp(id) {
   const k = examKpById(id);
   if (!k) return;
+  const known = examIsKnown(k.id);
   examPanelShow(k.title, `<div class="exam-meta">${esc(k.area)} · 考点</div>
     <p class="exam-kp-body">${esc(k.body)}</p>
-    ${k.memo ? `<div class="exam-feedback"><b>记忆点</b><br>${esc(k.memo)}</div>` : ''}`);
+    ${k.memo ? `<div class="exam-feedback"><b>记忆点</b><br>${esc(k.memo)}</div>` : ''}
+    <div class="btn-row"><button class="btn small${known ? ' ghost' : ''}" onclick="examKpToggle('${k.id}')">${known ? '取消已掌握' : '✓ 标记已掌握'}</button></div>`);
+}
+
+/**
+ * 面板内切换掌握状态：只刷新面板按钮和底层列表，不关闭面板
+ * （头部计数由 examRenderKpList 统一刷新）
+ */
+function examKpToggle(id) {
+  examToggleKnown(id);
+  const k = examKpById(id);
+  if (!k) return;
+  const known = examIsKnown(id);
+  examPanelShow(k.title, `<div class="exam-meta">${esc(k.area)} · 考点</div>
+    <p class="exam-kp-body">${esc(k.body)}</p>
+    ${k.memo ? `<div class="exam-feedback"><b>记忆点</b><br>${esc(k.memo)}</div>` : ''}
+    <div class="btn-row"><button class="btn small${known ? ' ghost' : ''}" onclick="examKpToggle('${id}')">${known ? '取消已掌握' : '✓ 标记已掌握'}</button></div>`);
+  examRenderKpList();
 }
 
 /* ---------------- ITTO 过程表 ---------------- */
@@ -149,13 +183,23 @@ function examMakeOutQ(pool, force) {
   const outs = p.outputs.filter(x => !examIsGenericOut(x));
   if (!outs.length) return null;
   const correct = examPick(outs);
+  /* 干扰项优先取同知识领域 → 同过程组 → 全池。
+     两个必须条件：① 不是本过程的输出；② 不是「变更请求」这类通用项。
+     否则会出现“四个选项里三个都是通用项”的题，用户靠“挑不一样的那个”就能作弊。 */
   const others = [];
-  pool.forEach(o => {
-    if (o.id === p.id) return;
-    o.outputs.forEach(x => {
-      if (x !== correct && p.outputs.indexOf(x) < 0 && others.indexOf(x) < 0) others.push(x);
+  const collect = (sameScope) => {
+    pool.forEach(o => {
+      if (o.id === p.id || !sameScope(o)) return;
+      o.outputs.forEach(x => {
+        if (x === correct || examIsGenericOut(x)) return;
+        if (p.outputs.indexOf(x) >= 0 || others.indexOf(x) >= 0) return;
+        others.push(x);
+      });
     });
-  });
+  };
+  collect(o => o.area === p.area);
+  if (others.length < 3) collect(o => o.group === p.group);
+  if (others.length < 3) collect(() => true);
   if (others.length < 3) return null;
   const opts = examShuffle([correct, ...examShuffle(others).slice(0, 3)]);
   return {
@@ -324,17 +368,37 @@ function examCalcCheck() {
   $('examCalcFeedback').innerHTML = `<div class="exam-feedback">${ok ? '✅ 对了' : '❌ 不对，正确值是 ' + shown}<div class="exam-steps">${formula}<br>${judge}</div></div>`;
 }
 
-/* ---------------- 刷题（下一版） ---------------- */
+/* ---------------- 刷题 ---------------- */
 function examHtmlBank() {
-  return examHead('刷题', '0 题') +
-    `<div class="card"><div class="empty"><i class="ico">📝</i>题库还没有导入<br>下一版支持 JSON 导入：章节题 / 历年真题 / 错题本</div></div>
-     <p class="exam-note">先用手上的一套真题跑通导入格式，再批量。题目和解析不放进公开仓库。</p>`;
+  const pool = EXAM_ITTO.filter(examHasItto);
+  const totalOut = (() => {
+    const set = new Set();
+    pool.forEach(p => p.outputs.filter(x => !examIsGenericOut(x)).forEach(x => set.add(x)));
+    return set.size;
+  })();
+  let h = examHead('刷题', pool.length + ' 个过程 / ' + totalOut + ' 个考点');
+  h += `<div class="card">
+    <h2>🧠 ITTO 自测</h2>
+    <p class="exam-kp-body">从已录入的 ${pool.length} 个过程里随机出题：
+    「某过程的输出是什么」和「哪个过程的输出包含某项」。答错会给完整输出列表。</p>
+    <div class="btn-row"><button class="btn small" onclick="examQuizStart()">来 3 道题</button></div>
+  </div>`;
+  h += `<div class="card"><div class="empty"><i class="ico">📝</i>章节题 / 历年真题待导入<br><span class="exam-note-inline">下一版支持 JSON 导入</span></div></div>`;
+  return h;
 }
 
 /* ---------------- 渲染 / 导航 ---------------- */
+/* 子页标题交给全局 pageTitle 承载（与语音/经期/设置一致），页面内不再重复画一份 */
+const EXAM_VIEW_TITLES = { hub: '软考高项', kp: '知识点', itto: 'ITTO 过程表', calc: '计算题', bank: '刷题' };
+function examSyncTitle() {
+  const t = $('pageTitle');
+  if (t) t.textContent = EXAM_VIEW_TITLES[examView] || '软考高项';
+}
+
 function examRender() {
   const root = $('examRoot');
   if (!root) return;
+  examSyncTitle();
   if (examView === 'kp') { root.innerHTML = examHtmlKp(); examRenderKpList(); return; }
   if (examView === 'itto') { root.innerHTML = examHtmlItto(); return; }
   if (examView === 'calc') { root.innerHTML = examHead('计算题', '挣值 · 第 1 类') + '<div id="examCalcBox"></div><p class="exam-note">下一版：三点估算、沟通渠道、决策树、网络图（关键路径/总时差）。</p>'; examCalcNew(); return; }
