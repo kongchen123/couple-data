@@ -630,7 +630,7 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
 .tl-photos .ph img.loaded { opacity: 1; }
 .tl-photos .ph.more::after { content: '+' attr(data-more); position: absolute; inset: 0; background: rgba(0,0,0,.45); color: #fff; font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
 /* 记录互动区：♥ 轻赞 + 一句回应（每条记录只有一条，由对方写） */
-.tl-react { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.tl-react { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
 .tl-like { display: inline-flex; align-items: center; gap: 4px; border: none; background: rgba(233,64,122,.08); color: #e9407a; font-size: 12px; padding: 5px 11px; border-radius: 999px; cursor: pointer; line-height: 1; font-family: inherit; transition: transform .15s ease, background .2s; -webkit-tap-highlight-color: transparent; }
 .tl-like:active { transform: scale(.9); }
 .tl-like.on { background: rgba(233,64,122,.18); font-weight: 600; }
@@ -642,12 +642,20 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
 .tl-reply { margin-top: 8px; padding: 8px 11px; background: rgba(233,64,122,.06); border-left: 3px solid rgba(233,64,122,.45); border-radius: 0 10px 10px 0; font-size: 13px; line-height: 1.55; display: flex; gap: 6px; align-items: flex-start; }
 .tl-reply .rp-who { color: #e9407a; font-weight: 600; flex: none; }
 .tl-reply .rp-body { flex: 1; min-width: 0; word-break: break-word; }
-.tl-reply .rp-act { border: none; background: none; color: var(--text-sub); font-size: 12px; cursor: pointer; padding: 0 2px; flex: none; line-height: 1.4; }
+.tl-reply .rp-act { border: none; background: none; color: var(--text-sub); font-size: 12px; cursor: pointer; padding: 3px 6px; flex: none; line-height: 1.4; white-space: nowrap; border-radius: 6px; -webkit-tap-highlight-color: transparent; }
+.tl-reply .rp-act:active { background: rgba(0,0,0,.06); }
+.tl-reply .rp-acts { display: inline-flex; align-items: center; gap: 2px; flex: none; margin-left: auto; padding-left: 4px; }
+.tl-reply.own { background: rgba(233,64,122,.03); border-left-color: rgba(233,64,122,.25); }
+.tl-reply-btn.static { cursor: default; opacity: .55; }
+.tl-reply-btn.static:active { background: none; }
 .tl-reply-edit { margin-top: 8px; display: flex; gap: 6px; align-items: center; }
 .tl-reply-input { flex: 1; min-width: 0; border: 1px solid rgba(233,64,122,.35); border-radius: 10px; padding: 8px 10px; font-size: 13px; font-family: inherit; background: #fff; color: inherit; outline: none; }
 .tl-reply-input:focus { border-color: #e9407a; }
 .tl-reply-send { flex: none; border: none; background: #e9407a; color: #fff; font-size: 12.5px; font-weight: 600; padding: 8px 14px; border-radius: 10px; cursor: pointer; font-family: inherit; }
 .tl-reply-send:active { opacity: .8; }
+.tl-reply-send:disabled, .tl-reply-input:disabled { opacity: .5; cursor: not-allowed; }
+.tl-reply-cancel { flex: none; border: none; background: none; color: var(--text-sub); font-size: 12.5px; padding: 8px 6px; border-radius: 10px; cursor: pointer; font-family: inherit; -webkit-tap-highlight-color: transparent; }
+.tl-reply-cancel:active { background: rgba(0,0,0,.06); }
 .voice-item { flex-wrap: wrap; }
 .voice-prog { flex: 0 0 100%; order: 9; display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer; }
 .voice-prog .track { position: relative; flex: 1; height: 6px; border-radius: 999px; background: rgba(233,64,122,.16); overflow: hidden; }
@@ -2708,26 +2716,49 @@ function tlKeyOf(t) { return (t.date || '') + (tlTimeOf(t) || '00:00') + t.id; }
    实测两台设备各回应一次时，后同步的那条会被整条覆盖，只有独立列表才能保证两边都不丢。
    结构：{ id, tid, kind:'like'|'reply', author, text?, createdAt, updatedAt, deleted } */
 const REACT_TTL = 30 * 24 * 60 * 60 * 1000;
-// 互动记录用确定性 id：由 目标+类型+作者 推导，而不是随机 uid。
+// 每条记录每人最多留几条评论（写满后要先删一条再写）
+const REPLY_MAX_PER_USER = 5;
+const REPLY_MAX_LEN = 200;
+
+// 点赞用确定性 id：由 目标+类型+作者 推导，而不是随机 uid。
 // 原因：同一个人在两台设备上都点♥时，uid 各不相同，同步后 mergeList 会当成两条不同记录
 // 保留下来，♥ 就会显示 2。用确定性 id 后两边生成的是同一条，updatedAt 大的赢。
 const reactId = (tid, kind, author) => 'r-' + kind + '-' + tid + '-' + String(author || '').replace(/\s+/g, '_');
+// 评论允许同一人写多条，所以 id 必须带创建时间，否则同一个人的第 2 条会覆盖第 1 条。
+// 后缀 = 时间戳(36进制) + 随机尾巴：
+//   1) 同一毫秒内连写两条，时间戳相同，靠随机尾巴分开（实测过：只靠 Date.now() 会碰撞）
+//   2) 两台设备同一毫秒各写一条，计数器方案也会撞，随机尾巴才能覆盖
+// 编辑不改 id，因此跨设备合并仍然稳定。
+const replyId = (tid, author, ts) =>
+  reactId(tid, 'reply', author) + '-' + Number(ts).toString(36)
+  + Math.random().toString(36).slice(2, 6);
+
 function itemReactions(tid) {
   return (S.reactions || []).filter(r => r && r.tid === tid && !r.deleted);
 }
-function myReaction(tid, kind) {
+// 全部评论，按时间正序（先写的在上）
+function allReplies(tid) {
+  return itemReactions(tid).filter(r => r.kind === 'reply')
+    .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+}
+// 我自己的评论（用于判断是否到上限）
+function myReplies(tid) {
   const me = myName();
-  return itemReactions(tid).find(r => r.kind === kind && r.author === me) || null;
+  return allReplies(tid).filter(r => r.author === me);
+}
+function myLike(tid) {
+  const me = myName();
+  return itemReactions(tid).find(r => r.kind === 'like' && r.author === me) || null;
 }
 function likeCount(tid) {
   // 按作者去重：即使历史数据里因旧逻辑产生过重复，也不会把♥数量算成 2
   const set = new Set(itemReactions(tid).filter(r => r.kind === 'like').map(r => r.author));
   return set.size;
 }
-// 谁不能互动：自己不能给自写记录点♥、也不能回自己（保持它始终是双向互动）
-function canReactTo(t) {
-  return !!t && t.author !== myName();
-}
+// 点赞只给自己的记录之外（自己给自己点赞没有意义）
+function canLike(t) { return !!t && t.author !== myName(); }
+// 评论不限作者：自己的记录也能补充说明，对方的记录可以回应
+function canReply(t) { return !!t; }
 function otherReactions(tid) {
   const me = myName();
   return itemReactions(tid).filter(r => r.author !== me);
@@ -2736,7 +2767,7 @@ function otherReactions(tid) {
 function toggleLike(tid) {
   const t = (S.timeline || []).find(x => x.id === tid && !x.deleted);
   if (!t) { toast('这条记录不存在了'); return; }
-  if (!canReactTo(t)) { toast('这是你自己写的，等 TA 来点吧 ❤'); return; }
+  if (!canLike(t)) { toast('这是你自己写的，等 TA 来点吧 ❤'); return; }
   const me = myName();
   if (!Array.isArray(S.reactions)) S.reactions = [];
   // 必须只找未删除的那条：否则取消后再点赞会命中墓碑，导致永远点不上
@@ -2753,42 +2784,51 @@ function toggleLike(tid) {
   if (tlIncrementalUpdate(t)) tlSkipRender = 1;
   commit('reactions', 'trash');
 }
-// 回应：每条记录每人最多一条（能改能删）；写的时候直接收口到 commit
-function saveReply(tid, text) {
+// 新增一条评论：每人每条记录最多 REPLY_MAX_PER_USER 条
+function addReply(tid, text) {
   const t = (S.timeline || []).find(x => x.id === tid && !x.deleted);
   if (!t) { toast('这条记录不存在了'); return false; }
-  if (!canReactTo(t)) { toast('这是自己写的，等 TA 来回应吧'); return false; }
-  const body = String(text || '').trim().slice(0, 200);
+  if (!canReply(t)) { toast('这条记录不能评论'); return false; }
+  const body = String(text || '').trim().slice(0, REPLY_MAX_LEN);
   if (!body) { toast('写点什么再发吧'); return false; }
+  if (myReplies(tid).length >= REPLY_MAX_PER_USER) {
+    toast('最多 ' + REPLY_MAX_PER_USER + ' 条，先删一条再写吧');
+    return false;
+  }
   const me = myName();
   if (!Array.isArray(S.reactions)) S.reactions = [];
-  const cur = S.reactions.find(r => r.tid === tid && r.kind === 'reply' && r.author === me && !r.deleted);
-  if (cur) { cur.text = body; touch(cur); }
-  else {
-    const rid = reactId(tid, 'reply', me);
-    const tomb = S.reactions.find(r => r.id === rid);
-    if (tomb) { tomb.text = body; tomb.deleted = false; touch(tomb); }
-    else S.reactions.push({ id: rid, tid, kind: 'reply', author: me, text: body, createdAt: Date.now(), updatedAt: Date.now() });
-  }
+  const ts = Date.now();
+  S.reactions.push({ id: replyId(tid, me, ts), tid, kind: 'reply', author: me, text: body, createdAt: ts, updatedAt: ts });
   if (tlIncrementalUpdate(t)) tlSkipRender = 1;
   commit('reactions', 'trash');
   return true;
 }
-function delReply(tid) {
-  const me = myName();
-  const cur = (S.reactions || []).find(r => r.tid === tid && r.kind === 'reply' && r.author === me && !r.deleted);
-  if (!cur) return;
-  askConfirm('删掉这条回应？', () => {
-    touch(cur); cur.deleted = true;
-    const t = (S.timeline || []).find(x => x.id === tid && !x.deleted);
+// 编辑已有评论：只能改自己的，id 不变（跨设备合并稳定）
+function editReply(rid, text) {
+  const r = (S.reactions || []).find(x => x.id === rid && !x.deleted);
+  if (!r || r.author !== myName()) return false;
+  const body = String(text || '').trim().slice(0, REPLY_MAX_LEN);
+  if (!body) { toast('写点什么再发吧'); return false; }
+  r.text = body; touch(r);
+  const t = (S.timeline || []).find(x => x.id === r.tid && !x.deleted);
+  if (t && tlIncrementalUpdate(t)) tlSkipRender = 1;
+  commit('reactions', 'trash');
+  return true;
+}
+function delReply(rid) {
+  const r = (S.reactions || []).find(x => x.id === rid && !x.deleted);
+  if (!r || r.author !== myName()) return;
+  askConfirm('删掉这条评论？', () => {
+    touch(r); r.deleted = true;
+    const t = (S.timeline || []).find(x => x.id === r.tid && !x.deleted);
     if (t && tlIncrementalUpdate(t)) tlSkipRender = 1;
     commit('reactions', 'trash');
   }, '删除');
 }
-// 回应输入框：展开 / 收起（不弹独立面板，保持时间线不跳）
+// 评论输入框状态：展开的记录 id / 正在编辑的评论 id（空=新增）
 let tlReplyOpenId = '';
-function tlReplyOpen(tid) {
-  tlReplyOpenId = tid;
+let tlReplyEditRid = '';
+function tlReplyRedraw(tid) {
   const t = (S.timeline || []).find(x => x.id === tid && !x.deleted);
   if (!t) return;
   if (tlIncrementalUpdate(t)) tlSkipRender = 1;
@@ -2798,56 +2838,89 @@ function tlReplyOpen(tid) {
     if (inp) { try { inp.focus(); } catch (e) {} }
   }, 60);
 }
+function tlReplyOpen(tid) {
+  tlReplyOpenId = tid; tlReplyEditRid = '';
+  tlReplyRedraw(tid);
+}
+// 点「编辑」：展开输入框并回填原文
+function tlReplyEditOpen(tid, rid) {
+  const r = (S.reactions || []).find(x => x.id === rid && !x.deleted);
+  if (!r) return;
+  tlReplyOpenId = tid; tlReplyEditRid = rid;
+  tlReplyRedraw(tid);
+}
 function tlReplyCancel(tid) {
-  tlReplyOpenId = '';
-  const t = (S.timeline || []).find(x => x.id === tid && !x.deleted);
-  if (!t) return;
-  if (tlIncrementalUpdate(t)) tlSkipRender = 1;
-  commit('reactions');
+  tlReplyOpenId = ''; tlReplyEditRid = '';
+  tlReplyRedraw(tid);
 }
 function tlReplySubmit(tid) {
   const inp = document.querySelector('.tl-reply-input');
   const txt = inp ? inp.value : '';
-  if (saveReply(tid, txt)) { tlReplyOpenId = ''; toast('回应已送出 ❤'); }
+  const editing = !!tlReplyEditRid;
+  const rid = tlReplyEditRid;
+  // 先收起输入框状态再写入：editReply/addReply 内部会 commit
+  // 若先写入再清状态，重渲染时输入框会被重新画出来（实测过：保存后框不收）
+  tlReplyOpenId = ''; tlReplyEditRid = '';
+  const ok = editing ? editReply(rid, txt) : addReply(tid, txt);
+  if (ok) {
+    toast(editing ? '已更新' : '评论已送出 ❤');
+  } else {
+    // 写入失败（如达到上限、内容为空）：恢复输入框，避免伪装成已发出
+    tlReplyOpenId = tid; tlReplyEditRid = editing ? rid : '';
+    tlReplyRedraw(tid);
+  }
 }
-// 渲染互动区（拼在 tlItemHtml 末尾）
+// 渲染互动区（拼在 tlItemHtml 末尾）：评论列表 → 右下角操作条 → 输入框
 function tlReactsHtml(t) {
   const tid = t.id;
   const me = myName();
-  const mine = !!myReaction(tid, 'like');
+  const mine = !!myLike(tid);
   const cnt = likeCount(tid);
-  const allow = canReactTo(t);
-  const others = otherReactions(tid);
-  const myReply = itemReactions(tid).find(r => r.kind === 'reply' && r.author === me) || null;
-  const theirReply = others.find(r => r.kind === 'reply') || null;
-  let like;
-  if (allow) {
-    like = `<button class="tl-like${mine ? ' on' : ''}" onclick="toggleLike('${esc(tid)}')" aria-label="${mine ? '取消点赞' : '点赞'}"><span class="ic">${mine ? '❤' : '♡'}</span>${cnt ? cnt : ''}</button>`;
-  } else {
-    // 自己写的：不可点，只展示对方留下的♥
-    like = cnt ? `<span class="tl-like on static"><span class="ic">❤</span>${cnt}</span>` : '';
+  const allowLike = canLike(t);
+  const allowReply = canReply(t);
+  const replies = allReplies(tid);
+  const cntMine = myReplies(tid).length;
+  const editing = tlReplyEditRid ? (S.reactions || []).find(x => x.id === tlReplyEditRid && !x.deleted) : null;
+  const atMax = !editing && cntMine >= REPLY_MAX_PER_USER;
+
+  // 评论列表：自己的带「编辑 / 删除」
+  const listHtml = replies.map(r => {
+    const own = r.author === me;
+    const acts = own
+      ? `<span class="rp-acts"><button class="rp-act" type="button" onclick="tlReplyEditOpen('${esc(tid)}','${esc(r.id)}')">编辑</button><button class="rp-act" type="button" onclick="delReply('${esc(r.id)}')">删除</button></span>`
+      : '';
+    return `<div class="tl-reply${own ? ' own' : ''}"><span class="rp-who">${esc(r.author)}</span><span class="rp-body">${linkify(r.text)}</span>${acts}</div>`;
+  }).join('');
+
+  // 右下角操作条：♥ + 评论入口
+  let likeHtml = '';
+  if (allowLike) {
+    likeHtml = `<button class="tl-like${mine ? ' on' : ''}" type="button" onclick="toggleLike('${esc(tid)}')" aria-label="${mine ? '取消点赞' : '点赞'}"><span class="ic">${mine ? '❤' : '♡'}</span>${cnt ? cnt : ''}</button>`;
+  } else if (cnt) {
+    likeHtml = `<span class="tl-like on static"><span class="ic">❤</span>${cnt}</span>`;
   }
-  // 回应区：对方给的优先显示；自己写的下面挂一个可点的「回复」入口
-  let replyHtml = '';
-  if (theirReply) {
-    replyHtml = `<div class="tl-reply"><span class="rp-who">${esc(theirReply.author)}</span><span class="rp-body">${linkify(theirReply.text)}</span></div>`;
+  let replyBtn = '';
+  if (allowReply && tlReplyOpenId !== tid) {
+    replyBtn = atMax
+      ? `<span class="tl-reply-btn static" title="每人最多 ${REPLY_MAX_PER_USER} 条"><span class="ic">💬</span>${cntMine} 条</span>`
+      : `<button class="tl-reply-btn" type="button" onclick="tlReplyOpen('${esc(tid)}')"><span class="ic">💬</span>${cnt ? (cntMine ? '再评一句' : '评论') : '评论'}</button>`;
   }
-  if (myReply) {
-    replyHtml += `<div class="tl-reply"><span class="rp-who">${esc(myReply.author)}</span><span class="rp-body">${linkify(myReply.text)}</span><button class="rp-act" onclick="tlReplyOpen('${esc(tid)}')" aria-label="编辑回应">编辑</button><button class="rp-act" onclick="delReply('${esc(tid)}')" aria-label="删除回应">删</button></div>`;
-  }
-  // 输入框：仅当自己可以回、且处于展开态（已有回应时为「编辑」，需回填原文本）
+  const bar = (likeHtml || replyBtn) ? `<div class="tl-react">${likeHtml}${replyBtn}</div>` : '';
+
+  // 输入框（展开时）
   let inputHtml = '';
-  if (allow && tlReplyOpenId === tid) {
-    inputHtml = `<div class="tl-reply-edit"><input class="tl-reply-input" type="text" maxlength="200" value="${myReply ? esc(myReply.text) : ''}" placeholder="回一句…" aria-label="回应内容"><button class="tl-reply-send" onclick="tlReplySubmit('${esc(tid)}')">${myReply ? '保存' : '发送'}</button></div>`;
+  if (allowReply && tlReplyOpenId === tid) {
+    const prefill = editing ? editing.text : '';
+    const ph = atMax ? '已达 ' + REPLY_MAX_PER_USER + ' 条上限' : '写一句…';
+    inputHtml = `<div class="tl-reply-edit">`
+      + `<input class="tl-reply-input" type="text" maxlength="${REPLY_MAX_LEN}" value="${esc(prefill)}" placeholder="${ph}" aria-label="评论内容"${atMax ? ' disabled' : ''}>`
+      + `<button class="tl-reply-send" type="button" onclick="tlReplySubmit('${esc(tid)}')"${atMax ? ' disabled' : ''}>${editing ? '保存' : '发送'}</button>`
+      + `<button class="tl-reply-cancel" type="button" onclick="tlReplyCancel('${esc(tid)}')">取消</button>`
+      + `</div>`;
   }
-  // 什么都没有且不能互动：整块不占位
-  if (!like && !replyHtml && !inputHtml) return '';
-  // 编辑已有回应时不再重复显示「回应」按钮（输入框已经在编辑态）
-  let btn = '';
-  if (allow && !myReply && tlReplyOpenId !== tid) {
-    btn = `<button class="tl-reply-btn" onclick="tlReplyOpen('${esc(tid)}')"><span class="ic">💬</span>回应</button>`;
-  }
-  return `<div class="tl-react">${like}${btn}</div>${replyHtml}${inputHtml}`;
+
+  if (!bar && !listHtml && !inputHtml) return '';
+  return `${listHtml}${bar}${inputHtml}`;
 }
 
 // 单条记录模板：meta → del → text → photo，位置由 DOM 顺序决定

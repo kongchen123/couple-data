@@ -7,7 +7,7 @@
    - notificationclick：优先聚焦已打开的同源窗口，否则新开 */
 // 改 index.html 时务必同步改这里：否则老设备会继续跑缓存里的旧页面，
 // 表象是「数据不见了」（新旧版存储键不同），极易被误判成数据损坏。
-const VERSION = 'v13';
+const VERSION = 'v14';
 const CACHE = 'couple-shell-' + VERSION;
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png'];
 
