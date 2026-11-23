@@ -629,6 +629,25 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
 .tl-photos .ph img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .3s; display: block; }
 .tl-photos .ph img.loaded { opacity: 1; }
 .tl-photos .ph.more::after { content: '+' attr(data-more); position: absolute; inset: 0; background: rgba(0,0,0,.45); color: #fff; font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+/* 记录互动区：♥ 轻赞 + 一句回应（每条记录只有一条，由对方写） */
+.tl-react { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.tl-like { display: inline-flex; align-items: center; gap: 4px; border: none; background: rgba(233,64,122,.08); color: #e9407a; font-size: 12px; padding: 5px 11px; border-radius: 999px; cursor: pointer; line-height: 1; font-family: inherit; transition: transform .15s ease, background .2s; -webkit-tap-highlight-color: transparent; }
+.tl-like:active { transform: scale(.9); }
+.tl-like.on { background: rgba(233,64,122,.18); font-weight: 600; }
+.tl-like.static { cursor: default; }
+.tl-like.static:active { transform: none; }
+.tl-react .ic { font-size: 13px; line-height: 1; }
+.tl-reply-btn { display: inline-flex; align-items: center; gap: 4px; border: none; background: transparent; color: var(--text-sub); font-size: 12px; padding: 5px 8px; border-radius: 8px; cursor: pointer; font-family: inherit; -webkit-tap-highlight-color: transparent; }
+.tl-reply-btn:active { background: rgba(0,0,0,.05); }
+.tl-reply { margin-top: 8px; padding: 8px 11px; background: rgba(233,64,122,.06); border-left: 3px solid rgba(233,64,122,.45); border-radius: 0 10px 10px 0; font-size: 13px; line-height: 1.55; display: flex; gap: 6px; align-items: flex-start; }
+.tl-reply .rp-who { color: #e9407a; font-weight: 600; flex: none; }
+.tl-reply .rp-body { flex: 1; min-width: 0; word-break: break-word; }
+.tl-reply .rp-act { border: none; background: none; color: var(--text-sub); font-size: 12px; cursor: pointer; padding: 0 2px; flex: none; line-height: 1.4; }
+.tl-reply-edit { margin-top: 8px; display: flex; gap: 6px; align-items: center; }
+.tl-reply-input { flex: 1; min-width: 0; border: 1px solid rgba(233,64,122,.35); border-radius: 10px; padding: 8px 10px; font-size: 13px; font-family: inherit; background: #fff; color: inherit; outline: none; }
+.tl-reply-input:focus { border-color: #e9407a; }
+.tl-reply-send { flex: none; border: none; background: #e9407a; color: #fff; font-size: 12.5px; font-weight: 600; padding: 8px 14px; border-radius: 10px; cursor: pointer; font-family: inherit; }
+.tl-reply-send:active { opacity: .8; }
 .voice-item { flex-wrap: wrap; }
 .voice-prog { flex: 0 0 100%; order: 9; display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer; }
 .voice-prog .track { position: relative; flex: 1; height: 6px; border-radius: 999px; background: rgba(233,64,122,.16); overflow: hidden; }
@@ -1238,7 +1257,7 @@ function nextLunarBirthday(bd, fromDate) {
 const KEY = 'coupleStationData', GH_KEY = 'coupleGithubConfig', SHA_KEY = 'coupleRemoteSha';
 const TAGS = ['日常', '美食', '碎碎念'];
 // 列表型数据字段：buildPayload / importData / hasUserData 统一引用，新增字段只改这里（tags 因需 normalize 单独处理）
-const LIST_FIELDS = ['timeline', 'wishes', 'capsules', 'voices', 'customDays', 'periods', 'wall', 'trash'];
+const LIST_FIELDS = ['timeline', 'wishes', 'capsules', 'voices', 'customDays', 'periods', 'wall', 'reactions', 'trash'];
 const QUOTES = ['喜欢是乍见之欢，爱是久处不厌。','我见过很多风景，但都不及你眼里的星光。','愿我们的故事，细水长流，来日方长。','你是我平淡日子里的星辰大海。','世界上有很多美好的词语，但都不如"我们"好听。','往后余生，风雪是你，平淡是你。','和你在一起的每一天，都值得被记住。','爱不是彼此凝视，而是一起望向同一个方向。','慢慢来，我们有一辈子的时间。','想把所有的温柔，都留给你一个人。'];
 const MAX_SECONDS = 30;
 
@@ -1248,7 +1267,7 @@ const defaultMe = () => isAndroid() ? 1 : 2;
 function defaultData() {
   // birthday1 / birthday2 为农历对象：{ m: 月(1-12), d: 日(1-30), leap: 是否闰月 }
   return { name1:'', name2:'', anniversary:'', birthday1:null, birthday2:null, me: defaultMe(),
-    timeline:[], wishes:[], capsules:[], voices:[], customDays:[], tags:[], periods:[], wall:[], trash:[],
+    timeline:[], wishes:[], capsules:[], voices:[], customDays:[], tags:[], periods:[], wall:[], reactions:[], trash:[],
     periodCfg:{ cycle: 28, len: 5 }, lastSyncAt:0, syncError:'' };
 }
 // 自定义标签统一成对象结构，复用其他数据的「updatedAt + 墓碑」合并逻辑
@@ -1992,6 +2011,7 @@ const RENDERERS = {
   tags: [renderWishes],
   periods: [renderPeriods],
   wall: [renderWall],
+  reactions: [renderTimeline],
 };
 // 墓碑保留 30 天：必须大于另一台设备最长的离线时间，否则离线设备上线会把已删记录又合并回来
 const TOMB_TTL = 30 * 24 * 60 * 60 * 1000;
@@ -2022,6 +2042,17 @@ function addListItem(key, item) {
   if (key === 'timeline' && tlIncrementalInsert(item)) tlSkipRender = 1;
   commit(key);
 }
+// 释放一条记录名下的互动数据（标墓碑而非删除，撤销时可原样恢复）
+function releaseItemReactions(tid) {
+  (S.reactions || []).forEach(r => {
+    if (r && r.tid === tid && !r.deleted) { touch(r); r.deleted = true; }
+  });
+}
+function restoreItemReactions(tid) {
+  (S.reactions || []).forEach(r => {
+    if (r && r.tid === tid && r.deleted) { touch(r); r.deleted = false; }
+  });
+}
 // 释放一条记录名下的全部照片（时间线一条最多 9 张，旧数据是单张 photo）
 function releaseItemPhotos(it) {
   const all = itemPhotos(it);
@@ -2040,6 +2071,8 @@ function delListItem(key, id) {
   const it = S[key].find(x => x.id === id); if (!it) return;
   // 时间线/照片墙：照片可能有多张，必须逐张释放，否则第 2 张起会变成永不回收的孤儿文件
   if (key === 'timeline' || key === 'wall') releaseItemPhotos(it);
+  // 时间线：连同这条记录的互动一起标墓碑，否则会变成挂不到任何记录的孤儿
+  if (key === 'timeline') releaseItemReactions(id);
   touch(it); it.deleted = true;
   // 时间线：只摘掉对应节点；该月空了连月份头一起删
   if (key === 'timeline' && tlIncrementalRemove(it)) tlSkipRender = 1;
@@ -2058,6 +2091,7 @@ function confirmDel(msg, key, id) {
           const keep = new Set(itemPhotos(it));
           if (keep.size) S.trash = S.trash.filter(t => !keep.has(t.path));
         }
+        if (key === 'timeline') restoreItemReactions(id);
         commit(key, 'trash');
       }
     });
@@ -2668,13 +2702,161 @@ let tlLastSig = '';        // 上次的筛选特征：变化时把展开量收�
 
 function tlKeyOf(t) { return (t.date || '') + (tlTimeOf(t) || '00:00') + t.id; }
 
+/* ================= 记录互动：♥ 轻赞 + 一句回应 =================
+   reactions 是独立列表（不进 timeline），靠 tid 关联。原因：mergeList 按 id 整条替换，
+   如果把互动内嵌在记录里，另一台设备编辑记录时会把整条连同互动一起覆盖掉——
+   实测两台设备各回应一次时，后同步的那条会被整条覆盖，只有独立列表才能保证两边都不丢。
+   结构：{ id, tid, kind:'like'|'reply', author, text?, createdAt, updatedAt, deleted } */
+const REACT_TTL = 30 * 24 * 60 * 60 * 1000;
+// 互动记录用确定性 id：由 目标+类型+作者 推导，而不是随机 uid。
+// 原因：同一个人在两台设备上都点♥时，uid 各不相同，同步后 mergeList 会当成两条不同记录
+// 保留下来，♥ 就会显示 2。用确定性 id 后两边生成的是同一条，updatedAt 大的赢。
+const reactId = (tid, kind, author) => 'r-' + kind + '-' + tid + '-' + String(author || '').replace(/\s+/g, '_');
+function itemReactions(tid) {
+  return (S.reactions || []).filter(r => r && r.tid === tid && !r.deleted);
+}
+function myReaction(tid, kind) {
+  const me = myName();
+  return itemReactions(tid).find(r => r.kind === kind && r.author === me) || null;
+}
+function likeCount(tid) {
+  // 按作者去重：即使历史数据里因旧逻辑产生过重复，也不会把♥数量算成 2
+  const set = new Set(itemReactions(tid).filter(r => r.kind === 'like').map(r => r.author));
+  return set.size;
+}
+// 谁不能互动：自己不能给自写记录点♥、也不能回自己（保持它始终是双向互动）
+function canReactTo(t) {
+  return !!t && t.author !== myName();
+}
+function otherReactions(tid) {
+  const me = myName();
+  return itemReactions(tid).filter(r => r.author !== me);
+}
+// 切换♥：同一人同一条只能有一个 like，再点就是取消
+function toggleLike(tid) {
+  const t = (S.timeline || []).find(x => x.id === tid && !x.deleted);
+  if (!t) { toast('这条记录不存在了'); return; }
+  if (!canReactTo(t)) { toast('这是你自己写的，等 TA 来点吧 ❤'); return; }
+  const me = myName();
+  if (!Array.isArray(S.reactions)) S.reactions = [];
+  // 必须只找未删除的那条：否则取消后再点赞会命中墓碑，导致永远点不上
+  const live = S.reactions.find(r => r.tid === tid && r.kind === 'like' && r.author === me && !r.deleted);
+  if (live) {
+    // 取消点赞：标墓碑而不是物理删除，否则另一台设备会把♥又合并回来
+    touch(live); live.deleted = true;
+  } else {
+    const rid = reactId(tid, 'like', me);
+    const tomb = S.reactions.find(r => r.id === rid);
+    if (tomb) { tomb.deleted = false; touch(tomb); }  // 复活旧记录，不另起一条
+    else S.reactions.push({ id: rid, tid, kind: 'like', author: me, createdAt: Date.now(), updatedAt: Date.now() });
+  }
+  if (tlIncrementalUpdate(t)) tlSkipRender = 1;
+  commit('reactions', 'trash');
+}
+// 回应：每条记录每人最多一条（能改能删）；写的时候直接收口到 commit
+function saveReply(tid, text) {
+  const t = (S.timeline || []).find(x => x.id === tid && !x.deleted);
+  if (!t) { toast('这条记录不存在了'); return false; }
+  if (!canReactTo(t)) { toast('这是自己写的，等 TA 来回应吧'); return false; }
+  const body = String(text || '').trim().slice(0, 200);
+  if (!body) { toast('写点什么再发吧'); return false; }
+  const me = myName();
+  if (!Array.isArray(S.reactions)) S.reactions = [];
+  const cur = S.reactions.find(r => r.tid === tid && r.kind === 'reply' && r.author === me && !r.deleted);
+  if (cur) { cur.text = body; touch(cur); }
+  else {
+    const rid = reactId(tid, 'reply', me);
+    const tomb = S.reactions.find(r => r.id === rid);
+    if (tomb) { tomb.text = body; tomb.deleted = false; touch(tomb); }
+    else S.reactions.push({ id: rid, tid, kind: 'reply', author: me, text: body, createdAt: Date.now(), updatedAt: Date.now() });
+  }
+  if (tlIncrementalUpdate(t)) tlSkipRender = 1;
+  commit('reactions', 'trash');
+  return true;
+}
+function delReply(tid) {
+  const me = myName();
+  const cur = (S.reactions || []).find(r => r.tid === tid && r.kind === 'reply' && r.author === me && !r.deleted);
+  if (!cur) return;
+  askConfirm('删掉这条回应？', () => {
+    touch(cur); cur.deleted = true;
+    const t = (S.timeline || []).find(x => x.id === tid && !x.deleted);
+    if (t && tlIncrementalUpdate(t)) tlSkipRender = 1;
+    commit('reactions', 'trash');
+  }, '删除');
+}
+// 回应输入框：展开 / 收起（不弹独立面板，保持时间线不跳）
+let tlReplyOpenId = '';
+function tlReplyOpen(tid) {
+  tlReplyOpenId = tid;
+  const t = (S.timeline || []).find(x => x.id === tid && !x.deleted);
+  if (!t) return;
+  if (tlIncrementalUpdate(t)) tlSkipRender = 1;
+  commit('reactions');
+  setTimeout(() => {
+    const inp = document.querySelector('.tl-reply-input');
+    if (inp) { try { inp.focus(); } catch (e) {} }
+  }, 60);
+}
+function tlReplyCancel(tid) {
+  tlReplyOpenId = '';
+  const t = (S.timeline || []).find(x => x.id === tid && !x.deleted);
+  if (!t) return;
+  if (tlIncrementalUpdate(t)) tlSkipRender = 1;
+  commit('reactions');
+}
+function tlReplySubmit(tid) {
+  const inp = document.querySelector('.tl-reply-input');
+  const txt = inp ? inp.value : '';
+  if (saveReply(tid, txt)) { tlReplyOpenId = ''; toast('回应已送出 ❤'); }
+}
+// 渲染互动区（拼在 tlItemHtml 末尾）
+function tlReactsHtml(t) {
+  const tid = t.id;
+  const me = myName();
+  const mine = !!myReaction(tid, 'like');
+  const cnt = likeCount(tid);
+  const allow = canReactTo(t);
+  const others = otherReactions(tid);
+  const myReply = itemReactions(tid).find(r => r.kind === 'reply' && r.author === me) || null;
+  const theirReply = others.find(r => r.kind === 'reply') || null;
+  let like;
+  if (allow) {
+    like = `<button class="tl-like${mine ? ' on' : ''}" onclick="toggleLike('${esc(tid)}')" aria-label="${mine ? '取消点赞' : '点赞'}"><span class="ic">${mine ? '❤' : '♡'}</span>${cnt ? cnt : ''}</button>`;
+  } else {
+    // 自己写的：不可点，只展示对方留下的♥
+    like = cnt ? `<span class="tl-like on static"><span class="ic">❤</span>${cnt}</span>` : '';
+  }
+  // 回应区：对方给的优先显示；自己写的下面挂一个可点的「回复」入口
+  let replyHtml = '';
+  if (theirReply) {
+    replyHtml = `<div class="tl-reply"><span class="rp-who">${esc(theirReply.author)}</span><span class="rp-body">${linkify(theirReply.text)}</span></div>`;
+  }
+  if (myReply) {
+    replyHtml += `<div class="tl-reply"><span class="rp-who">${esc(myReply.author)}</span><span class="rp-body">${linkify(myReply.text)}</span><button class="rp-act" onclick="tlReplyOpen('${esc(tid)}')" aria-label="编辑回应">编辑</button><button class="rp-act" onclick="delReply('${esc(tid)}')" aria-label="删除回应">删</button></div>`;
+  }
+  // 输入框：仅当自己可以回、且处于展开态（已有回应时为「编辑」，需回填原文本）
+  let inputHtml = '';
+  if (allow && tlReplyOpenId === tid) {
+    inputHtml = `<div class="tl-reply-edit"><input class="tl-reply-input" type="text" maxlength="200" value="${myReply ? esc(myReply.text) : ''}" placeholder="回一句…" aria-label="回应内容"><button class="tl-reply-send" onclick="tlReplySubmit('${esc(tid)}')">${myReply ? '保存' : '发送'}</button></div>`;
+  }
+  // 什么都没有且不能互动：整块不占位
+  if (!like && !replyHtml && !inputHtml) return '';
+  // 编辑已有回应时不再重复显示「回应」按钮（输入框已经在编辑态）
+  let btn = '';
+  if (allow && !myReply && tlReplyOpenId !== tid) {
+    btn = `<button class="tl-reply-btn" onclick="tlReplyOpen('${esc(tid)}')"><span class="ic">💬</span>回应</button>`;
+  }
+  return `<div class="tl-react">${like}${btn}</div>${replyHtml}${inputHtml}`;
+}
+
 // 单条记录模板：meta → del → text → photo，位置由 DOM 顺序决定
 function tlItemHtml(t) {
   const who2 = S.name2 && t.author === S.name2;
   const long = (t.text || '').length > 120; // 约 6 行以上才给折叠按钮（实际由 calibrateTlClamp 按真实溢出校准）
   const isNew = t.id === tlNewId; // 刚发布的记录带入场动画
   const hasText = !!t.text && !/^📷 分享/.test(t.text); // 纯图占位符不入正文
-  return `<div class="tl-item${who2 ? ' who2' : ''}${isNew ? ' new' : ''}" data-id="${esc(t.id)}"><div class="meta"><span class="who">${esc(t.author)}</span>${t.tag ? `<span class="tl-tag">${esc(t.tag)}</span>` : ''}<span class="when">${esc(tlWhenLabel(t))}</span></div><button class="del" onclick="openActionSheet('${t.id}')" title="更多操作" aria-label="更多操作">⋯</button>${hasText ? `<div class="text${long ? ' clamp' : ''}">${linkify(t.text)}</div>${long ? `<button class="text-toggle" onclick="tlToggleText(this)">展开全文</button>` : ''}` : ''}${tlPhotosHtml(t)}</div>`;
+  return `<div class="tl-item${who2 ? ' who2' : ''}${isNew ? ' new' : ''}" data-id="${esc(t.id)}"><div class="meta"><span class="who">${esc(t.author)}</span>${t.tag ? `<span class="tl-tag">${esc(t.tag)}</span>` : ''}<span class="when">${esc(tlWhenLabel(t))}</span></div><button class="del" onclick="openActionSheet('${t.id}')" title="更多操作" aria-label="更多操作">⋯</button>${hasText ? `<div class="text${long ? ' clamp' : ''}">${linkify(t.text)}</div>${long ? `<button class="text-toggle" onclick="tlToggleText(this)">展开全文</button>` : ''}` : ''}${tlPhotosHtml(t)}${tlReactsHtml(t)}</div>`;
 }
 
 function tlFindItemEl(root, id) {
@@ -3128,7 +3310,7 @@ function tlPhotosHtml(t) {
   }
   const show = photos.slice(0, 9);
   const more = photos.length - show.length;
-  return '<div class="tl-photos' + (show.length >= 3 ? ' n3' : '') + '">' + show.map((p, i) =>
+  return '<div class="tl-photos' + (show.length >= 3 && show.length !== 4 ? ' n3' : '') + '">' + show.map((p, i) =>
     `<div class="ph${i === show.length - 1 && more > 0 ? ' more' : ''}"${i === show.length - 1 && more > 0 ? ` data-more="${more}"` : ''} onclick="previewPostPhoto('${t.id}',${i})"><img data-photo="${esc(p)}" alt="照片 ${i + 1}" loading="lazy" decoding="async"></div>`
   ).join('') + '</div>';
 }
@@ -3172,6 +3354,7 @@ function quickDel(key, id) {
     if (!cur) return;
     touch(cur); cur.deleted = false;
     if (cur.photo && Array.isArray(S.trash)) S.trash = S.trash.filter(t => t.path !== cur.photo);
+    if (key === 'timeline') restoreItemReactions(id);
     // 撤销时若节点已被摘掉，同样只插回一个节点，不重建整表
     if (key === 'timeline' && tlIncrementalInsert(cur)) tlSkipRender = 1;
     commit(key, 'trash');
