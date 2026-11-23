@@ -394,3 +394,23 @@ wusiStorage → 存在时启用 mirrorCache() 镜像备份
 4. **不确定就查**：`search_files` 找关键词比凭记忆猜更可靠
 5. **涉及删除/迁移数据时先确认备份**，不可逆操作要明确告知用户
 6. **不要把 token 写进代码**，也不要提交任何含 token 的文件
+
+## 13. 软考高项模块（exam.js / exam-data.js，2026-11 新增）
+
+独立于情侣业务，**不参与 `S` 同步**，也不写进 `couple-data.json`。
+
+| 文件 | 作用 |
+|---|---|
+| `exam.js` | 页面渲染 / 知识点详情 / ITTO 自测 / 挣值计算题 / 全屏面板 `#examPanel` |
+| `exam-data.js` | 内容：`EXAM_ITTO`（49 个过程，14 个有 ITTO 明细）、`EXAM_KP`（知识点） |
+
+- 入口：更多 → 软考高项。路由 `exam` 已加进 `PAGE_TAB` / `PAGE_TITLES` / `SUB_PAGES`，
+  `go()` 里调 `examEnter()`（脚本未就绪时有 `typeof` 保护）。
+- DOM：`#page-exam > .scroll-area > #examRoot`；详情与自测走 `#examPanel`，
+  已注册到 ov 栈的 `examDetail`，返回键 / Esc 可关。
+- 数据：考试日期存 `localStorage` 的 `coupleExamCfg`；内容全是静态文件，
+  不进 `S`、不上传、不占同步体积。
+- 改内容只动 `exam-data.js`；改引擎动 `exam.js`。**新增文件必须同步 `sw.js` 的 `SHELL`
+  并升 `VERSION`（当前 v15）**，否则离线白屏 / 旧缓存。
+- 题库（真题）计划用 JSON + 本地导入（IndexedDB），**不提交公开仓库**，避免公开转载。
+- 覆盖范围：P0 只有知识点、ITTO（14 个明细）、挣值计算题；刷题页是占位。
