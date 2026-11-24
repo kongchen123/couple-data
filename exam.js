@@ -68,6 +68,7 @@ function examHtmlHub() {
     <button class="exam-tile" onclick="examGo('itto')"><span class="ico">🧩</span><b>ITTO</b><span>${examIttoDetailCount()}/${EXAM_ITTO.length} 个过程明细</span></button>
     <button class="exam-tile" onclick="examGo('calc')"><span class="ico">🧮</span><b>计算题</b><span>挣值分析 · 随机出题</span></button>
     <button class="exam-tile" onclick="examGo('bank')"><span class="ico">📝</span><b>刷题</b><span>ITTO 自测 · 随机 3 题</span></button>
+    <button class="exam-tile" onclick="examGo('notes')"><span class="ico">📖</span><b>章节速记</b><span>${(typeof EXAM_NOTES !== 'undefined' ? EXAM_NOTES.length : 0)} 篇完整资料</span></button>
   </div>
   <p class="exam-note">内容还在校对：ITTO 先录了高频过程，知识点后续按教材补全；刷题和更多计算题型下一版。</p>`;
 }
@@ -389,7 +390,7 @@ function examHtmlBank() {
 
 /* ---------------- 渲染 / 导航 ---------------- */
 /* 子页标题交给全局 pageTitle 承载（与语音/经期/设置一致），页面内不再重复画一份 */
-const EXAM_VIEW_TITLES = { hub: '软考高项', kp: '知识点', itto: 'ITTO 过程表', calc: '计算题', bank: '刷题' };
+const EXAM_VIEW_TITLES = { hub: '软考高项', kp: '知识点', itto: 'ITTO 过程表', calc: '计算题', bank: '刷题', notes: '章节速记' };
 function examSyncTitle() {
   const t = $('pageTitle');
   if (t) t.textContent = EXAM_VIEW_TITLES[examView] || '软考高项';
@@ -403,6 +404,7 @@ function examRender() {
   if (examView === 'itto') { root.innerHTML = examHtmlItto(); return; }
   if (examView === 'calc') { root.innerHTML = examHead('计算题', '挣值 · 第 1 类') + '<div id="examCalcBox"></div><p class="exam-note">下一版：三点估算、沟通渠道、决策树、网络图（关键路径/总时差）。</p>'; examCalcNew(); return; }
   if (examView === 'bank') { root.innerHTML = examHtmlBank(); return; }
+  if (examView === 'notes') { root.innerHTML = ntHtmlList(); ntRenderList(); return; }
   root.innerHTML = examHtmlHub();
 }
 

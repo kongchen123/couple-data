@@ -677,6 +677,31 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
 .exam-tile b { font-size: 14px; color: var(--text-main); }
 .exam-tile span { font-size: 11px; color: var(--text-sub); }
 .exam-note { font-size: 11px; color: var(--text-faint); line-height: 1.6; margin-top: 12px; }
+/* ---- 软考资料阅读器（notes.js）：md 渲染样式 ---- */
+.nt-item { display: block; width: 100%; text-align: left; background: var(--bg-card); border: none; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; }
+.nt-item .t { font-size: 14px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
+.nt-item .s { font-size: 11px; color: var(--text-sub); line-height: 1.5; margin-top: 4px; }
+.nt-item .hint { font-size: 11px; color: var(--text-faint); line-height: 1.5; margin-top: 5px; padding-top: 5px; border-top: 1px dashed var(--border-input); }
+.nt-tag { font-size: 9px; font-weight: 700; color: var(--primary); background: var(--primary-light); border-radius: 6px; padding: 1px 5px; flex: none; opacity: .9; }
+.nt-p { font-size: 13.5px; line-height: 1.75; color: var(--text-main); margin: 0 0 10px; }
+.nt-h2 { font-size: 15px; font-weight: 800; color: var(--primary); margin: 20px 0 9px; padding-bottom: 6px; border-bottom: 2px solid var(--primary-light); }
+.nt-h3 { font-size: 14px; font-weight: 700; color: var(--text-main); margin: 16px 0 7px; }
+.nt-h4 { font-size: 13px; font-weight: 700; color: var(--text-sub); margin: 12px 0 6px; }
+.nt-quote { font-size: 12.5px; line-height: 1.7; color: var(--text-sub); background: var(--bg-card); border-left: 3px solid var(--primary-light); border-radius: 0 8px 8px 0; padding: 9px 12px; margin: 0 0 12px; }
+.nt-list { font-size: 13.5px; line-height: 1.75; color: var(--text-main); margin: 0 0 10px; padding-left: 20px; }
+.nt-list li { margin-bottom: 4px; }
+.nt-sub { margin: 3px 0 3px; padding-left: 16px; }
+.nt-hr { border: none; border-top: 1px solid var(--border-input); margin: 16px 0; }
+.nt-pre { background: var(--bg-bar); border-radius: 10px; padding: 11px 13px; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 0 12px; }
+.nt-pre code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11.5px; line-height: 1.6; color: var(--text-main); white-space: pre; }
+.nt-tbwrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 0 13px; border-radius: 10px; border: 1px solid var(--border-input); }
+.nt-tb { border-collapse: collapse; font-size: 12px; line-height: 1.55; width: 100%; }
+.nt-tb th { background: var(--bg-bar); color: var(--text-main); font-weight: 700; padding: 8px 10px; text-align: left; white-space: nowrap; border-bottom: 1.5px solid var(--border-input); }
+.nt-tb td { padding: 8px 10px; color: var(--text-main); vertical-align: top; border-bottom: 1px solid var(--border-input); }
+.nt-tb tr:last-child td { border-bottom: none; }
+.nt-tb b { font-weight: 700; color: var(--primary); }
+.nt-foot { text-align: center; font-size: 11px; color: var(--text-faint); margin: 22px 0 8px; }
+.exam-panel-body code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; background: var(--bg-bar); border-radius: 4px; padding: 1px 4px; }
 .exam-head { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; }
 .exam-back { border: none; background: none; color: var(--primary); font-size: 13px; font-weight: 700; padding: 6px 0; cursor: pointer; flex: none; }
 .exam-h2 { font-size: 15px; font-weight: 700; }
@@ -5764,6 +5789,8 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 }
 </script>
 <script src="./exam-data.js" defer></script>
+<script src="./exam-notes.js" defer></script>
+<script src="./notes.js" defer></script>
 <script src="./exam.js" defer></script>
 </body>
 </html>
