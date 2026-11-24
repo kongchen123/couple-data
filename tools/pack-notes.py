@@ -56,6 +56,11 @@ def main():
             nid = 'readme'
             title = '备考总览'
             tag = '总览'
+        elif re.match(r'00[-_]', name):
+            # 学习计划：排在所有章节最前。标题本身就是“学习计划”，不再重复打标签
+            nid = 'plan'
+            title = pick_title(lines, name)
+            tag = ''
         else:
             m = re.match(r'(\d+)[-_]', name)
             nid = (m.group(1) if m else os.path.splitext(name)[0])

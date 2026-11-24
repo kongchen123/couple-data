@@ -341,11 +341,11 @@ function ntTocGo(anchorId) {
      关闭抽屉会走 ovPop → 还原焦点，focus 会打断平滑滚动，导致停在原处 */
   const y = el.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop;
   ntTocClose();
-  requestAnimationFrame(() => {
-    body.scrollTop = Math.max(0, y - 8);
-    /* focus 可能在 rAF 之后才发生（ovPop 里延时 60ms），补一次确保落点准确 */
-    setTimeout(() => { body.scrollTop = Math.max(0, y - 8); }, 80);
-  });
+  /* 抽屉是绝对定位覆盖层，关闭它不改变 examPanelBody 的高度，
+     所以可以直接同步赋值（不用 rAF：头部浏览器/后台标签会节流 rAF，
+     导致跳转静默失效）。再补一次 setTimeout 兜底焦点还原带来的位移 */
+  body.scrollTop = Math.max(0, y - 8);
+  setTimeout(() => { body.scrollTop = Math.max(0, y - 8); }, 90);
 }
 
 /* 关闭面板时顺带把目录抽屉收起来，否则 drawer 会悬在下一页上 */

@@ -15,6 +15,17 @@ const ROOT = path.dirname(__dirname);
 const NOTES_JS = path.join(ROOT, 'notes.js');
 const PACK_JS = path.join(ROOT, 'exam-notes.js');
 
+// md 源统计：作为《实际值》的基准，避免把数字写死后每次加篇章都要改测试
+const SRC_DIR = path.join(ROOT, '软考资料');
+const mdFiles = fs.readdirSync(SRC_DIR).filter(f => f.toLowerCase().endsWith('.md'));
+const mdFileCount = mdFiles.length;
+const mdTableCount = mdFiles.reduce((n, f) => {
+  const t = fs.readFileSync(path.join(SRC_DIR, f), 'utf8');
+  // 表格分隔行 |---|:--:| 每个表格恰好一行（“外面有竖线 + 内部只有 -:空格”），
+  // 不会误伤普通数据行
+  return n + (t.match(/^\s*\|[-:\s|]+\|\s*$/gm) || []).length;
+}, 0);
+
 let pass = 0, fail = 0;
 const bad = [];
 function ok(name, cond, detail) {
@@ -42,7 +53,7 @@ vm.runInContext(packSrc, sandbox, { filename: 'exam-notes.js' });
 const get = (expr) => vm.runInContext(expr, sandbox);
 const EXAM_NOTES = get('EXAM_NOTES');
 ok('EXAM_NOTES 已定义', Array.isArray(EXAM_NOTES), '类型: ' + typeof EXAM_NOTES);
-ok('篇数为 18', EXAM_NOTES.length === 18, '实际: ' + EXAM_NOTES.length);
+ok('篇数 = md 源文件数', EXAM_NOTES.length === mdFileCount, '包装: ' + EXAM_NOTES.length + ' / md 源: ' + mdFileCount);
 
 // 加载渲染器（跳过 UI 部分，只取纯函数）
 vm.runInContext(src, sandbox, { filename: 'notes.js' });
@@ -93,7 +104,7 @@ const tDet = ntRender('<details>\n<summary>答案</summary>\n内容\n</details>'
 ok('details 直通', /<details>/.test(tDet) && /<\/details>/.test(tDet), tDet);
 
 // ---- 5. 真实资料全量渲染 ----
-console.log('\n=== 5. 真实资料全量渲染（18 篇）===');
+console.log('\n=== 5. 真实资料全量渲染（' + EXAM_NOTES.length + ' 篇）===');
 let totalTb = 0, totalH = 0, totalLi = 0, unbal = [], suspicious = [];
 EXAM_NOTES.forEach(n => {
   const html = ntRender(n.md, true);
@@ -119,7 +130,7 @@ EXAM_NOTES.forEach(n => {
     '  ' + (html.length / 1024).toFixed(1) + 'KB');
 });
 
-ok('表格总数 = 138（与 md 源一致）', totalTb === 138, '实际: ' + totalTb);
+ok('表格总数 = md 源表格数', totalTb === mdTableCount, '渲染: ' + totalTb + ' / md 源: ' + mdTableCount);
 // 目录锚点：每个 H2/H3 都应带 id，且不与 md 源表格数冲突
 ok('标题全部带目录锚点', !/<h[34] class="nt-h[234]"(?! id=)/.test(
   EXAM_NOTES.map(n => ntRender(n.md, true, [])).join('')), '有标题缺 id');
