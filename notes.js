@@ -42,8 +42,9 @@ function ntSplitRow(l) {
   return s.split('|').map(x => x.trim());
 }
 
-/* 把 md 渲染成 HTML。skipFirstH1=true 时跳过首个 H1（详情页标题栏已有） */
-function ntRender(md, skipFirstH1) {
+/* 把 md 渲染成 HTML。skipFirstH1=true 时跳过首个 H1（详情页标题栏已有）
+   tocOut 传入数组时，顺带收集 H2/H3 作为目录项 {lvl, text, id} */
+function ntRender(md, skipFirstH1, tocOut) {
   const lines = String(md || '').replace(/\r\n?/g, '\n').split('\n');
   const out = [];
   let i = 0;
@@ -91,7 +92,14 @@ function ntRender(md, skipFirstH1) {
       if (lvl === 1 && !skippedH1) { skippedH1 = true; i++; continue; }
       const tag = lvl <= 2 ? 'h3' : (lvl === 3 ? 'h4' : 'h5');
       const cls = lvl <= 2 ? 'nt-h2' : (lvl === 3 ? 'nt-h3' : 'nt-h4');
-      out.push('<' + tag + ' class="' + cls + '">' + ntInline(hm[2]) + '</' + tag + '>');
+      /* 目录锚点按出现顺序编号：中文 id 需要转义，顺序号更稳且不会重复 */
+      let aid = '';
+      if (tocOut && lvl <= 3) {
+        aid = 'nt-h-' + tocOut.length;
+        tocOut.push({ lvl: lvl, text: ntPlain(hm[2]), id: aid });
+      }
+      out.push('<' + tag + ' class="' + cls + '"' + (aid ? ' id="' + aid + '"' : '') + '>' +
+        ntInline(hm[2]) + '</' + tag + '>');
       i++;
       continue;
     }
@@ -261,9 +269,91 @@ function ntRenderList() {
 
 function ntInput(v) { ntKw = v; ntRenderList(); }
 
+let ntToc = [];
+let ntCurId = '';
+
 function ntOpen(id) {
   const n = ntById(id);
   if (!n) { toast('章节不存在'); return; }
-  examPanelShow(n.title, ntRender(n.md, true) +
+  ntCurId = id;
+  ntToc = [];
+  const html = ntRender(n.md, true, ntToc);
+  examPanelShow(n.title, '<div id="ntDoc">' + html + '</div>' +
     '<div class="nt-foot">—— 完 ——</div>');
+  ntSyncTocBtn();
+}
+
+/* ---------- 目录：面板头部的 ☰ 按钮 + 底部抽屉 ---------- */
+/* 按钮写在 index.html 的 examPanel 头部（默认 hidden），这里只负责显隐：
+   只有当前渲染的是章节文档（#ntDoc 存在）且收集到目录项时才露出。
+   examPanelShow 末尾会调这个函数，所以 ITTO / 知识点详情会自动收起目录键 */
+function ntSyncTocBtn() {
+  const btn = $('ntTocBtn');
+  if (!btn) return;
+  btn.hidden = !(document.getElementById('ntDoc') && ntToc.length);
+}
+
+function ntTocOpen() {
+  if (!ntToc.length) return;
+  const list = $('ntTocList');
+  if (!list) return;
+  /* 打开时把当前读到的位置高亮出来，否则 14 条目录看不出读到哪了 */
+  const cur = ntCurrentAnchor();
+  list.innerHTML = ntToc.map(t =>
+    '<button class="nt-toc-item lv' + t.lvl + (t.id === cur ? ' cur' : '') + '"' +
+    ' onclick="ntTocGo(\'' + t.id + '\')">' + ntEsc(t.text) + '</button>'
+  ).join('');
+  $('ntTocMask').classList.add('show');
+  $('ntTocPanel').classList.add('show');
+  ovPush('ntToc');
+  /* 高亮项滚进可视区 */
+  const hit = list.querySelector('.nt-toc-item.cur');
+  if (hit) list.scrollTop = Math.max(0, hit.offsetTop - list.clientHeight / 2);
+}
+
+function ntTocClose() {
+  const m = $('ntTocMask'), p = $('ntTocPanel');
+  if (m) m.classList.remove('show');
+  if (p) p.classList.remove('show');
+  ovPop('ntToc');
+}
+
+/* 当前可视区顶部附近的那个标题（用于目录高亮） */
+function ntCurrentAnchor() {
+  const body = $('examPanelBody');
+  if (!body || !ntToc.length) return '';
+  const top = body.getBoundingClientRect().top + 12;
+  let cur = '';
+  for (const t of ntToc) {
+    const el = document.getElementById(t.id);
+    if (!el) continue;
+    if (el.getBoundingClientRect().top <= top) cur = t.id;
+    else break;
+  }
+  return cur || ntToc[0].id;
+}
+
+function ntTocGo(anchorId) {
+  const body = $('examPanelBody');
+  const el = document.getElementById(anchorId);
+  if (!body || !el) { ntTocClose(); return; }
+  /* 坐标必须在抽屉关闭前算好；且用直接赋值不用 smooth：
+     关闭抽屉会走 ovPop → 还原焦点，focus 会打断平滑滚动，导致停在原处 */
+  const y = el.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop;
+  ntTocClose();
+  requestAnimationFrame(() => {
+    body.scrollTop = Math.max(0, y - 8);
+    /* focus 可能在 rAF 之后才发生（ovPop 里延时 60ms），补一次确保落点准确 */
+    setTimeout(() => { body.scrollTop = Math.max(0, y - 8); }, 80);
+  });
+}
+
+/* 关闭面板时顺带把目录抽屉收起来，否则 drawer 会悬在下一页上 */
+function ntResetToc() {
+  ntToc = [];
+  ntCurId = '';
+  const m = $('ntTocMask'), p = $('ntTocPanel');
+  if (m) m.classList.remove('show');
+  if (p) p.classList.remove('show');
+  ntSyncTocBtn();
 }

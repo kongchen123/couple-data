@@ -97,7 +97,7 @@ console.log('\n=== 5. 真实资料全量渲染（18 篇）===');
 let totalTb = 0, totalH = 0, totalLi = 0, unbal = [], suspicious = [];
 EXAM_NOTES.forEach(n => {
   const html = ntRender(n.md, true);
-  const tb = (html.match(/<table class="nt-tb">/g) || []).length;
+  const tb = (html.match(/<table class="nt-tb"/g) || []).length;
   const hs = (html.match(/<h[345] class="nt-h/g) || []).length;
   const li = (html.match(/<li>/g) || []).length;
   totalTb += tb; totalH += hs; totalLi += li;
@@ -120,6 +120,9 @@ EXAM_NOTES.forEach(n => {
 });
 
 ok('表格总数 = 138（与 md 源一致）', totalTb === 138, '实际: ' + totalTb);
+// 目录锚点：每个 H2/H3 都应带 id，且不与 md 源表格数冲突
+ok('标题全部带目录锚点', !/<h[34] class="nt-h[234]"(?! id=)/.test(
+  EXAM_NOTES.map(n => ntRender(n.md, true, [])).join('')), '有标题缺 id');
 ok('无标签不配平', unbal.length === 0, unbal.join('; '));
 ok('无残留 md 标记', suspicious.length === 0, suspicious.join('; '));
 ok('标题总数 > 100', totalH > 100, '实际: ' + totalH);

@@ -701,6 +701,20 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
 .nt-tb tr:last-child td { border-bottom: none; }
 .nt-tb b { font-weight: 700; color: var(--primary); }
 .nt-foot { text-align: center; font-size: 11px; color: var(--text-faint); margin: 22px 0 8px; }
+/* ---- 章节目录抽屉：从底部升起，条目按 H2/H3 缩进 ---- */
+#ntTocMask { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 130; opacity: 0; visibility: hidden; transition: opacity .22s, visibility .22s; }
+#ntTocMask.show { opacity: 1; visibility: visible; }
+#ntTocPanel { position: fixed; left: 0; right: 0; bottom: 0; z-index: 131; background: var(--bg-card); border-radius: 18px 18px 0 0; transform: translateY(100%); visibility: hidden; transition: transform .24s ease, visibility .24s; display: flex; flex-direction: column; max-height: 72vh; padding-bottom: env(safe-area-inset-bottom); }
+#ntTocPanel.show { transform: none; visibility: visible; }
+.nt-toc-head { flex: none; display: flex; align-items: center; padding: 13px 16px 9px; border-bottom: 1px solid var(--border-input); }
+.nt-toc-head b { font-size: 14px; color: var(--text-main); }
+.nt-toc-x { margin-left: auto; border: none; background: none; color: var(--text-sub); font-size: 16px; line-height: 1; padding: 4px 6px; cursor: pointer; }
+.nt-toc-list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 6px 8px 14px; }
+.nt-toc-item { display: block; width: 100%; text-align: left; border: none; background: none; color: var(--text-main); font-size: 13px; line-height: 1.5; padding: 9px 12px; border-radius: 9px; cursor: pointer; }
+.nt-toc-item.lv3 { padding-left: 30px; font-size: 12px; color: var(--text-sub); }
+.nt-toc-item:active { background: var(--bg-bar); }
+.nt-toc-item.cur { background: var(--primary-light); color: var(--primary); font-weight: 700; }
+.nt-toc-btn[hidden] { display: none; }
 .exam-panel-body code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; background: var(--bg-bar); border-radius: 4px; padding: 1px 4px; }
 .exam-head { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; }
 .exam-back { border: none; background: none; color: var(--primary); font-size: 13px; font-weight: 700; padding: 6px 0; cursor: pointer; flex: none; }
@@ -1221,8 +1235,19 @@ button.exam-cell { width: 100%; cursor: pointer; }
   <div class="exam-panel-head">
     <button class="exam-panel-back" onclick="examPanelClose()" aria-label="关闭">‹</button>
     <div class="tt" id="examPanelTitle">软考高项</div>
+    <!-- 目录：只在章节详情里露出（notes.js 控制 hidden），点击弹出底部抽屉 -->
+    <button class="exam-panel-back" id="ntTocBtn" onclick="ntTocOpen()" aria-label="目录" hidden>☰</button>
   </div>
   <div class="exam-panel-body" id="examPanelBody"></div>
+</div>
+<!-- 软考资料：章节目录抽屉（从底部升起，点遮罩或返回键关闭） -->
+<div id="ntTocMask" onclick="ntTocClose()"></div>
+<div id="ntTocPanel" role="dialog" aria-modal="true" aria-label="目录">
+  <div class="nt-toc-head">
+    <b>目录</b>
+    <button class="nt-toc-x" onclick="ntTocClose()" aria-label="关闭目录">✕</button>
+  </div>
+  <div class="nt-toc-list" id="ntTocList"></div>
 </div>
 <!-- 常驻语音播放器：不随列表重渲染销毁，避免「停不下来 / 播不了」 -->
 <audio id="voiceAudio" preload="none" playsinline></audio>
@@ -1685,6 +1710,7 @@ const OV_DEFS = {
   dp: { panel: 'dpPanel' },
   wishPeriod: { panel: 'wpPanel' },
   examDetail: { panel: 'examPanel' },
+  ntToc: { panel: 'ntTocPanel' },
   lightbox: { panel: 'lightbox' }
 };
 const OV_CLOSE = {
@@ -1695,6 +1721,7 @@ const OV_CLOSE = {
   dp: () => closeDatePicker(),
   wishPeriod: () => closeWishPeriod(),
   examDetail: () => { if (typeof examPanelClose === 'function') examPanelClose(); },
+  ntToc: () => { if (typeof ntTocClose === 'function') ntTocClose(); },
   lightbox: () => closeLightbox()
 };
 function ovFocusables(panel) {

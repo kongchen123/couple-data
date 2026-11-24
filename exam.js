@@ -420,11 +420,15 @@ function examPanelShow(title, html) {
   $('examPanelBody').scrollTop = 0;
   $('examPanel').classList.add('show');
   ovPush('examDetail');
+  // 章节详情才有目录；其它详情面板进来时目录键自动收起（notes.js 未就绪时忽略）
+  if (typeof ntSyncTocBtn === 'function') ntSyncTocBtn();
 }
 function examPanelClose() {
   const p = $('examPanel');
   if (p) p.classList.remove('show');
   ovPop('examDetail');
+  // 把目录抽屉一并收掉，避免悬在下一页上
+  if (typeof ntResetToc === 'function') ntResetToc();
 }
 
 /* 深链 #exam 时，主脚本先切了页面，这里补渲染（defer 脚本晚于主脚本执行） */
