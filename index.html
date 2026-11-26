@@ -76,19 +76,14 @@
   --month-fade: linear-gradient(180deg, #fff7f9 92%, rgba(255,247,249,0));
   --pred-grad: linear-gradient(135deg, #fff0f4, #ffe3ea);
   --text-main: #4a3b40;
-  --text-sub: #846c76;
-  --text-faint: #a0878f;
+  --text-sub: #a08a92;
+  --text-faint: #c9b3bb;
   --text-quote: #8a6e78;
   --text-cal: #6b5560;
   --text-dim: #e9d5da;
   --border-input: #f3dee4;
   --border-chip: #f3dee4;
   --scrollbar-thumb: #f0c9d4;
-  --wave-bar: #ff9fb5;
-  --play-loading: #ffb3c6;
-  --who-bg: #efedff;
-  --who2-bg: #ffeef3;
-  --cache-bg: #f3f8f2;
   --shadow-card: 0 6px 24px rgba(245,87,127,.1);
   --shadow-hero: 0 10px 30px rgba(245,87,127,.35);
   --shadow-btn: 0 4px 12px rgba(245,87,127,.3);
@@ -118,11 +113,6 @@
     --border-input: #4a3a40;
     --border-chip: #4a3a40;
     --scrollbar-thumb: #5a454e;
-    --wave-bar: #d4738c;
-    --play-loading: #c96580;
-    --who-bg: #2e2a42;
-    --who2-bg: #3a2a31;
-    --cache-bg: #243024;
     --shadow-card: 0 6px 24px rgba(0,0,0,.35);
   }
 }
@@ -160,8 +150,8 @@ main { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 4
 /* 页面骨架：整页不滚，顶部固定 + 下方局部滚动 */
 .page.active { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
 /* 左右滑动切页的入场动画 */
-@keyframes pageInL { from { transform: translateX(16px); opacity: .7; } }
-@keyframes pageInR { from { transform: translateX(-16px); opacity: .7; } }
+@keyframes pageInL { from { transform: translateX(32px); opacity: .5; } }
+@keyframes pageInR { from { transform: translateX(-32px); opacity: .5; } }
 .page.active.anim-l { animation: pageInL .26s cubic-bezier(.22,.9,.32,1); }
 .page.active.anim-r { animation: pageInR .26s cubic-bezier(.22,.9,.32,1); }
 .page.active > * { flex-shrink: 0; }
@@ -180,18 +170,9 @@ main { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 4
 .count-page .empty { grid-column: 1 / -1; }
 .count-dots { display: flex; justify-content: center; align-items: center; gap: 5px; margin-top: 9px; }
 .count-dots:empty { display: none; }
-.count-dots i { width: 5px; height: 5px; border-radius: 3px; background: #ffd0dc; transition: width .2s, background .2s; cursor: pointer; }
+.count-dots i { width: 5px; height: 5px; border-radius: 3px; background: #ffd0dc; transition: all .2s; cursor: pointer; }
 .count-dots i.on { width: 14px; background: #e9407a; }
 .count-item { min-width: 0; background: var(--bg-soft); border-radius: 12px; padding: 8px 12px; }
-
-/* 首页经期速览：一行主文 + 一行细说，不占额外高度 */
-.per-home-body { background: var(--bg-soft); border-radius: 12px; padding: 10px 12px; }
-.per-home-main { font-size: 16px; font-weight: 700; color: var(--primary); line-height: 1.4; }
-.per-home-main.soon { color: #e8890a; }
-.per-home-sub { font-size: 11.5px; color: var(--text-sub); margin-top: 3px; line-height: 1.5; }
-@media (prefers-color-scheme: dark) {
-  .per-home-main.soon { color: #ffcf8a; }
-}
 .count-item .date { word-break: break-word; overflow-wrap: anywhere; font-size: 11px; color: #c9b3bb; line-height: 1.5; }
 .count-item .date .ymd { white-space: nowrap; }
 /* 短屏压缩，尽量让首页不出现滚动 */
@@ -240,8 +221,6 @@ input:focus { border-color: #ff7e9d; }
 .photo-preview { position: relative; margin-top: 10px; display: none; }
 .photo-preview img { max-width: 120px; max-height: 120px; border-radius: 10px; border: 2px solid #ffd6e0; }
 .photo-preview .x { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%; background: #e05070; color: #fff; border: none; font-size: 12px; cursor: pointer; }
-/* 删除类小按钮：视觉保持 22px，热区扩到 44px 防误触 */
-.photo-preview .x::after { content: ""; position: absolute; inset: -11px; border-radius: 50%; }
 .search-box { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; position: relative; }
 .search-box input { flex: 1; padding-right: 38px; } /* 给右侧清除按钮留位 */
 .search-clear { display: none; position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border: none; border-radius: 50%; background: var(--bg-input); color: var(--text-sub); font-size: 13px; line-height: 1; padding: 0; cursor: pointer; align-items: center; justify-content: center; }
@@ -252,7 +231,7 @@ input:focus { border-color: #ff7e9d; }
 :root { --tl-gap: 12px; --tl-dot: 9px; --tl-dot-top: 17px; } /* 圆点竖直中心：对齐 meta 首行文字中线，轴线与圆点共用同一真值 */
 .tl-group { position: relative; padding-left: 18px; margin-bottom: 4px; }
 .group-month { position: sticky; top: 0; z-index: 2; font-size: 13px; font-weight: 700; color: var(--primary); padding: 8px 0; display: flex; align-items: center; gap: 6px; background: var(--month-fade); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); margin-left: -18px; padding-left: 18px; }
-.group-month::after { content: ""; flex: 1; height: 1px; background: var(--border-input); }
+.group-month::after { content: ""; flex: 1; height: 1px; background: #ffd6e0; }
 .tl-item { position: relative; display: flex; flex-direction: column; gap: 8px; background: var(--bg-card); border-radius: var(--radius-item); padding: 11px 14px 12px; margin-bottom: var(--tl-gap); box-shadow: 0 4px 14px rgba(245,87,127,.08); }
 .tl-item::before { content: ""; position: absolute; left: -16px; top: calc(var(--tl-dot-top) - var(--tl-dot) / 2); width: var(--tl-dot); height: var(--tl-dot); border-radius: 50%; background: #8f7ff5; box-shadow: 0 0 0 3px #e9e5ff; z-index: 1; } /* 圆点：z-index 提层盖在竖线上（::after 在 DOM 序靠后，不加会反过来压住圆点） */
 .tl-item.who2::before { background: #ff8fa8; box-shadow: 0 0 0 3px #ffe4ec; }
@@ -261,9 +240,9 @@ input:focus { border-color: #ff7e9d; }
 .tl-item:last-child::after { bottom: auto; height: calc(var(--tl-dot-top) + var(--tl-dot) / 2); } /* 末条：线收在圆点下缘 */
 .tl-item .meta { display: flex; align-items: center; gap: 8px; padding-right: 16px; }
 .tl-item .meta .when { margin-left: auto; color: var(--text-faint); } /* 时间靠右：who → tag 在左，when 沉到行尾 */
-.tl-item .who { font-size: 11.5px; font-weight: 700; color: #6f63d8; background: var(--who-bg); border-radius: 8px; padding: 2px 9px; }
+.tl-item .who { font-size: 11.5px; font-weight: 700; color: #6f63d8; background: #efedff; border-radius: 8px; padding: 2px 9px; }
 .tl-tag { display: inline-block; font-size: 10.5px; color: #8a6e78; background: #fff5f7; border: 1px solid #f3dee4; border-radius: 8px; padding: 1px 8px; } /* 标签只出现在 meta 行内，无需独立 margin */
-.tl-item.who2 .who { color: #e9407a; background: var(--who2-bg); }
+.tl-item.who2 .who { color: #e9407a; background: #ffeef3; }
 .tl-item .when { font-size: 11px; color: var(--text-faint); flex-shrink: 0; }
 .tl-item .text { font-size: 14px; line-height: 1.65; white-space: pre-wrap; word-break: break-word; }
 .tl-item .text.clamp { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; } /* 长文本折叠，点「展开全文」放开 */
@@ -322,11 +301,13 @@ body.wall-selecting .wall-sel-fab { background: #e9407a; color: #fff; border-col
 .tl-item.new { animation: tlNew .4s ease; } /* 新写入的记录淡入落位 */
 .empty .ico { display: block; font-style: normal; font-size: 34px; margin-bottom: 6px; opacity: .9; }
 .x-del { border: none; background: none; color: #d9a3b1; cursor: pointer; padding: 9px; }
+/* 文件选择：不要用 display:none —— 部分 WebView（小米浏览器网页应用 / 网页壳）只对渲染中的 input 弹选择器 */
+.file-input-off { position: fixed; left: -9999px; top: 0; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
 .tag-picker, .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
 .chip { padding: 7px 12px; min-height: 34px; border-radius: 20px; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; border: 1.5px solid var(--border-chip); background: var(--bg-card); color: var(--text-quote); cursor: pointer; transition: background .2s, border-color .2s, color .2s; }
 .chip.on { background: #ff8fa8; border-color: #ff8fa8; color: #fff; font-weight: 700; }
 .chip.tag-new { border-style: dashed; color: #c9a1ac; }
-.chip.tag-new.on { background: var(--bg-active); border-color: #ff8fa8; color: #e9407a; }
+.chip.tag-new.on { background: #fff0f4; border-color: #ff8fa8; color: #e9407a; }
 .chip .tag-x { display: inline-block; margin-left: 4px; padding: 0 2px; font-size: 13px; line-height: 1; opacity: .55; }
 .chip .tag-x:hover { opacity: 1; }
 .tag-editor { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
@@ -349,37 +330,6 @@ body.wall-selecting .wall-sel-fab { background: #e9407a; color: #fff; border-col
 .wish-g-od { font-size: 10px; font-weight: 700; color: #c9707f; background: #fdeff1; border-radius: 6px; padding: 1px 6px; }
 .wish-item.overdue { opacity: .72; }
 .wish-roll { border: none; background: none; color: var(--primary); font-size: 11px; font-weight: 700; padding: 6px 4px; cursor: pointer; flex-shrink: 0; }
-/* ---- 心愿页：压缩上方占位，把空间还给列表 ---- */
-.wish-top-card { padding: 9px 13px; margin-bottom: 7px; }
-.wp-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 7px; }
-.wp-title { display: flex; align-items: baseline; gap: 5px; min-width: 0; }
-.wp-ico { font-size: 13px; line-height: 1; transform: translateY(1px); }
-.wp-frac { display: inline-flex; align-items: baseline; font-variant-numeric: tabular-nums; letter-spacing: -.2px; }
-.wp-frac b { font-size: 17px; font-weight: 800; color: var(--primary); line-height: 1; }
-.wp-frac i { font-style: normal; font-size: 12px; color: var(--text-faint); margin: 0 1px; }
-.wp-frac em { font-style: normal; font-size: 13px; font-weight: 600; color: var(--text-sub); }
-.wp-word { font-size: 11px; color: var(--text-faint); margin-left: 1px; }
-.wp-right { display: flex; align-items: center; gap: 9px; flex: none; }
-.wp-pct { font-size: 11.5px; font-weight: 800; color: var(--primary); background: var(--bg-active); border-radius: 999px; padding: 2px 8px; font-variant-numeric: tabular-nums; line-height: 1.35; }
-.wish-top-card .progress-bar { margin-top: 0; height: 5px; border-radius: 3px; background: var(--bg-bar); box-shadow: inset 0 1px 1px rgba(233,64,122,.07); }
-.wish-top-card .progress-bar i { border-radius: 3px; background: var(--bar-grad); }
-.wish-top-card .wish-progress-line { margin-top: 0; font-size: 10.5px; flex: none; justify-content: flex-end; color: var(--text-faint); gap: 7px; }
-.wish-top-card .wish-progress-line b { font-weight: 700; color: var(--text-sub); }
-.wp-dot { color: var(--text-dim); margin: 0 2px; }
-.wp-pct.zero { color: var(--text-faint); background: var(--bg-soft); }
-.wish-top-card .composer { margin-top: 9px; margin-bottom: 0; }
-.wish-top-card .inline-composer { margin-bottom: 0; gap: 6px; }
-.wish-top-card .inline-composer input[type="text"] { flex: 1 1 0; min-width: 0; padding: 8px 11px; font-size: 13.5px; }
-.wish-more-btn { flex: none; padding: 8px 9px !important; line-height: 1; font-size: 13px !important; }
-.wish-more-btn.open { background: rgba(233,64,122,.1); color: #e9407a; }
-.wish-more-btn.has-pick { color: #e9407a; font-weight: 700; }
-/* 选项区：默认折叠，展开时下方滑出 */
-.wish-opts { display: none; margin-top: 9px; }
-.wish-opts.open { display: block; }
-.wish-top-card .period-bar { margin-bottom: 8px; }
-.wish-top-card .tag-picker { margin-bottom: 0; }
-.wish-top-card .tag-editor { margin-top: 8px; margin-bottom: 0; }
-#page-wishes .filter-bar { margin-bottom: 8px; }
 .wp-year { width: 100%; border: 1.5px solid var(--border-chip); background: var(--bg-card); color: var(--text-cal); border-radius: 10px; padding: 9px 0; font-size: 13px; cursor: pointer; margin-bottom: 8px; }
 .wp-year.on { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 700; }
 .capsule-item { position: relative; background: var(--bg-soft); border-radius: var(--radius-item); padding: 12px 14px; margin-bottom: 10px; }
@@ -397,17 +347,13 @@ body.wall-selecting .wall-sel-fab { background: #e9407a; color: #fff; border-col
 .voice-item { display: flex; align-items: center; gap: 10px; background: var(--bg-soft); border-radius: var(--radius-item); padding: 12px 14px; margin-bottom: 10px; box-shadow: inset 0 0 0 1.5px transparent; transition: box-shadow .2s, background .2s; }
 .voice-item.playing { background: var(--bg-active); box-shadow: inset 0 0 0 1.5px #ffc9d6; }
 .voice-item .voice-msg { flex: 1; min-width: 0; }
-.voice-item .voice-msg .who { font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-/* 作者标签：一眼分清“我”和“TA”，不用去读名字 */
-.voice-item .who-tag { font-size: 10px; font-weight: 700; line-height: 1; padding: 3px 6px; border-radius: 6px; background: #ede9ff; color: #6f63d8; flex: none; }
-.voice-item.theirs .who-tag { background: var(--who2-bg); color: #e9407a; }
-.voice-item.mine .play-btn { opacity: .88; }
+.voice-item .voice-msg .who { font-size: 13px; font-weight: 700; }
 .voice-item .voice-msg .sub { font-size: 11px; color: var(--text-sub); margin-top: 2px; }
 .play-btn { width: 38px; height: 38px; border-radius: 50%; border: none; background: #e9407a; color: #fff; font-size: 14px; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: transform .15s; }
 .play-btn:active { transform: scale(.93); }
-.play-btn.loading { background: var(--play-loading); }
+.play-btn.loading { background: #ffb3c6; }
 .wave { display: flex; align-items: center; gap: 2px; height: 20px; }
-.wave .bar { width: 3px; height: 18px; border-radius: 2px; background: var(--wave-bar); transform-origin: center; animation: wave 0.9s ease-in-out infinite; will-change: transform; }
+.wave .bar { width: 3px; border-radius: 2px; background: #ff9fb5; animation: wave 0.9s ease-in-out infinite; }
 /* 待上传缩略图：从 60px 小方块改成 84px，加序号角标，拖动时有落点提示 */
 #tlPreview.show, #tlEditPreview.show { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
 #tlPreview .thumb, #tlEditPreview .thumb {
@@ -422,34 +368,24 @@ body.wall-selecting .wall-sel-fab { background: #e9407a; color: #fff; border-col
   border-radius: 9px; background: rgba(0,0,0,.55); color: #fff; font-size: 10.5px; font-weight: 700;
   line-height: 17px; text-align: center; pointer-events: none;
 }
-/* 删除钮：热区 44x44 完全留在容器内（父级 overflow:hidden 不裁剪），视觉圆仍为 20px */
 #tlPreview .thumb .x, #tlEditPreview .thumb .x {
-  position: absolute; top: 0; right: 0; width: 44px; height: 44px; border: none;
-  background: transparent; color: #fff; cursor: pointer; padding: 0;
-  display: flex; align-items: flex-start; justify-content: flex-end; font-size: 0;
-}
-#tlPreview .thumb .x::before, #tlEditPreview .thumb .x::before {
-  content: "✕"; display: block; width: 20px; height: 20px; margin: 3px;
-  border-radius: 50%; background: rgba(0,0,0,.55); color: #fff;
-  font-size: 11px; line-height: 20px; text-align: center; font-weight: 400;
+  position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border: none; border-radius: 50%;
+  background: rgba(0,0,0,.55); color: #fff; font-size: 11px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; padding: 0;
 }
 #tlPreview .thumb img, #tlEditPreview .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 /* 未播放时的静态时长条：宽度按时长比例，最长 30 秒占满 */
-.voice-static { margin-top: 6px; height: 3px; border-radius: 2px; background: var(--bg-bar); overflow: hidden; }
+.voice-static { margin-top: 6px; height: 3px; border-radius: 2px; background: #ffe0e8; overflow: hidden; }
 .voice-static i { display: block; height: 100%; border-radius: 2px; background: linear-gradient(90deg, #ffb3c6, #ff8fa8); }
 .voice-item .who { display: flex; align-items: baseline; gap: 6px; }
 .voice-item .who .dur { font-size: 11px; font-weight: 500; color: var(--text-sub); }
 /* 进度条：加大触摸区，拖动更顺手 */
 .voice-prog { flex-basis: 100%; margin-top: 8px; cursor: pointer; touch-action: none; padding: 6px 0; }
-.voice-prog .track { height: 4px; border-radius: 2px; background: var(--bg-bar); overflow: hidden; }
+.voice-prog .track { height: 4px; border-radius: 2px; background: #ffe0e8; overflow: hidden; }
 .voice-prog .track i { display: block; height: 100%; background: linear-gradient(90deg, #ff8fa8, #e9407a); border-radius: 2px; }
 .voice-prog .voice-time { display: block; margin-top: 4px; font-size: 11px; color: var(--text-sub); text-align: right; }
 .voice-item { flex-wrap: wrap; }
-/* 用 scaleY 代替 height：动画留在合成层，不再逐帧触发布局计算（5/18≈.28） */
-@keyframes wave { 0%,100% { transform: scaleY(.28); } 50% { transform: scaleY(1); } }
-/* 切到其他页面时暂停循环动画：不可见的元素不该继续占用渲染帧 */
-.page:not(.active) .wave .bar,
-.page:not(.active) .rec-btn.recording { animation-play-state: paused; }
+@keyframes wave { 0%,100% { height: 5px; } 50% { height: 18px; } }
 .day-item { display: flex; align-items: center; gap: 8px; background: var(--bg-soft); border-radius: 10px; padding: 8px 12px; margin-bottom: 8px; font-size: 13px; }
 .day-item .d { margin-left: auto; color: var(--text-sub); font-size: 12px; }
 /* ---- 经期记录 ---- */
@@ -481,8 +417,7 @@ body.wall-selecting .wall-sel-fab { background: #e9407a; color: #fff; border-col
 .per-badge { display: inline-block; margin-left: 6px; font-size: 10px; font-weight: 600; color: #e9407a; background: rgba(233,64,122,.12); border-radius: 6px; padding: 1px 6px; vertical-align: 1px; }
 .per-act { flex: none; border: none; background: var(--bg-bar); color: #e9407a; font-size: 11px; padding: 7px 10px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
 .per-act:active { background: var(--bg-active); }
-.per-del { flex: none; width: 26px; height: 26px; border: none; border-radius: 50%; background: transparent; color: var(--text-faint); font-size: 14px; line-height: 1; padding: 0; cursor: pointer; position: relative; }
-.per-del::after { content: ""; position: absolute; inset: -9px; border-radius: 50%; }
+.per-del { flex: none; width: 26px; height: 26px; border: none; border-radius: 50%; background: transparent; color: var(--text-faint); font-size: 14px; line-height: 1; padding: 0; cursor: pointer; }
 .per-del:active { background: var(--bg-active); }
 .per-count { font-size: 12px; font-weight: 400; color: var(--text-sub); margin-left: auto; }
 .pred-card { background: var(--pred-grad); border-radius: var(--radius-item); padding: 12px 14px; margin-bottom: 10px; }
@@ -490,7 +425,7 @@ body.wall-selecting .wall-sel-fab { background: #e9407a; color: #fff; border-col
 .pred-card .sub { font-size: 12px; color: var(--text-sub); margin-top: 4px; line-height: 1.6; }
 .sync-state { font-size: 12px; color: var(--text-sub); margin-top: 8px; }
 /* ---- 本地缓存卡片 ---- */
-.cache-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 999px; background: var(--cache-bg); color: #5b8f5b; margin-bottom: 12px; }
+.cache-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 999px; background: #f3f8f2; color: #5b8f5b; margin-bottom: 12px; }
 .cache-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .cache-badge.busy { background: #fdf5e8; color: #b98a3a; }
 .cache-badge.warn { background: #fdeff1; color: #c9707f; }
@@ -499,7 +434,7 @@ body.wall-selecting .wall-sel-fab { background: #e9407a; color: #fff; border-col
 .cache-row:last-child { border-bottom: none; }
 .cache-row .k { color: var(--text-sub); flex: none; }
 .cache-row .v { color: var(--text-cal); font-weight: 600; text-align: right; line-height: 1.45; }
-.toast { position: fixed; left: 50%; bottom: calc(190px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(10px); background: rgba(74,59,64,.92); color: #fff; font-size: 13px; padding: 9px 18px; border-radius: 20px; z-index: 99; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; }
+.toast { position: fixed; left: 50%; bottom: calc(148px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(10px); background: rgba(74,59,64,.92); color: #fff; font-size: 13px; padding: 9px 18px; border-radius: 20px; z-index: 99; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 /* ---- FAB：浮动主操作按钮（时间线/心愿/胶囊页显示） ---- */
 :root { --tabbar-h: 56px; }
@@ -531,7 +466,7 @@ body.wall-selecting .wall-item.sel { outline: 3px solid #e9407a; outline-offset:
 #wallSelBar .wsel-del:disabled { opacity: .45; }
 #wallSelBar .wsel-cancel { background: rgba(255,255,255,.18); color: #fff; }
 /* 高级设置折叠区：常用项常驻，仓库/Token/缓存回收这类低频维护项收进这里 */
-.sync-state.err { color: #c0392b; background: var(--bg-active); border-radius: 8px; padding: 7px 10px; line-height: 1.55; }
+.sync-state.err { color: #c0392b; background: #fff2f0; border-radius: 8px; padding: 7px 10px; line-height: 1.55; }
 .adv > summary {
   cursor: pointer; list-style: none; font-size: 14.5px; font-weight: 800; color: var(--primary);
   display: flex; align-items: center; gap: 6px; padding: 2px 0; user-select: none;
@@ -615,7 +550,7 @@ body.wall-selecting .wall-item.sel { outline: 3px solid #e9407a; outline-offset:
 .bd-cur { font-size: 11.5px; color: var(--text-faint); margin: 2px 0 10px; }
 .who-me-row .tag-picker { margin-bottom: 0; }
 /* ---- 站内确认弹层（替代原生 confirm） ---- */
-#cfMask { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 130; opacity: 0; visibility: hidden; transition: opacity .22s, visibility .22s; display: flex; align-items: center; justify-content: center; padding: 28px; }
+#cfMask { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 120; opacity: 0; visibility: hidden; transition: opacity .22s, visibility .22s; display: flex; align-items: center; justify-content: center; padding: 28px; }
 #cfMask.show { opacity: 1; visibility: visible; }
 #cfPanel { width: 100%; max-width: 320px; background: var(--bg-card); border-radius: 16px; padding: 20px 18px 14px; box-shadow: 0 12px 40px rgba(0,0,0,.2); transform: scale(.92); transition: transform .22s; }
 #cfMask.show #cfPanel { transform: scale(1); }
@@ -624,34 +559,13 @@ body.wall-selecting .wall-item.sel { outline: 3px solid #e9407a; outline-offset:
 #cfBtns .btn { flex: 1; }
 #cfBtns .btn.danger { background: linear-gradient(135deg, #ff8fa8, #e05070); border: none; color: #fff; box-shadow: var(--shadow-btn); padding: 9px 0; font-size: 14px; }
 /* ---- 撤销提示条：删除后 5 秒内可反悔 ---- */
-#undoToast { position: fixed; left: 50%; bottom: calc(140px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(10px); background: rgba(74,59,64,.94); color: #fff; font-size: 13px; padding: 7px 7px 7px 16px; border-radius: 22px; z-index: 99; opacity: 0; visibility: hidden; transition: opacity .25s, transform .25s, visibility .25s; pointer-events: none; display: flex; align-items: center; gap: 10px; max-width: 86vw; }
+#undoToast { position: fixed; left: 50%; bottom: calc(148px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(10px); background: rgba(74,59,64,.94); color: #fff; font-size: 13px; padding: 7px 7px 7px 16px; border-radius: 22px; z-index: 99; opacity: 0; visibility: hidden; transition: opacity .25s, transform .25s, visibility .25s; pointer-events: none; display: flex; align-items: center; gap: 10px; max-width: 86vw; }
 #undoToast.show { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); pointer-events: auto; }
 #undoToast .undo-btn { border: none; background: #ff8fa8; color: #fff; font-size: 12.5px; font-weight: 700; border-radius: 14px; padding: 5px 13px; cursor: pointer; flex-shrink: 0; }
-
-/* 新版本提示：比撤销条高一层，两者同时出现也不打架 */
-/* 底部间距 = 撤销条高度(43) + 间隙(10) + 撤销条自身 bottom(140) = 193。
-   撤销条 148 → 140（仍高于 FAB 的 72~128，不会压到浮动按钮），
-   更新提示 210 → 193，两条一起下移贴近底部内容区。
-   同时整体放大一档：字号 13→15、内边距 9→12、圆角 22→26、图标 14→17，
-   原来那条“扁扁的细条”变饱满，不再是页面中间一根孤零零的窄条 */
-#swToast { position: fixed; left: 50%; bottom: calc(235px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(10px); background: rgba(74,59,64,.94); color: #fff; font-size: 15px; padding: 12px 12px 12px 16px; border-radius: 26px; z-index: 100; opacity: 0; visibility: hidden; transition: opacity .25s, transform .25s, visibility .25s; pointer-events: none; display: flex; align-items: center; gap: 11px; width: max-content; max-width: 92vw; box-shadow: 0 8px 26px rgba(74,59,64,.28); }
-#swToast.show { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); pointer-events: auto; }
-#swToast .sw-ico { flex-shrink: 0; font-size: 17px; }
-/* min-width 是这条提示的关键：窄屏下若允许无限收缩，文字会被按钮挤成 1 列
-   （实测 375px 屏：消息区只剩 6px 宽，条高从 45px 涨到 135px） */
-#swToast #swMsg { flex: 1 1 auto; min-width: 108px; line-height: 1.4; }
-#swToast .sw-btn { border: none; background: #ff8fa8; color: #fff; font-size: 14px; font-weight: 700; border-radius: 16px; padding: 7px 15px; cursor: pointer; flex-shrink: 0; white-space: nowrap; -webkit-tap-highlight-color: transparent; }
-/* 「稍后」改 ✕ 图标：文字版要占 40px，窄屏下正是它把消息区挤没了 */
-#swToast .sw-x { border: none; background: transparent; color: #cbb6bd; font-size: 17px; line-height: 1; padding: 8px 6px 8px 3px; cursor: pointer; flex-shrink: 0; -webkit-tap-highlight-color: transparent; }
-@media (prefers-color-scheme: dark) {
-  #swToast { background: rgba(58,42,49,.96); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
-}
 /* ---- 时间线动作面板 & 编辑面板：底部弹层（长按记录或点 ⋯ 呼出） ---- */
-#asMask, #tlEditMask, #tlComposeMask { position: fixed; inset: 0; bottom: var(--kb, 0px); background: rgba(0,0,0,.4); z-index: 112; opacity: 0; visibility: hidden; transition: opacity .25s, visibility .25s; }
+#asMask, #tlEditMask, #tlComposeMask { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 112; opacity: 0; visibility: hidden; transition: opacity .25s, visibility .25s; }
 #asMask.show, #tlEditMask.show, #tlComposeMask.show { opacity: 1; visibility: visible; }
-/* bottom 用 --kb（键盘高度）：iOS/安卓键盘弹出时 fixed 元素默认不被推起，
-   靠 JS 监听 visualViewport 写入 --kb 把面板整体抬高，否则输入框会被键盘盖住 */
-#asPanel, #tlEditPanel, #tlComposePanel { position: fixed; left: 50%; bottom: var(--kb, 0px); transform: translateX(-50%) translateY(100%); width: 100%; max-width: 560px; background: var(--bg-card); border-radius: 18px 18px 0 0; padding: 14px 16px calc(12px + env(safe-area-inset-bottom)); z-index: 113; box-shadow: 0 -8px 30px rgba(0,0,0,.15); transition: transform .28s ease; }
+#asPanel, #tlEditPanel, #tlComposePanel { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%) translateY(100%); width: 100%; max-width: 560px; background: var(--bg-card); border-radius: 18px 18px 0 0; padding: 14px 16px calc(12px + env(safe-area-inset-bottom)); z-index: 113; box-shadow: 0 -8px 30px rgba(0,0,0,.15); transition: transform .28s ease; }
 #asPanel.show, #tlEditPanel.show, #tlComposePanel.show { transform: translateX(-50%) translateY(0); }
 .as-title { font-size: 13px; color: var(--text-sub); text-align: center; margin-bottom: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .as-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
@@ -666,7 +580,7 @@ nav.tabbar { flex: none; background: var(--bg-card); display: flex; box-shadow: 
 nav.tabbar button { flex: 1; border: none; background: none; padding: 10px 0 9px; font-size: 11px; color: var(--text-sub); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; }
 nav.tabbar button .ico { font-size: 19px; }
 nav.tabbar button.on { color: var(--primary); font-weight: 700; }
-#lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.9); display: flex; align-items: center; justify-content: center; z-index: 115; opacity: 0; visibility: hidden; transition: opacity .25s, visibility .25s; touch-action: none; overflow: hidden; }
+#lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.9); display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; visibility: hidden; transition: opacity .25s, visibility .25s; touch-action: none; overflow: hidden; }
 #lightbox.show { opacity: 1; visibility: visible; }
 #lightbox img { max-width: 94vw; max-height: 84vh; border-radius: 8px; transform-origin: 50% 50%; will-change: transform; -webkit-user-select: none; user-select: none; -webkit-user-drag: none; }
 #lbPrev, #lbNext { position: absolute; top: 50%; transform: translateY(-50%); width: 46px; height: 46px; border: none; border-radius: 50%; background: rgba(255,255,255,.14); color: #fff; font-size: 24px; line-height: 1; cursor: pointer; display: none; align-items: center; justify-content: center; }
@@ -693,8 +607,6 @@ nav.tabbar button.on { color: var(--primary); font-weight: 700; }
   .cal-cell.pred { background: #4a2833; }
   .cal-cell.pick { background: #4a2833; box-shadow: inset 0 0 0 1.5px #7a4a5a; }
   .voice-item.playing { box-shadow: inset 0 0 0 1.5px #7a4a5a; }
-  .voice-item .who-tag { background: #2e2a42; color: #a99bff; }
-  .voice-item.theirs .who-tag { background: #4a2833; color: #ff8fa8; }
   .tl-item { box-shadow: 0 4px 14px rgba(0,0,0,.25), inset 0 0 0 1px rgba(255,255,255,.05); } /* 深色下阴影不可见，改用内描边撑起卡片边界 */
   .tl-item .who { background: #3d2a38; }
   .tl-tag { background: #322830; border-color: #4a3a40; color: #c9aeb8; }
@@ -736,45 +648,6 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
 .exam-tile b { font-size: 14px; color: var(--text-main); }
 .exam-tile span { font-size: 11px; color: var(--text-sub); }
 .exam-note { font-size: 11px; color: var(--text-faint); line-height: 1.6; margin-top: 12px; }
-/* ---- 软考资料阅读器（notes.js）：md 渲染样式 ---- */
-.nt-item { display: block; width: 100%; text-align: left; background: var(--bg-card); border: none; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; }
-.nt-item .t { font-size: 14px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
-.nt-item .s { font-size: 11px; color: var(--text-sub); line-height: 1.5; margin-top: 4px; }
-.nt-item .hint { font-size: 11px; color: var(--text-faint); line-height: 1.5; margin-top: 5px; padding-top: 5px; border-top: 1px dashed var(--border-input); }
-.nt-tag { font-size: 9px; font-weight: 700; color: var(--primary); background: var(--primary-light); border-radius: 6px; padding: 1px 5px; flex: none; opacity: .9; }
-.nt-p { font-size: 13.5px; line-height: 1.75; color: var(--text-main); margin: 0 0 10px; }
-.nt-h2 { font-size: 15px; font-weight: 800; color: var(--primary); margin: 20px 0 9px; padding-bottom: 6px; border-bottom: 2px solid var(--primary-light); }
-.nt-h3 { font-size: 14px; font-weight: 700; color: var(--text-main); margin: 16px 0 7px; }
-.nt-h4 { font-size: 13px; font-weight: 700; color: var(--text-sub); margin: 12px 0 6px; }
-.nt-quote { font-size: 12.5px; line-height: 1.7; color: var(--text-sub); background: var(--bg-card); border-left: 3px solid var(--primary-light); border-radius: 0 8px 8px 0; padding: 9px 12px; margin: 0 0 12px; }
-.nt-list { font-size: 13.5px; line-height: 1.75; color: var(--text-main); margin: 0 0 10px; padding-left: 20px; }
-.nt-list li { margin-bottom: 4px; }
-.nt-sub { margin: 3px 0 3px; padding-left: 16px; }
-.nt-hr { border: none; border-top: 1px solid var(--border-input); margin: 16px 0; }
-.nt-pre { background: var(--bg-bar); border-radius: 10px; padding: 11px 13px; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 0 12px; }
-.nt-pre code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11.5px; line-height: 1.6; color: var(--text-main); white-space: pre; }
-.nt-tbwrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 0 13px; border-radius: 10px; border: 1px solid var(--border-input); }
-.nt-tb { border-collapse: collapse; font-size: 12px; line-height: 1.55; width: 100%; }
-.nt-tb th { background: var(--bg-bar); color: var(--text-main); font-weight: 700; padding: 8px 10px; text-align: left; white-space: nowrap; border-bottom: 1.5px solid var(--border-input); }
-.nt-tb td { padding: 8px 10px; color: var(--text-main); vertical-align: top; border-bottom: 1px solid var(--border-input); }
-.nt-tb tr:last-child td { border-bottom: none; }
-.nt-tb b { font-weight: 700; color: var(--primary); }
-.nt-foot { text-align: center; font-size: 11px; color: var(--text-faint); margin: 22px 0 8px; }
-/* ---- 章节目录抽屉：从底部升起，条目按 H2/H3 缩进 ---- */
-#ntTocMask { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 130; opacity: 0; visibility: hidden; transition: opacity .22s, visibility .22s; }
-#ntTocMask.show { opacity: 1; visibility: visible; }
-#ntTocPanel { position: fixed; left: 0; right: 0; bottom: 0; z-index: 131; background: var(--bg-card); border-radius: 18px 18px 0 0; transform: translateY(100%); visibility: hidden; transition: transform .24s ease, visibility .24s; display: flex; flex-direction: column; max-height: 72vh; padding-bottom: env(safe-area-inset-bottom); }
-#ntTocPanel.show { transform: none; visibility: visible; }
-.nt-toc-head { flex: none; display: flex; align-items: center; padding: 13px 16px 9px; border-bottom: 1px solid var(--border-input); }
-.nt-toc-head b { font-size: 14px; color: var(--text-main); }
-.nt-toc-x { margin-left: auto; border: none; background: none; color: var(--text-sub); font-size: 16px; line-height: 1; padding: 4px 6px; cursor: pointer; }
-.nt-toc-list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 6px 8px 14px; }
-.nt-toc-item { display: block; width: 100%; text-align: left; border: none; background: none; color: var(--text-main); font-size: 13px; line-height: 1.5; padding: 9px 12px; border-radius: 9px; cursor: pointer; }
-.nt-toc-item.lv3 { padding-left: 30px; font-size: 12px; color: var(--text-sub); }
-.nt-toc-item:active { background: var(--bg-bar); }
-.nt-toc-item.cur { background: var(--primary-light); color: var(--primary); font-weight: 700; }
-.nt-toc-btn[hidden] { display: none; }
-.exam-panel-body code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; background: var(--bg-bar); border-radius: 4px; padding: 1px 4px; }
 .exam-head { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; }
 .exam-back { border: none; background: none; color: var(--primary); font-size: 13px; font-weight: 700; padding: 6px 0; cursor: pointer; flex: none; }
 .exam-h2 { font-size: 15px; font-weight: 700; }
@@ -785,11 +658,6 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
 .exam-kp .t { font-size: 14px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
 .exam-kp .b { font-size: 12px; color: var(--text-sub); line-height: 1.55; margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .exam-hot { font-size: 9px; font-weight: 700; color: #e9407a; background: #ffe3ea; border-radius: 6px; padding: 1px 5px; }
-/* 已掌握：整体淡化 + 前置勾选，扫一眼就能分清哪些还没看 */
-.exam-kp.known { opacity: .55; }
-.exam-kp.known .t { color: var(--text-sub); }
-.exam-kp-done { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border-radius: 50%; background: #34c759; color: #fff; font-size: 10px; font-weight: 700; flex: none; }
-.exam-note-inline { font-size: 11px; color: var(--text-faint); }
 .exam-grid { display: grid; grid-template-columns: 42px repeat(5, 1fr); gap: 3px; }
 .exam-grid .gh { text-align: center; font-size: 10px; color: var(--text-sub); padding: 2px 0 4px; }
 .exam-grid .ah { display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: var(--primary); }
@@ -797,10 +665,10 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
 button.exam-cell { width: 100%; cursor: pointer; }
 .exam-cell.dim { background: transparent; }
 .exam-cell button { border: none; background: none; padding: 3px 0; font-size: 10px; line-height: 1.2; color: var(--text-cal); cursor: pointer; flex: 1 1 auto; display: flex; align-items: center; justify-content: center; }
-.exam-cell.hot { background: var(--bg-active); border-color: var(--border-input); }
+.exam-cell.hot { background: #fff0f4; border-color: #ffd6e0; }
 .exam-cell.hot button { color: #c9405f; font-weight: 600; }
 .exam-legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 10.5px; color: var(--text-sub); margin-top: 10px; }
-.exam-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--bg-active); border: 1px solid var(--border-input); vertical-align: -1px; margin-right: 3px; }
+.exam-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: #fff0f4; border: 1px solid #ffd6e0; vertical-align: -1px; margin-right: 3px; }
 #examPanel { position: fixed; inset: 0; background: var(--bg-page); z-index: 125; display: flex; flex-direction: column; transform: translateX(100%); visibility: hidden; transition: transform .24s ease, visibility .24s; }
 #examPanel.show { transform: none; visibility: visible; }
 .exam-panel-head { flex: none; display: flex; align-items: center; gap: 10px; padding: calc(10px + env(safe-area-inset-top)) 14px 10px; background: var(--bg-card); border-bottom: 1px solid var(--border-input); }
@@ -841,7 +709,7 @@ button.exam-cell { width: 100%; cursor: pointer; }
 .photo-preview.multi.show { display: flex; }
 .photo-preview.multi .thumb { position: relative; width: 84px; height: 84px; border-radius: 10px; overflow: hidden; border: 2px solid #ffd6e0; background: var(--bg-soft); }
 .photo-preview.multi .thumb img { width: 100%; height: 100%; object-fit: cover; max-width: none; max-height: none; border: none; border-radius: 0; display: block; }
-.photo-preview.multi .thumb .x { top: 0; right: 0; width: 44px; height: 44px; z-index: 2; }
+.photo-preview.multi .thumb .x { top: -7px; right: -7px; width: 24px; height: 24px; font-size: 13px; z-index: 2; }
 .tl-photos { display: grid; gap: 4px; margin-top: 8px; grid-template-columns: repeat(2, 1fr); border-radius: 12px; overflow: hidden; }
 .tl-photos.n3 { grid-template-columns: repeat(3, 1fr); }
 .tl-photos .ph { position: relative; aspect-ratio: 1; overflow: hidden; background: var(--bg-soft); cursor: zoom-in; }
@@ -868,7 +736,7 @@ button.exam-cell { width: 100%; cursor: pointer; }
 .tl-reply-btn.static { cursor: default; opacity: .55; }
 .tl-reply-btn.static:active { background: none; }
 .tl-reply-edit { margin-top: 8px; display: flex; gap: 6px; align-items: center; }
-.tl-reply-input { flex: 1; min-width: 0; border: 1px solid rgba(233,64,122,.35); border-radius: 10px; padding: 8px 10px; font-size: 13px; font-family: inherit; background: var(--bg-input); color: inherit; outline: none; }
+.tl-reply-input { flex: 1; min-width: 0; border: 1px solid rgba(233,64,122,.35); border-radius: 10px; padding: 8px 10px; font-size: 13px; font-family: inherit; background: #fff; color: inherit; outline: none; }
 .tl-reply-input:focus { border-color: #e9407a; }
 .tl-reply-send { flex: none; border: none; background: #e9407a; color: #fff; font-size: 12.5px; font-weight: 600; padding: 8px 14px; border-radius: 10px; cursor: pointer; font-family: inherit; }
 .tl-reply-send:active { opacity: .8; }
@@ -877,7 +745,7 @@ button.exam-cell { width: 100%; cursor: pointer; }
 .tl-reply-cancel:active { background: rgba(0,0,0,.06); }
 .voice-item { flex-wrap: wrap; }
 .voice-prog { flex: 0 0 100%; order: 9; display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer; }
-.voice-prog .track { position: relative; flex: 1; height: 6px; border-radius: 999px; background: var(--bg-bar); overflow: hidden; }
+.voice-prog .track { position: relative; flex: 1; height: 6px; border-radius: 999px; background: rgba(233,64,122,.16); overflow: hidden; }
 .voice-prog .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: #e9407a; border-radius: 999px; }
 .voice-time { font-size: 11px; color: var(--text-sub); font-variant-numeric: tabular-nums; flex-shrink: 0; }
 </style>
@@ -913,13 +781,6 @@ button.exam-cell { width: 100%; cursor: pointer; }
       <div class="count-pager" id="countPager"><div class="count-track" id="countList"></div></div>
       <div class="count-dots" id="countDots"></div>
     </div>
-    <!-- 经期速览：首页直达，不必再进「更多 → 经期记录」；无记录时自动隐藏 -->
-    <div class="card per-home" id="homePerCard" style="display:none">
-      <h2>🌹 经期
-        <button class="quote-refresh" onclick="go('period', null, 'l')" title="查看经期记录" aria-label="查看经期记录">›</button>
-      </h2>
-      <div class="per-home-body" id="homePerBody"></div>
-    </div>
     <div class="card">
       <h2>🌸 今日情话
         <button class="quote-refresh" id="quoteBtn" onclick="refreshQuote()" title="换一句" aria-label="换一句情话">↻</button>
@@ -934,7 +795,7 @@ button.exam-cell { width: 100%; cursor: pointer; }
       <div class="wall-wrap">
         <div class="wall-grid" id="wallGrid"></div>
       </div>
-      <input type="file" id="wallInput" accept="image/*" multiple style="display:none">
+      <input type="file" id="wallInput" accept="image/*" multiple class="file-input-off">
     </div>
   </section>
 
@@ -948,32 +809,27 @@ button.exam-cell { width: 100%; cursor: pointer; }
 
   <!-- ============ 心愿 ============ -->
   <section class="page" id="page-wishes">
-    <div class="card wish-top-card">
-      <div class="wp-head">
-        <div class="wp-title">
-          <span class="wp-ico" aria-hidden="true">💫</span>
-          <span class="wp-frac"><b id="wishDone">0</b><i>/</i><em id="wishTotal">0</em></span>
-          <span class="wp-word">完成</span>
-        </div>
-        <div class="wp-right">
-          <span class="wish-progress-line" id="wishPeriodLine"></span>
-          <span class="wp-pct" id="wishPercent">0%</span>
-        </div>
+    <div class="card">
+      <h2>💫 心愿进度</h2>
+      <div class="row-between">
+        <span>已完成 <b id="wishDone" class="accent">0</b> / <span id="wishTotal">0</span></span>
+        <b id="wishPercent" class="accent">0%</b>
       </div>
       <div class="progress-bar"><i id="wishBar" style="width:0%"></i></div>
+      <div class="wish-progress-line" id="wishPeriodLine"></div>
+    </div>
+    <div class="card">
+      <h2>✨ 许个心愿</h2>
       <div class="composer inline-composer">
-        <input type="text" id="wishText" placeholder="✨ 许个心愿…">
+        <input type="text" id="wishText" placeholder="想一起做的事…">
         <button class="btn small" onclick="addWish()">加入</button>
-        <button class="btn small ghost wish-more-btn" id="wishMoreBtn" onclick="toggleWishOpts()" title="更多选项" aria-label="更多选项">⌄</button>
       </div>
-      <div class="wish-opts" id="wishOpts">
-        <div class="period-bar" id="wishPeriodBar"></div>
-        <div class="tag-picker" id="tagPicker"></div>
-        <div class="tag-editor" id="tagEditor" style="display:none">
-          <input type="text" id="tagInput" maxlength="6" placeholder="标签名，最多 6 个字">
-          <button class="btn small" onclick="confirmAddTag()">添加</button>
-          <button class="btn small ghost" onclick="toggleTagEditor(false)">取消</button>
-        </div>
+      <div class="period-bar" id="wishPeriodBar"></div>
+      <div class="tag-picker" id="tagPicker"></div>
+      <div class="tag-editor" id="tagEditor" style="display:none">
+        <input type="text" id="tagInput" maxlength="6" placeholder="标签名，最多 6 个字">
+        <button class="btn small" onclick="confirmAddTag()">添加</button>
+        <button class="btn small ghost" onclick="toggleTagEditor(false)">取消</button>
       </div>
     </div>
     <div class="filter-bar" id="filterBar"></div>
@@ -999,7 +855,7 @@ button.exam-cell { width: 100%; cursor: pointer; }
     <div class="card">
       <h2>🎙 语音留言</h2>
       <div class="rec-panel">
-        <button class="rec-btn" id="recBtn" onclick="toggleRecord()" aria-label="开始录音">🎤</button>
+        <button class="rec-btn" id="recBtn" onclick="toggleRecord()">🎤</button>
         <div class="rec-tip" id="recTip">点击开始录音，最长 30 秒</div>
       </div>
     </div>
@@ -1051,9 +907,9 @@ button.exam-cell { width: 100%; cursor: pointer; }
           <span class="mi-txt"><span class="mi-name">软考高项</span><span class="mi-sub">知识点 · ITTO · 计算题</span></span>
           <span class="mi-arrow">›</span>
         </button>
-        <button class="more-item" onclick="go('capsule', null, 'l')">
-          <span class="mi-ico">⏳</span>
-          <span class="mi-txt"><span class="mi-name">时间胶囊</span><span class="mi-sub">写一封信，封存到将来</span></span>
+        <button class="more-item" onclick="go('voice', null, 'l')">
+          <span class="mi-ico">🎙</span>
+          <span class="mi-txt"><span class="mi-name">语音留言</span><span class="mi-sub">录一段话，说给 TA 听</span></span>
           <span class="mi-arrow">›</span>
         </button>
         <button class="more-item" onclick="go('period', null, 'l')">
@@ -1190,7 +1046,7 @@ button.exam-cell { width: 100%; cursor: pointer; }
   <button data-p="home" onclick="go('home', this)"><span class="ico">🏠</span><span class="label">首页</span></button>
   <button class="on" data-p="timeline" onclick="go('timeline', this)"><span class="ico">📖</span><span class="label">时间线</span></button>
   <button data-p="wishes" onclick="go('wishes', this)"><span class="ico">💫</span><span class="label">心愿</span></button>
-  <button data-p="voice" onclick="go('voice', this)"><span class="ico">🎙</span><span class="label">语音</span></button>
+  <button data-p="capsule" onclick="go('capsule', this)"><span class="ico">⏳</span><span class="label">胶囊</span></button>
   <button data-p="more" onclick="go('more', this)"><span class="ico">🧩</span><span class="label">更多</span></button>
 </nav>
 <!-- FAB：浮动主操作按钮（时间线/心愿/胶囊页显示），弹层或键盘出现时自动隐藏 -->
@@ -1198,13 +1054,6 @@ button.exam-cell { width: 100%; cursor: pointer; }
 <div id="uploadBar"><span id="uploadTxt">上传中…</span><button type="button" onclick="cancelUpload()">取消</button></div>
 <button class="fab" id="fab" onclick="fabAction()" aria-label="写一条记录">✍️</button>
 <div class="toast" id="toast"></div>
-<!-- 新版本提示：SW 激活接管后出现，避免用户长期跑着旧页面却不知道 -->
-<div id="swToast" role="status" aria-live="polite">
-  <span class="sw-ico">✨</span>
-  <span id="swMsg">小站有新版本啦</span>
-  <button class="sw-btn" onclick="swReload()">立即更新</button>
-  <button class="sw-x" onclick="swDismiss()" aria-label="稍后再说">✕</button>
-</div>
 <!-- 站内确认弹层：替代原生 confirm -->
 <div id="cfMask" onclick="cfCancel(event)">
   <div id="cfPanel" role="dialog" aria-modal="true" aria-label="确认操作">
@@ -1237,7 +1086,7 @@ button.exam-cell { width: 100%; cursor: pointer; }
   </div>
   <div class="composer-row">
     <input type="date" id="tlDate" readonly onclick="openDatePicker('tlDate')">
-    <label class="btn small ghost" style="display:inline-block">📷 照片<input type="file" id="tlPhoto" accept="image/*" multiple hidden></label>
+    <label class="btn small ghost" style="display:inline-block">📷 照片<input type="file" id="tlPhoto" accept="image/*" class="file-input-off"></label>
     <button class="btn small" id="tlAdd" onclick="addTimeline()">发布</button>
   </div>
   <div class="photo-preview multi" id="tlPreview"></div>
@@ -1308,19 +1157,8 @@ button.exam-cell { width: 100%; cursor: pointer; }
   <div class="exam-panel-head">
     <button class="exam-panel-back" onclick="examPanelClose()" aria-label="关闭">‹</button>
     <div class="tt" id="examPanelTitle">软考高项</div>
-    <!-- 目录：只在章节详情里露出（notes.js 控制 hidden），点击弹出底部抽屉 -->
-    <button class="exam-panel-back" id="ntTocBtn" onclick="ntTocOpen()" aria-label="目录" hidden>☰</button>
   </div>
   <div class="exam-panel-body" id="examPanelBody"></div>
-</div>
-<!-- 软考资料：章节目录抽屉（从底部升起，点遮罩或返回键关闭） -->
-<div id="ntTocMask" onclick="ntTocClose()"></div>
-<div id="ntTocPanel" role="dialog" aria-modal="true" aria-label="目录">
-  <div class="nt-toc-head">
-    <b>目录</b>
-    <button class="nt-toc-x" onclick="ntTocClose()" aria-label="关闭目录">✕</button>
-  </div>
-  <div class="nt-toc-list" id="ntTocList"></div>
 </div>
 <!-- 常驻语音播放器：不随列表重渲染销毁，避免「停不下来 / 播不了」 -->
 <audio id="voiceAudio" preload="none" playsinline></audio>
@@ -1783,7 +1621,6 @@ const OV_DEFS = {
   dp: { panel: 'dpPanel' },
   wishPeriod: { panel: 'wpPanel' },
   examDetail: { panel: 'examPanel' },
-  ntToc: { panel: 'ntTocPanel' },
   lightbox: { panel: 'lightbox' }
 };
 const OV_CLOSE = {
@@ -1794,7 +1631,6 @@ const OV_CLOSE = {
   dp: () => closeDatePicker(),
   wishPeriod: () => closeWishPeriod(),
   examDetail: () => { if (typeof examPanelClose === 'function') examPanelClose(); },
-  ntToc: () => { if (typeof ntTocClose === 'function') ntTocClose(); },
   lightbox: () => closeLightbox()
 };
 function ovFocusables(panel) {
@@ -1923,95 +1759,6 @@ const GHPUT_RETRY = 4;
 const MAX_CONTENT_BYTES = 1024 * 1024;
 const BUDGET_WARN_BYTES = 900 * 1024;
 let budgetWarned = false; // 每次会话只提醒一次，避免每次保存都弹
-/* ---------- 通知摘要：让推送说清「改了什么」 ---------- */
-// GitHub Actions 从 commit message 的 add='摘要' 里取正文（见 .github/workflows/remind.yml）。
-// 快照只存 id + 可公开的文字片段；胶囊内容在解锁前绝不能进摘要，否则通知本身就是剧透。
-const NOTIFY_SNAP = 'coupleNotifySnap';
-const NOTIFY_KINDS = [
-  ['timeline',  '时间线', (it) => it.text],
-  ['wishes',    '心愿',   (it) => it.text],
-  ['wall',      '照片',   () => ''],
-  ['capsules',  '胶囊',   () => ''],   // ← 只报数量，不带文字
-  ['voices',    '语音',   () => ''],
-  ['customDays','纪念日', (it) => it.name],
-  ['periods',   '经期',   () => ''],
-  // 点赞/评论：单独一类，未读时也要能出摘要（以前漏掉，导致只点赞时通知没头没脑）
-  ['reactions', '互动',   (it) => it.text || ''],
-];
-let pendingNotifySnap = null;
-// 摘要要进 commit message 第一行，不能带引号/换行（单引号会破坏 add='…' 的边界）
-const notifySafe = (s) => String(s || '').replace(/'/g, '’').replace(/["\r\n]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40);
-function notifySnapshot() {
-  const snap = {};
-  NOTIFY_KINDS.forEach(([k, , textOf]) => {
-    snap[k] = (S[k] || []).filter((it) => it && !it.deleted).map((it) => {
-      const o = { id: String(it.id || ''), t: notifySafe(textOf(it)).slice(0, 24) };
-      // 互动需要区分点赞/评论：点赞没有正文，文案完全不同
-      if (k === 'reactions') o.k = it.kind === 'like' ? 'like' : 'reply';
-      return o;
-    });
-  });
-  return snap;
-}
-// 生成一句话摘要。首次运行只建立基线、不报变更（否则第一次就误报「全部是新增」）
-function buildNotifyDigest() {
-  let prev = null;
-  try { prev = JSON.parse(localStorage.getItem(NOTIFY_SNAP)); } catch (e) { prev = null; }
-  const cur = notifySnapshot();
-  pendingNotifySnap = cur;
-  if (!prev || typeof prev !== 'object') return '';
-  // 1) 新增：按字段优先级，只报最有意义的一类
-  for (const [k, label] of NOTIFY_KINDS) {
-    const before = new Set((prev[k] || []).map((x) => x && x.id));
-    const added = (cur[k] || []).filter((it) => !before.has(it.id));
-    if (added.length) {
-      // 互动（点赞/评论）：点赞没正文，必须单独措辞，否则会成“新增了 N 条互动”
-      if (k === 'reactions') {
-        const reps = added.filter((x) => x.k === 'reply');
-        const likes = added.length - reps.length;
-        if (reps.length) {
-          const t = reps[0].t;
-          if (!t) return reps.length > 1 ? '评论了 ' + reps.length + ' 条' : '评论了你的记录';
-          return reps.length > 1
-            ? '评论了 ' + reps.length + ' 条，如：' + t
-            : '评论：' + t;
-        }
-        if (likes) return likes > 1 ? '赞了你的 ' + likes + ' 条记录' : '赞了你的记录';
-        return '';
-      }
-      const t = added[0].t;
-      if (!t) return '新增了 ' + added.length + ' 条' + label;
-      return added.length > 1
-        ? '新增 ' + added.length + ' 条' + label + '，如：' + t
-        : '新增' + label + '：' + t;
-    }
-  }
-  // 2) 修改：id 相同但文字变了
-  for (const [k, label] of NOTIFY_KINDS) {
-    const before = new Map((prev[k] || []).map((x) => [x && x.id, (x && x.t) || '']));
-    const mod = (cur[k] || []).filter((it) => before.has(it.id) && before.get(it.id) !== it.t);
-    if (mod.length) {
-      const t = mod[0].t;
-      if (k === 'reactions') return t ? '修改了评论：' + t : '更新了互动';
-      return t ? '更新了' + label + '：' + t : '更新了' + label;
-    }
-  }
-  // 3) 删除：只报数量（内容已经没了，没必要带）
-  //    互动跳过：取消点赞/删评论是悄声动作，不值得惊动对方
-  for (const [k, label] of NOTIFY_KINDS) {
-    if (k === 'reactions') continue;
-    const after = new Set((cur[k] || []).map((x) => x && x.id));
-    const gone = (prev[k] || []).filter((x) => x && !after.has(x.id));
-    if (gone.length) return '删除了 ' + gone.length + ' 条' + label;
-  }
-  return '';
-}
-// 只有上传成功后才推进基线，失败重试时摘要才不会丢
-function commitNotifySnap() {
-  if (!pendingNotifySnap) return;
-  try { localStorage.setItem(NOTIFY_SNAP, JSON.stringify(pendingNotifySnap)); } catch (e) { /* 配额满时放弃，摘要退化而已 */ }
-  pendingNotifySnap = null;
-}
 async function ghPut(path, content, sha, isBinary) {
   if (needToken()) throw new Error('缺少 GitHub Token');
   const c = ghCfg();
@@ -2034,20 +1781,13 @@ async function ghPut(path, content, sha, isBinary) {
       toast('数据已接近云端上限，建议导出备份并清理旧记录 ⚠');
     }
   }
-  // 数据文件带一句话摘要供 Actions 写进通知正文；订阅文件（push-subs.json）不带
-  // isDataFile 同时用于「是否推进基线」：只有数据文件成功后才提交，避免
-  // push-subs.json 成功时误推进基线导致下次真实变更的摘要丢失
-  const isDataFile = !isBinary && path === 'couple-data.json';
-  const digest = isDataFile ? buildNotifyDigest() : '';
   let useSha = sha;
   let lastErr = null;
   for (let attempt = 0; attempt <= GHPUT_RETRY; attempt++) {
-    const msg = `sync from=${deviceTag} me=${S.me} at=${new Date().toISOString()}` + (digest ? ` add='${digest}'` : '');
-    const body = { message: msg, content: payload, branch: c.branch || undefined };
+    const body = { message: `sync from=${deviceTag} me=${S.me} at=${new Date().toISOString()}`, content: payload, branch: c.branch || undefined };
     if (useSha) body.sha = useSha;
     const r = await netFetch(ghUrl(c, path), { method: 'PUT', headers: auth(c.token), body: JSON.stringify(body) });
-    // 首次运行时 digest 为空（只建基线），也必须提交，否则永远没有基线 → 摘要恒为空
-    if (r.ok) { if (isDataFile) commitNotifySnap(); return (await r.json()).content.sha; }
+    if (r.ok) return (await r.json()).content.sha;
     // 409/422 = 分支 ref 已被别的请求推进，或文件已存在而没带 sha
     if (r.status === 409 || r.status === 422) {
       // 422 不止一种含义：sha 不匹配可以重试，文件过大重试多少次都没用
@@ -2565,34 +2305,6 @@ function syncCountHeight() {
   track.style.height = cur ? cur.offsetHeight + 'px' : '';
 }
 
-/* ---- 首页经期速览：无记录时整块隐藏，避免空卡片占位 ---- */
-// 复用 nextPeriod / avgCycle / avgLen / dayState，保证与「经期记录」页的预测口径完全一致
-function renderHomePeriod() {
-  const card = $('homePerCard'), body = $('homePerBody');
-  if (!card || !body) return;
-  const ps = validPeriods();
-  if (!ps.length) { card.style.display = 'none'; return; }
-  card.style.display = '';
-  const td = fmtDay(new Date());
-  const st = dayState(td);
-  let main = '', sub = '', cls = '';
-  if (st === 'on') {
-    // 今日在经期中：显示第几天，未填结束日时提醒补填
-    const p = ps.find(x => td >= x.start && (!x.end || td <= x.end));
-    main = `经期第 ${diffDays(td, p.start) + 1} 天`;
-    sub = p.end ? `本次记录到 ${mdLabel(p.end)}` : '结束后记得补填结束日期，预测会更准';
-    cls = 'on';
-  } else {
-    const nx = nextPeriod();
-    const d = daysTo(nx);
-    main = d > 0 ? `距下次约 ${d} 天` : '就在这几天';
-    // 临近（3 天内）换个措辞，提醒提前准备
-    if (d > 0 && d <= 3) { main = `快到了 · ${d} 天后`; cls = 'soon'; }
-    sub = `预计 ${mdLabel(fmtDay(nx))} 前后 · 周期 ${avgCycle()} 天 · 约 ${avgLen()} 天`;
-  }
-  body.innerHTML = `<div class="per-home-main ${cls}">${esc(main)}</div><div class="per-home-sub">${esc(sub)}</div>`;
-}
-
 function renderHome() {
   const ann = S.anniversary;
   $('hTitle').textContent = `${S.name1 || '我'} ♥ ${S.name2 || 'TA'}`;
@@ -2632,8 +2344,6 @@ function renderHome() {
   syncCountHeight();
   // 每日情话：优先用当天缓存，没有就联网取一句
   renderQuote();
-  // 经期速览（首页直达）
-  renderHomePeriod();
   // 照片墙
   renderWall();
 }
@@ -3822,25 +3532,8 @@ function tlComposeOpen() {
   if (!$('tlText').value) loadTlDraft();
   $('tlComposeMask').classList.add('show');
   $('tlComposePanel').classList.add('show');
-  // 等面板滑入完成再聚焦：避开 transition 期间的 --kb 抖动，也避免键盘推起时面板还在动画中
-  setTimeout(() => { $('tlText').focus(); ensureVisibleInPanel('tlComposePanel'); }, 280);
+  setTimeout(() => $('tlText').focus(), 280); // 等面板滑入完成再聚焦，避免键盘顶起时面板还在动画中
   ovPush('compose');
-}
-/* 面板内输入框聚焦后，若被键盘挡住则把面板内容滚到可见处。
-   --kb 抬高已处理大部分场景，这里兜底「面板本身高于可视区」的情况（小屏 + 多行输入）。 */
-function ensureVisibleInPanel(panelId) {
-  const panel = $(panelId);
-  if (!panel) return;
-  const vv = window.visualViewport;
-  if (!vv) return;
-  const rect = panel.getBoundingClientRect();
-  const overflow = rect.top - vv.offsetTop;      // 面板顶部若已顶出可视区上方
-  if (overflow < 0) {
-    const sc = panel.querySelector('textarea, input');
-    if (sc && sc.scrollIntoView) {
-      try { sc.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { /* 忽略 */ }
-    }
-  }
 }
 function tlComposeClose(e) {
   if (e && e.target && e.target.id !== 'tlComposeMask') return; // 面板内部点击不关闭
@@ -4268,8 +3961,6 @@ function renderWishes() {
   $('wishDone').textContent = done; $('wishTotal').textContent = act.length;
   const pct = act.length ? Math.round(done / act.length * 100) : 0;
   $('wishPercent').textContent = pct + '%'; $('wishBar').style.width = pct + '%';
-  const pctEl = $('wishPercent');
-  if (pctEl) pctEl.classList.toggle('zero', pct === 0);
   const curM = wpCurMonth(), curY = String(new Date().getFullYear());
   const rate = arr => arr.filter(w => w.done).length + '/' + arr.length;
   const mAct = act.filter(w => w.period === curM);
@@ -4278,7 +3969,7 @@ function renderWishes() {
   if (mAct.length) line.push('本月 <b>' + rate(mAct) + '</b>');
   if (yAct.length) line.push('今年 <b>' + rate(yAct) + '</b>');
   const hasAnyPeriod = act.some(w => wpIsValid(w.period));
-  $('wishPeriodLine').innerHTML = line.length ? line.join('<span class="wp-dot">·</span>') : (hasAnyPeriod ? '本月还没有安排' : '还没有带时间节点的心愿');
+  $('wishPeriodLine').innerHTML = line.length ? line.join(' · ') : (hasAnyPeriod ? '本月还没有安排' : '还没有带时间节点的心愿');
 
   /* 写心愿时选时间段：本月 / 今年 / 不限期 三个快捷键 + 其它年份月份 */
   const chips = [
@@ -4302,7 +3993,6 @@ function renderWishes() {
   ).join('');
   $('tagPicker').innerHTML = defaultChips + customChips +
     `<button class="chip tag-new ${tagEditing ? 'on' : ''}" onclick="toggleTagEditor()">＋ 自定义</button>`;
-  syncWishMoreHint();
 
   // 筛选条只显示「真的被用过」的标签，按标签顺序排列
   const used = [...new Set(S.wishes.filter(w => !w.deleted && w.tag).map(w => w.tag))];
@@ -4437,26 +4127,6 @@ function addWish() {
   if (!text) { toast('先写一个心愿吧～'); return; }
   addListItem('wishes', { id: uid(), text, tag: newTag, done: false, period: wpIsValid(newPeriod) ? newPeriod : '', createdAt: Date.now() });
   $('wishText').value = ''; newTag = ''; toast('心愿已加入 ✨');
-}
-/* 输入区选项（时间节点 / 标签）默认收起，把高度让给列表 */
-function toggleWishOpts(force) {
-  const box = $('wishOpts'), btn = $('wishMoreBtn');
-  if (!box || !btn) return;
-  const open = typeof force === 'boolean' ? force : !box.classList.contains('open');
-  box.classList.toggle('open', open);
-  btn.classList.toggle('open', open);
-  btn.textContent = open ? '⌃' : '⌄';
-  if (open) renderWishes();
-}
-/* 折叠时把当前选中的时间/标签提示在按钮上，避免选了看不到 */
-function syncWishMoreHint() {
-  const btn = $('wishMoreBtn');
-  if (!btn) return;
-  const parts = [];
-  if (wpIsValid(newPeriod)) parts.push(wpLabel(newPeriod));
-  if (newTag) parts.push(newTag);
-  btn.classList.toggle('has-pick', parts.length > 0);
-  btn.title = parts.length ? '已选：' + parts.join(' · ') : '更多选项';
 }
 function toggleWish(id) { const w = S.wishes.find(x => x.id === id); if (!w) return; touch(w); w.done = !w.done; commit('wishes'); if (w.done) toast('又完成一个心愿，恭喜！🎉'); }
 const delWish = (id) => quickDel('wishes', id);
@@ -4764,7 +4434,7 @@ async function onRecordStop() {
 function renderVoices() {
   const list = [...S.voices].filter(v => !v.deleted).sort((a, b) => b.createdAt - a.createdAt);
   if (!list.length) {
-    $('voiceList').innerHTML = '<div class="empty"><i class="ico">🎙</i>还没有语音留言<br><span style="font-size:12px;opacity:.75">录一段今晚的晚安，或者一句想说的话</span></div>';
+    $('voiceList').innerHTML = '<div class="empty"><i class="ico">🎤</i>还没有语音留言<br>录一段想说的话吧</div>';
     return;
   }
   // 注意：列表里不再放 audio 元素，播放统一交给常驻播放器 #voiceAudio
@@ -4773,12 +4443,6 @@ function renderVoices() {
     const isPaused = isPlaying && voicePaused;
     const isLoading = voiceLoadingId === v.id;
     const ico = isLoading ? '⏳' : (isPlaying ? (isPaused ? '▶' : '⏸') : '▶');
-    // 区分是谁说的：和 TA 的名字比对，自己发的加 .mine，对方加 .theirs，配色+标签一眼可辨
-    const isMine = (v.by || '') === myName();
-    const whoCls = isMine ? ' mine' : (v.by ? ' theirs' : '');
-    // 标签已表明身份，自己那条不必再重复名字（否则读成“我婷”）；对方保留名字才好认
-    const whoTag = isMine ? '我' : 'TA';
-    const whoName = isMine ? '' : esc(v.by || '');
     const wave = isPlaying && !isPaused
       ? '<div class="wave">' + Array.from({ length: 8 }, (_, i) => `<span class="bar" style="animation-delay:${(i * 0.07).toFixed(2)}s"></span>`).join('') + '</div>'
       : '';
@@ -4795,10 +4459,10 @@ function renderVoices() {
     const staticBar = (!isPlaying && durSec > 0)
       ? `<div class="voice-static"><i style="width:${Math.min(100, Math.max(4, durSec / 30 * 100)).toFixed(1)}%"></i></div>`
       : '';
-    return `<div class="voice-item${isPlaying ? ' playing' : ''}${whoCls}">
+    return `<div class="voice-item${isPlaying ? ' playing' : ''}">
       <button class="play-btn${isLoading ? ' loading' : ''}" onclick="togglePlay('${v.id}')" aria-label="${isPaused ? '继续播放' : (isPlaying ? '暂停语音' : '播放语音')}">${ico}</button>
       <div class="voice-msg">
-        <div class="who"><span class="who-tag">${whoTag}</span>${whoName}<span class="dur">${fmtSecMin1(durSec)}</span></div>
+        <div class="who">${esc(v.by || '')}<span class="dur">${fmtSecMin1(durSec)}</span></div>
         <div class="sub">${fmtTs(v.createdAt)}</div>
         ${staticBar}
       </div>
@@ -5799,11 +5463,11 @@ async function pushGh() {
 }
 /* ================= 路由 & 渲染 ================= */
 // 子页面（语音 / 经期 / 设置）在底部导航中归属「更多」页签
-const PAGE_TAB = { capsule: 'more', period: 'more', settings: 'more', exam: 'more' };
+const PAGE_TAB = { voice: 'more', period: 'more', settings: 'more', exam: 'more' };
 // 各页标题 + 子页集合：子页显示返回按钮，一级页恢复默认标题
 const PAGE_TITLES = { home: '情侣小站', timeline: '时间线', wishes: '心愿', capsule: '时间胶囊', more: '更多', voice: '语音留言', period: '经期记录', settings: '设置', exam: '软考高项' };
-const SUB_PAGES = { capsule: 1, period: 1, settings: 1, exam: 1 };
-const MAIN_PAGES = ['home', 'timeline', 'wishes', 'voice', 'more'];
+const SUB_PAGES = { voice: 1, period: 1, settings: 1, exam: 1 };
+const MAIN_PAGES = ['home', 'timeline', 'wishes', 'capsule', 'more'];
 const currentPage = () => { const p = document.querySelector('.page.active'); return p ? p.id.replace('page-', '') : ''; };
 /* ---- 历史栈：子页与主干 tab 都入栈，物理返回键 = 回到上一页而不是退出应用 ---- */
 let histDepth = 1; // 应用内历史深度（bootRoute 的 replaceState 占位记为 1）
@@ -5928,10 +5592,10 @@ function enablePullRefresh(pageEl) {
   area.addEventListener('touchend', finish);
   area.addEventListener('touchcancel', finish);
 }
-['timeline', 'wishes', 'voice', 'period'].forEach(p => enablePullRefresh($('page-' + p)));
+['timeline', 'wishes', 'capsule', 'period'].forEach(p => enablePullRefresh($('page-' + p)));
 /* ===== 左右滑动切换页面 ===== */
 // 一级页 = 底部导航 5 页可左右滑；语音/经期/设置为子页，右滑固定返回「更多」
-const TAB_ORDER = ['home', 'timeline', 'wishes', 'voice', 'more'];
+const TAB_ORDER = ['home', 'timeline', 'wishes', 'capsule', 'more'];
 onSwipe(document.querySelector('main'), {
   min: 50, ratio: 1.4, flick: 24,
   guard: e => tlSwipeLock || e.target.closest('#countPager, #calGrid, input, textarea, select, button'), // 长按进行中时放弃本次滑屏手势，避免与动作面板竞争
@@ -6030,80 +5694,14 @@ bindVoicePlayer();
 renderAll();
 boot().catch(err => console.error('启动同步流程异常：', err));
 
-/* ================= 键盘避让 =================
-   底部弹层是 position:fixed bottom:0，而 iOS 16+ 与安卓 Chrome 键盘弹出时
-   默认不会推起 fixed 元素（interactive-widget 默认 resizes-visual），
-   输入框和「发布」会被键盘盖住。这里用 visualViewport 算出被遮挡的高度写入 --kb，
-   面板 CSS 用 bottom: var(--kb) 整体抬高。
-   不支持的浏览器（老 iOS）降级为 0，保持原行为。 */
-(function setupKeyboardAvoid() {
-  const vv = window.visualViewport;
-  if (!vv) return;                       // 无 visualViewport（极老内核）直接不动
-  const root = document.documentElement;
-  let raf = 0;
-  function apply() {
-    raf = 0;
-    // 键盘高度 = 布局视口高度 - 视觉视口高度 - 视觉视口偏移
-    // 用 Math.max 防负数；小于 60px 视为浏览器工具栏收缩而非键盘，避免面板莫名抽动
-    const kb = Math.round(window.innerHeight - vv.height - vv.offsetTop);
-    const h = kb > 60 ? kb : 0;
-    if (h) root.style.setProperty('--kb', h + 'px');
-    else root.style.removeProperty('--kb');
-  }
-  function schedule() { if (!raf) raf = requestAnimationFrame(apply); }
-  vv.addEventListener('resize', schedule);
-  vv.addEventListener('scroll', schedule);   // 安卓键盘弹出时先触发 scroll 再 resize
-  // 失焦时补一次，防止键盘收起但事件未完整触发导致面板悬在半空
-  document.addEventListener('focusout', () => setTimeout(schedule, 120));
-})();
-
 // PWA：注册 Service Worker（离线可用 + 添加到主屏幕）；个别浏览器/无痕模式不支持，失败不影响使用
-// 更新提示：sw.js 用 skipWaiting + clients.claim，新版本会直接接管，因此
-// 监听 controllerchange 才知道“已经换到新版”。
-// 判定“首次安装 vs 版本更新”不能看 navigator.serviceWorker.controller（注销/接管
-// 都是异步的，读数不可靠），改用 localStorage 里持久化的标记：
-// 没标记 = 这辈子第一次用 → 静默写标记，不弹；有标记 = 之前用过 → 真更新，弹。
-const SW_SEEN_KEY = 'coupleSwSeen';
-let swSeenBefore = false;
-try { swSeenBefore = localStorage.getItem(SW_SEEN_KEY) === '1'; } catch (e) {}
-function swMarkSeen() { try { localStorage.setItem(SW_SEEN_KEY, '1'); } catch (e) {} }
-function swShowToast(msg) {
-  const el = $('swToast'); if (!el) return;
-  const m = $('swMsg'); if (m && msg) m.textContent = msg;
-  el.classList.add('show');
-}
-function swDismiss() { const el = $('swToast'); if (el) el.classList.remove('show'); }
-// 用户点「立即更新」：直接 reload 拿到新版页面（数据在 localStorage，不会丢）
-function swReload() {
-  swDismiss();
-  try { location.reload(); } catch (e) { location.href = location.pathname; }
-}
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  // 页面一打开就写标记：这样本次会话之后的任何接管都算“更新”而不是“首装”
-  const isFirstRun = !swSeenBefore;
-  if (isFirstRun) swMarkSeen();
-
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').then((reg) => {
-      // 上次没接管成功的 waiting worker：已有标识才提示
-      if (reg.waiting && !isFirstRun) swShowToast('小站有新版本啦');
-      reg.addEventListener('updatefound', () => {
-        const nw = reg.installing; if (!nw) return;
-        nw.addEventListener('statechange', () => {
-          if (nw.state === 'activated' && !isFirstRun) swShowToast('小站有新版本啦');
-        });
-      });
-    }).catch(e => console.warn('Service Worker 注册失败：', e));
-    // 新 SW 接管：首次使用不打扰（用户压根还没用过旧版）
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (!isFirstRun) swShowToast('小站有新版本啦');
-    });
+    navigator.serviceWorker.register('./sw.js').catch(e => console.warn('Service Worker 注册失败：', e));
   });
 }
 </script>
 <script src="./exam-data.js" defer></script>
-<script src="./exam-notes.js" defer></script>
-<script src="./notes.js" defer></script>
 <script src="./exam.js" defer></script>
 </body>
 </html>
