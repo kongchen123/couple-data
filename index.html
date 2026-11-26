@@ -173,6 +173,15 @@ main { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 4
 .count-dots i { width: 5px; height: 5px; border-radius: 3px; background: #ffd0dc; transition: all .2s; cursor: pointer; }
 .count-dots i.on { width: 14px; background: #e9407a; }
 .count-item { min-width: 0; background: var(--bg-soft); border-radius: 12px; padding: 8px 12px; }
+
+/* 首页经期速览：一行主文 + 一行细说，不占额外高度 */
+.per-home-body { background: var(--bg-soft); border-radius: 12px; padding: 10px 12px; }
+.per-home-main { font-size: 16px; font-weight: 700; color: var(--primary); line-height: 1.4; }
+.per-home-main.soon { color: #e8890a; }
+.per-home-sub { font-size: 11.5px; color: var(--text-sub); margin-top: 3px; line-height: 1.5; }
+@media (prefers-color-scheme: dark) {
+  .per-home-main.soon { color: #ffcf8a; }
+}
 .count-item .date { word-break: break-word; overflow-wrap: anywhere; font-size: 11px; color: #c9b3bb; line-height: 1.5; }
 .count-item .date .ymd { white-space: nowrap; }
 /* 短屏压缩，尽量让首页不出现滚动 */
@@ -591,6 +600,17 @@ body.wall-selecting .wall-item.sel { outline: 3px solid #e9407a; outline-offset:
 #undoToast { position: fixed; left: 50%; bottom: calc(148px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(10px); background: rgba(74,59,64,.94); color: #fff; font-size: 13px; padding: 7px 7px 7px 16px; border-radius: 22px; z-index: 99; opacity: 0; visibility: hidden; transition: opacity .25s, transform .25s, visibility .25s; pointer-events: none; display: flex; align-items: center; gap: 10px; max-width: 86vw; }
 #undoToast.show { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); pointer-events: auto; }
 #undoToast .undo-btn { border: none; background: #ff8fa8; color: #fff; font-size: 12.5px; font-weight: 700; border-radius: 14px; padding: 5px 13px; cursor: pointer; flex-shrink: 0; }
+
+/* 新版本提示：比撤销条高一层，两者同时出现也不打架 */
+#swToast { position: fixed; left: 50%; bottom: calc(196px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(10px); background: rgba(74,59,64,.94); color: #fff; font-size: 13px; padding: 8px 8px 8px 14px; border-radius: 22px; z-index: 100; opacity: 0; visibility: hidden; transition: opacity .25s, transform .25s, visibility .25s; pointer-events: none; display: flex; align-items: center; gap: 8px; max-width: 90vw; }
+#swToast.show { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+#swToast .sw-ico { flex-shrink: 0; }
+#swToast #swMsg { flex: 1; min-width: 0; }
+#swToast .sw-btn { border: none; background: #ff8fa8; color: #fff; font-size: 12.5px; font-weight: 700; border-radius: 14px; padding: 5px 13px; cursor: pointer; flex-shrink: 0; }
+#swToast .sw-x { border: none; background: transparent; color: #cbb6bd; font-size: 12px; padding: 5px 8px; cursor: pointer; flex-shrink: 0; }
+@media (prefers-color-scheme: dark) {
+  #swToast { background: rgba(58,42,49,.96); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+}
 /* ---- 时间线动作面板 & 编辑面板：底部弹层（长按记录或点 ⋯ 呼出） ---- */
 #asMask, #tlEditMask, #tlComposeMask { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 112; opacity: 0; visibility: hidden; transition: opacity .25s, visibility .25s; }
 #asMask.show, #tlEditMask.show, #tlComposeMask.show { opacity: 1; visibility: visible; }
@@ -853,6 +873,13 @@ button.exam-cell { width: 100%; cursor: pointer; }
       <h2>🎂 值得期待的日子</h2>
       <div class="count-pager" id="countPager"><div class="count-track" id="countList"></div></div>
       <div class="count-dots" id="countDots"></div>
+    </div>
+    <!-- 经期速览：首页直达，不必再进「更多 → 经期记录」；无记录时自动隐藏 -->
+    <div class="card per-home" id="homePerCard" style="display:none">
+      <h2>🌹 经期
+        <button class="quote-refresh" onclick="go('period', null, 'l')" title="查看经期记录" aria-label="查看经期记录">›</button>
+      </h2>
+      <div class="per-home-body" id="homePerBody"></div>
     </div>
     <div class="card">
       <h2>🌸 今日情话
@@ -1132,6 +1159,13 @@ button.exam-cell { width: 100%; cursor: pointer; }
 <div id="uploadBar"><span id="uploadTxt">上传中…</span><button type="button" onclick="cancelUpload()">取消</button></div>
 <button class="fab" id="fab" onclick="fabAction()" aria-label="写一条记录">✍️</button>
 <div class="toast" id="toast"></div>
+<!-- 新版本提示：SW 激活接管后出现，避免用户长期跑着旧页面却不知道 -->
+<div id="swToast" role="status" aria-live="polite">
+  <span class="sw-ico">✨</span>
+  <span id="swMsg">小站有新版本啦</span>
+  <button class="sw-btn" onclick="swReload()">立即更新</button>
+  <button class="sw-x" onclick="swDismiss()" aria-label="稍后">稍后</button>
+</div>
 <!-- 站内确认弹层：替代原生 confirm -->
 <div id="cfMask" onclick="cfCancel(event)">
   <div id="cfPanel" role="dialog" aria-modal="true" aria-label="确认操作">
@@ -2396,6 +2430,34 @@ function syncCountHeight() {
   track.style.height = cur ? cur.offsetHeight + 'px' : '';
 }
 
+/* ---- 首页经期速览：无记录时整块隐藏，避免空卡片占位 ---- */
+// 复用 nextPeriod / avgCycle / avgLen / dayState，保证与「经期记录」页的预测口径完全一致
+function renderHomePeriod() {
+  const card = $('homePerCard'), body = $('homePerBody');
+  if (!card || !body) return;
+  const ps = validPeriods();
+  if (!ps.length) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  const td = fmtDay(new Date());
+  const st = dayState(td);
+  let main = '', sub = '', cls = '';
+  if (st === 'on') {
+    // 今日在经期中：显示第几天，未填结束日时提醒补填
+    const p = ps.find(x => td >= x.start && (!x.end || td <= x.end));
+    main = `经期第 ${diffDays(td, p.start) + 1} 天`;
+    sub = p.end ? `本次记录到 ${mdLabel(p.end)}` : '结束后记得补填结束日期，预测会更准';
+    cls = 'on';
+  } else {
+    const nx = nextPeriod();
+    const d = daysTo(nx);
+    main = d > 0 ? `距下次约 ${d} 天` : '就在这几天';
+    // 临近（3 天内）换个措辞，提醒提前准备
+    if (d > 0 && d <= 3) { main = `快到了 · ${d} 天后`; cls = 'soon'; }
+    sub = `预计 ${mdLabel(fmtDay(nx))} 前后 · 周期 ${avgCycle()} 天 · 约 ${avgLen()} 天`;
+  }
+  body.innerHTML = `<div class="per-home-main ${cls}">${esc(main)}</div><div class="per-home-sub">${esc(sub)}</div>`;
+}
+
 function renderHome() {
   const ann = S.anniversary;
   $('hTitle').textContent = `${S.name1 || '我'} ♥ ${S.name2 || 'TA'}`;
@@ -2435,6 +2497,8 @@ function renderHome() {
   syncCountHeight();
   // 每日情话：优先用当天缓存，没有就联网取一句
   renderQuote();
+  // 经期速览（首页直达）
+  renderHomePeriod();
   // 照片墙
   renderWall();
 }
@@ -5809,9 +5873,46 @@ renderAll();
 boot().catch(err => console.error('启动同步流程异常：', err));
 
 // PWA：注册 Service Worker（离线可用 + 添加到主屏幕）；个别浏览器/无痕模式不支持，失败不影响使用
+// 更新提示：sw.js 用 skipWaiting + clients.claim，新版本会直接接管，因此
+// 监听 controllerchange 才知道“已经换到新版”。
+// 判定“首次安装 vs 版本更新”不能看 navigator.serviceWorker.controller（注销/接管
+// 都是异步的，读数不可靠），改用 localStorage 里持久化的标记：
+// 没标记 = 这辈子第一次用 → 静默写标记，不弹；有标记 = 之前用过 → 真更新，弹。
+const SW_SEEN_KEY = 'coupleSwSeen';
+let swSeenBefore = false;
+try { swSeenBefore = localStorage.getItem(SW_SEEN_KEY) === '1'; } catch (e) {}
+function swMarkSeen() { try { localStorage.setItem(SW_SEEN_KEY, '1'); } catch (e) {} }
+function swShowToast(msg) {
+  const el = $('swToast'); if (!el) return;
+  const m = $('swMsg'); if (m && msg) m.textContent = msg;
+  el.classList.add('show');
+}
+function swDismiss() { const el = $('swToast'); if (el) el.classList.remove('show'); }
+// 用户点「立即更新」：直接 reload 拿到新版页面（数据在 localStorage，不会丢）
+function swReload() {
+  swDismiss();
+  try { location.reload(); } catch (e) { location.href = location.pathname; }
+}
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  // 页面一打开就写标记：这样本次会话之后的任何接管都算“更新”而不是“首装”
+  const isFirstRun = !swSeenBefore;
+  if (isFirstRun) swMarkSeen();
+
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(e => console.warn('Service Worker 注册失败：', e));
+    navigator.serviceWorker.register('./sw.js').then((reg) => {
+      // 上次没接管成功的 waiting worker：已有标识才提示
+      if (reg.waiting && !isFirstRun) swShowToast('小站有新版本啦');
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing; if (!nw) return;
+        nw.addEventListener('statechange', () => {
+          if (nw.state === 'activated' && !isFirstRun) swShowToast('小站有新版本啦');
+        });
+      });
+    }).catch(e => console.warn('Service Worker 注册失败：', e));
+    // 新 SW 接管：首次使用不打扰（用户压根还没用过旧版）
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!isFirstRun) swShowToast('小站有新版本啦');
+    });
   });
 }
 </script>
