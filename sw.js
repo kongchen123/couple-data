@@ -7,9 +7,12 @@
    - notificationclick：优先聚焦已打开的同源窗口，否则新开 */
 // 改 index.html 时务必同步改这里：否则老设备会继续跑缓存里的旧页面，
 // 表象是「数据不见了」（新旧版存储键不同），极易被误判成数据损坏。
-const VERSION = 'v25';
+const VERSION = 'v26';
 const CACHE = 'couple-shell-' + VERSION;
-const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png', './exam.js', './exam-data.js', './exam-notes.js', './notes.js'];
+// 软考模块（exam-data / exam-notes / notes / exam 共约 291 KB）不入预缓存：
+// 它们由 index.html 的 ensureExamLoaded() 在进入「软考高项」时按需注入，
+// 但仍走本 SW 的 fetch 分支，首次加载后会进缓存，离线依然可用。
+const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
