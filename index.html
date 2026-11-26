@@ -738,6 +738,8 @@ input:focus-visible, textarea:focus-visible { border-color: #ff7e9d; }
 .exam-tile b { font-size: 14px; color: var(--text-main); }
 .exam-tile span { font-size: 11px; color: var(--text-sub); }
 .exam-note { font-size: 11px; color: var(--text-faint); line-height: 1.6; margin-top: 12px; }
+  /* 软考模块按需加载时的占位（首屏不再下载 291 KB 脚本）*/
+  .exam-loading { padding: 48px 20px; text-align: center; font-size: 13px; color: var(--text-faint); line-height: 1.8; }
 /* ---- 软考资料阅读器（notes.js）：md 渲染样式 ---- */
 .nt-item { display: block; width: 100%; text-align: left; background: var(--bg-card); border: none; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; }
 .nt-item .t { font-size: 14px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
@@ -5877,6 +5879,55 @@ function updateFab(p) {
   fab.classList.toggle('show', !!cfg);
 }
 function fabAction() { const cfg = FAB_CFG[currentPage()]; if (cfg) cfg.act(); }
+/* ================= 软考高项：按需加载 =================
+   四个脚本共约 291 KB（其中 exam-notes.js 单文件 233 KB），而「更多 → 软考高项」
+   是低频入口。改为进入该页时才注入，首屏不再下载这 291 KB。
+   - 串行注入保证依赖顺序（exam-data 先于 exam，两者先于 notes）
+   - 同一时刻只发一轮请求，反复点入不会重复加载
+   - 加载失败只影响本页，给出重试按钮，不拖累其它功能 */
+let examLoadState = 'idle'; // idle | loading | ready | failed
+let examLoadPromise = null;
+const EXAM_SCRIPTS = ['./exam-data.js', './exam-notes.js', './notes.js', './exam.js'];
+/* 已成功加载的脚本记下来：重试时只补未成功的那几个。
+   不做去重的话，重试会把已成功的脚本再执行一遘 —— 那些脚本用 const 声明顶层变量
+   （如 EXAM_ITTO），重复执行会抛 SyntaxError，且白白再下载 233 KB 的 exam-notes.js。 */
+const examLoadedSet = new Set();
+function loadScriptOnce(src) {
+  if (examLoadedSet.has(src)) return Promise.resolve(src);
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src; s.async = false;
+    s.onload = () => { examLoadedSet.add(src); resolve(src); };
+    s.onerror = () => { s.remove(); reject(new Error('加载失败：' + src)); };
+    document.head.appendChild(s);
+  });
+}
+function ensureExamLoaded() {
+  if (examLoadState === 'ready') return Promise.resolve(true);
+  if (examLoadState === 'loading') return examLoadPromise;
+  examLoadState = 'loading';
+  const root = $('examRoot');
+  if (root) root.innerHTML = '<div class="exam-loading">正在加载软考资料…</div>';
+  examLoadPromise = EXAM_SCRIPTS.reduce(
+    (p, src) => p.then(() => loadScriptOnce(src)),
+    Promise.resolve()
+  ).then(() => { examLoadState = 'ready'; return true; })
+   .catch(err => {
+     examLoadState = 'failed';
+     examLoadPromise = null;
+     const r = $('examRoot');
+     if (r) r.innerHTML = '<div class="exam-loading">资料加载失败，请检查网络后重试<br><br>'
+       + '<button class="exam-back" onclick="examRetryLoad()">重新加载</button></div>';
+     console.warn('[exam] 按需加载失败：', err);
+     return false;
+   });
+  return examLoadPromise;
+}
+function examRetryLoad() {
+  examLoadState = 'idle'; examLoadPromise = null;
+  ensureExamLoaded().then(ok => { if (ok && typeof examEnter === 'function') examEnter(); });
+}
+
 function go(p, btn, dir, opts) {
   opts = opts || {};
   // 重复点击当前 tab：平滑回到顶部，不重放动画、不重建列表
@@ -5905,7 +5956,8 @@ function go(p, btn, dir, opts) {
   if (p === 'home') { syncCountHeight(); setTimeout(syncCountHeight, 60); } // 切回首页时补量高度（隐藏时量不到；rAF 在部分 WebView 会被节流，用直接调用+短延时兜底）
   if (p === 'voice') { renderVoices(); scheduleVoicePrefetch(300); } // 进页面就先偷偷把最近几条下载好
   if (p === 'period') renderPeriods(); // 进经期页刷新日历与预测（跨月停留后数据可能已更新）
-  if (p === 'exam' && typeof examEnter === 'function') examEnter(); // 软考高项：进入时渲染，脚本未就绪时由 exam.js 自己补
+  if (p === 'exam') ensureExamLoaded().then(ok => { if (ok && typeof examEnter === 'function') examEnter(); });
+  // 软考高项：脚本按需注入，加载完成后再渲染（避免自愈式白屏）
   updateFab(p);
 }
 /* ===== 滚动容器定位 + 按页滚动记忆（display:none 会丢滚动位置，返回时恢复） ===== */
@@ -6066,6 +6118,7 @@ bindVoicePlayer();
   try { history.replaceState({ p }, '', '#' + p); } catch (e) { /* file:// 等环境忽略 */ }
   if (p !== 'timeline') go(p, null, '', { silent: true });
   else updateFab('timeline');
+  // 深链直达 #exam：go() 里已经触发按需加载；这里不重复调用，避免二次注入
 })();
 renderAll();
 boot().catch(err => console.error('启动同步流程异常：', err));
@@ -6141,9 +6194,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   });
 }
 </script>
-<script src="./exam-data.js" defer></script>
-<script src="./exam-notes.js" defer></script>
-<script src="./notes.js" defer></script>
-<script src="./exam.js" defer></script>
+<!-- 软考高项模块（共约 291 KB）不在此加载：见主脚本里的 ensureExamLoaded()，
+     只有进入「更多 → 软考高项」时才按需注入，首屏省下 291 KB 流量。 -->
 </body>
 </html>
