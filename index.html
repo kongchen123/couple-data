@@ -1884,6 +1884,74 @@ const GHPUT_RETRY = 4;
 const MAX_CONTENT_BYTES = 1024 * 1024;
 const BUDGET_WARN_BYTES = 900 * 1024;
 let budgetWarned = false; // 每次会话只提醒一次，避免每次保存都弹
+/* ---------- 通知摘要：让推送说清「改了什么」 ---------- */
+// GitHub Actions 从 commit message 的 add='摘要' 里取正文（见 .github/workflows/remind.yml）。
+// 快照只存 id + 可公开的文字片段；胶囊内容在解锁前绝不能进摘要，否则通知本身就是剧透。
+const NOTIFY_SNAP = 'coupleNotifySnap';
+const NOTIFY_KINDS = [
+  ['timeline',  '时间线', (it) => it.text],
+  ['wishes',    '心愿',   (it) => it.text],
+  ['wall',      '照片',   () => ''],
+  ['capsules',  '胶囊',   () => ''],   // ← 只报数量，不带文字
+  ['voices',    '语音',   () => ''],
+  ['customDays','纪念日', (it) => it.name],
+  ['periods',   '经期',   () => ''],
+];
+let pendingNotifySnap = null;
+// 摘要要进 commit message 第一行，不能带引号/换行（单引号会破坏 add='…' 的边界）
+const notifySafe = (s) => String(s || '').replace(/'/g, '’').replace(/["\r\n]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40);
+function notifySnapshot() {
+  const snap = {};
+  NOTIFY_KINDS.forEach(([k, , textOf]) => {
+    snap[k] = (S[k] || []).filter((it) => it && !it.deleted).map((it) => ({
+      id: String(it.id || ''),
+      t: notifySafe(textOf(it)).slice(0, 24),
+    }));
+  });
+  return snap;
+}
+// 生成一句话摘要。首次运行只建立基线、不报变更（否则第一次就误报「全部是新增」）
+function buildNotifyDigest() {
+  let prev = null;
+  try { prev = JSON.parse(localStorage.getItem(NOTIFY_SNAP)); } catch (e) { prev = null; }
+  const cur = notifySnapshot();
+  pendingNotifySnap = cur;
+  if (!prev || typeof prev !== 'object') return '';
+  // 1) 新增：按字段优先级，只报最有意义的一类
+  for (const [k, label] of NOTIFY_KINDS) {
+    const before = new Set((prev[k] || []).map((x) => x && x.id));
+    const added = (cur[k] || []).filter((it) => !before.has(it.id));
+    if (added.length) {
+      const t = added[0].t;
+      if (!t) return '新增了 ' + added.length + ' 条' + label;
+      return added.length > 1
+        ? '新增 ' + added.length + ' 条' + label + '，如：' + t
+        : '新增' + label + '：' + t;
+    }
+  }
+  // 2) 修改：id 相同但文字变了
+  for (const [k, label] of NOTIFY_KINDS) {
+    const before = new Map((prev[k] || []).map((x) => [x && x.id, (x && x.t) || '']));
+    const mod = (cur[k] || []).filter((it) => before.has(it.id) && before.get(it.id) !== it.t);
+    if (mod.length) {
+      const t = mod[0].t;
+      return t ? '更新了' + label + '：' + t : '更新了' + label;
+    }
+  }
+  // 3) 删除：只报数量（内容已经没了，没必要带）
+  for (const [k, label] of NOTIFY_KINDS) {
+    const after = new Set((cur[k] || []).map((x) => x && x.id));
+    const gone = (prev[k] || []).filter((x) => x && !after.has(x.id));
+    if (gone.length) return '删除了 ' + gone.length + ' 条' + label;
+  }
+  return '';
+}
+// 只有上传成功后才推进基线，失败重试时摘要才不会丢
+function commitNotifySnap() {
+  if (!pendingNotifySnap) return;
+  try { localStorage.setItem(NOTIFY_SNAP, JSON.stringify(pendingNotifySnap)); } catch (e) { /* 配额满时放弃，摘要退化而已 */ }
+  pendingNotifySnap = null;
+}
 async function ghPut(path, content, sha, isBinary) {
   if (needToken()) throw new Error('缺少 GitHub Token');
   const c = ghCfg();
@@ -1906,13 +1974,20 @@ async function ghPut(path, content, sha, isBinary) {
       toast('数据已接近云端上限，建议导出备份并清理旧记录 ⚠');
     }
   }
+  // 数据文件带一句话摘要供 Actions 写进通知正文；订阅文件（push-subs.json）不带
+  // isDataFile 同时用于「是否推进基线」：只有数据文件成功后才提交，避免
+  // push-subs.json 成功时误推进基线导致下次真实变更的摘要丢失
+  const isDataFile = !isBinary && path === 'couple-data.json';
+  const digest = isDataFile ? buildNotifyDigest() : '';
   let useSha = sha;
   let lastErr = null;
   for (let attempt = 0; attempt <= GHPUT_RETRY; attempt++) {
-    const body = { message: `sync from=${deviceTag} me=${S.me} at=${new Date().toISOString()}`, content: payload, branch: c.branch || undefined };
+    const msg = `sync from=${deviceTag} me=${S.me} at=${new Date().toISOString()}` + (digest ? ` add='${digest}'` : '');
+    const body = { message: msg, content: payload, branch: c.branch || undefined };
     if (useSha) body.sha = useSha;
     const r = await netFetch(ghUrl(c, path), { method: 'PUT', headers: auth(c.token), body: JSON.stringify(body) });
-    if (r.ok) return (await r.json()).content.sha;
+    // 首次运行时 digest 为空（只建基线），也必须提交，否则永远没有基线 → 摘要恒为空
+    if (r.ok) { if (isDataFile) commitNotifySnap(); return (await r.json()).content.sha; }
     // 409/422 = 分支 ref 已被别的请求推进，或文件已存在而没带 sha
     if (r.status === 409 || r.status === 422) {
       // 422 不止一种含义：sha 不匹配可以重试，文件过大重试多少次都没用
