@@ -39,7 +39,7 @@ if start < 0 or end < 0:
 src = t[start:end].replace('let pendingNotifySnap = null;', 'var pendingNotifySnap = null;')
 
 harness = """
-const S = { timeline: [], wishes: [], wall: [], capsules: [], voices: [], customDays: [], periods: [] };
+const S = { timeline: [], wishes: [], wall: [], capsules: [], voices: [], customDays: [], periods: [], reactions: [] };
 const _ls = {};
 const localStorage = {
   getItem: (k) => (k in _ls ? _ls[k] : null),
@@ -166,6 +166,82 @@ ok('首装 → 基线已写入', JSON.parse(_ls[NOTIFY_SNAP]).timeline.length ==
 S.timeline.push({ id: 'b', text: '后来的第二条' });
 d = buildNotifyDigest();
 ok('首装后第二次 → 能出摘要', d === '新增时间线：后来的第二条', d);
+
+// ---------- 互动（点赞 / 评论）----------
+// 以前 NOTIFY_KINDS 里没有 reactions，只点赞时摘要为空，
+// workflow 于是回退成「点开看看有什么新内容」，通知完全没头没脑。
+
+// 15. 单纯点赞 → 说明是「赞了你的记录」，而不是「新增了 1 条互动」
+reset();
+S.timeline = [{ id: 't1', text: '今天去逛了山姆' }];
+seed(notifySnapshot());
+S.reactions.push({ id: 'r-like-t1-振', tid: 't1', kind: 'like', author: '振' });
+d = buildNotifyDigest();
+ok('点赞 → 赞了你的记录', d === '赞了你的记录', d);
+
+// 16. 一次赞多条
+reset();
+seed(notifySnapshot());
+S.reactions.push(
+  { id: 'r-like-a', tid: 'a', kind: 'like', author: '振' },
+  { id: 'r-like-b', tid: 'b', kind: 'like', author: '振' }
+);
+d = buildNotifyDigest();
+ok('点赞多条 → 报数量', d === '赞了你的 2 条记录', d);
+
+// 17. 评论 → 带正文
+reset();
+seed(notifySnapshot());
+S.reactions.push({ id: 'r-reply-1', tid: 't1', kind: 'reply', author: '振', text: '好想吃' });
+d = buildNotifyDigest();
+ok('评论 → 带正文', d === '评论：好想吃', d);
+
+// 18. 同时点赞又评论 → 优先报评论（信息量更大）
+reset();
+seed(notifySnapshot());
+S.reactions.push(
+  { id: 'r-like-a', tid: 'a', kind: 'like', author: '振' },
+  { id: 'r-reply-1', tid: 'a', kind: 'reply', author: '振', text: '下次带我去' }
+);
+d = buildNotifyDigest();
+ok('点赞+评论 → 优先评论', d === '评论：下次带我去', d);
+
+// 19. 多条评论 → 报数量+示例
+reset();
+seed(notifySnapshot());
+S.reactions.push(
+  { id: 'r-reply-1', tid: 'a', kind: 'reply', author: '振', text: '第一条' },
+  { id: 'r-reply-2', tid: 'b', kind: 'reply', author: '振', text: '第二条' }
+);
+d = buildNotifyDigest();
+ok('评论多条 → 数量+示例', d === '评论了 2 条，如：第一条', d);
+
+// 20. 修改评论
+reset();
+S.reactions = [{ id: 'r-reply-1', tid: 'a', kind: 'reply', author: '振', text: '原评论' }];
+seed(notifySnapshot());
+S.reactions[0].text = '改过的评论';
+d = buildNotifyDigest();
+ok('修改评论 → 说明清楚', d === '修改了评论：改过的评论', d);
+
+// 21. 取消点赞 / 删评论 → 不发通知（悄声动作，不该惊动对方）
+reset();
+S.reactions = [
+  { id: 'r-like-a', tid: 'a', kind: 'like', author: '振' },
+  { id: 'r-reply-1', tid: 'a', kind: 'reply', author: '振', text: '删掉的评论' }
+];
+seed(notifySnapshot());
+S.reactions = [];
+d = buildNotifyDigest();
+ok('取消点赞/删评论 → 静默', d === '', d);
+
+// 22. 点赞不应掩盖同时新增的时间线（时间线优先级更高）
+reset();
+seed(notifySnapshot());
+S.timeline.push({ id: 'n1', text: '新记录' });
+S.reactions.push({ id: 'r-like-x', tid: 'n1', kind: 'like', author: '振' });
+d = buildNotifyDigest();
+ok('新增+点赞 → 报新增', d === '新增时间线：新记录', d);
 
 console.log('');
 console.log('通过 ' + pass + ' / ' + (pass + fail));

@@ -602,12 +602,17 @@ body.wall-selecting .wall-item.sel { outline: 3px solid #e9407a; outline-offset:
 #undoToast .undo-btn { border: none; background: #ff8fa8; color: #fff; font-size: 12.5px; font-weight: 700; border-radius: 14px; padding: 5px 13px; cursor: pointer; flex-shrink: 0; }
 
 /* 新版本提示：比撤销条高一层，两者同时出现也不打架 */
-#swToast { position: fixed; left: 50%; bottom: calc(196px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(10px); background: rgba(74,59,64,.94); color: #fff; font-size: 13px; padding: 8px 8px 8px 14px; border-radius: 22px; z-index: 100; opacity: 0; visibility: hidden; transition: opacity .25s, transform .25s, visibility .25s; pointer-events: none; display: flex; align-items: center; gap: 8px; max-width: 90vw; }
+/* 底部间距 = 撤销条高度(43) + 间隙(19) + 撤销条自身 bottom(148) = 210，
+   比原来的 196 多留 14px，两条同时出现时不再贴在一起 */
+#swToast { position: fixed; left: 50%; bottom: calc(210px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(10px); background: rgba(74,59,64,.94); color: #fff; font-size: 13px; padding: 9px 10px 9px 13px; border-radius: 22px; z-index: 100; opacity: 0; visibility: hidden; transition: opacity .25s, transform .25s, visibility .25s; pointer-events: none; display: flex; align-items: center; gap: 9px; width: max-content; max-width: 92vw; box-shadow: 0 6px 20px rgba(74,59,64,.22); }
 #swToast.show { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); pointer-events: auto; }
-#swToast .sw-ico { flex-shrink: 0; }
-#swToast #swMsg { flex: 1; min-width: 0; }
-#swToast .sw-btn { border: none; background: #ff8fa8; color: #fff; font-size: 12.5px; font-weight: 700; border-radius: 14px; padding: 5px 13px; cursor: pointer; flex-shrink: 0; }
-#swToast .sw-x { border: none; background: transparent; color: #cbb6bd; font-size: 12px; padding: 5px 8px; cursor: pointer; flex-shrink: 0; }
+#swToast .sw-ico { flex-shrink: 0; font-size: 14px; }
+/* min-width 是这条提示的关键：窄屏下若允许无限收缩，文字会被按钮挤成 1 列
+   （实测 375px 屏：消息区只剩 6px 宽，条高从 45px 涨到 135px） */
+#swToast #swMsg { flex: 1 1 auto; min-width: 98px; line-height: 1.35; }
+#swToast .sw-btn { border: none; background: #ff8fa8; color: #fff; font-size: 12.5px; font-weight: 700; border-radius: 14px; padding: 5px 12px; cursor: pointer; flex-shrink: 0; white-space: nowrap; -webkit-tap-highlight-color: transparent; }
+/* 「稍后」改 ✕ 图标：文字版要占 40px，窄屏下正是它把消息区挤没了 */
+#swToast .sw-x { border: none; background: transparent; color: #cbb6bd; font-size: 15px; line-height: 1; padding: 6px 4px 6px 2px; cursor: pointer; flex-shrink: 0; -webkit-tap-highlight-color: transparent; }
 @media (prefers-color-scheme: dark) {
   #swToast { background: rgba(58,42,49,.96); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
 }
@@ -1164,7 +1169,7 @@ button.exam-cell { width: 100%; cursor: pointer; }
   <span class="sw-ico">✨</span>
   <span id="swMsg">小站有新版本啦</span>
   <button class="sw-btn" onclick="swReload()">立即更新</button>
-  <button class="sw-x" onclick="swDismiss()" aria-label="稍后">稍后</button>
+  <button class="sw-x" onclick="swDismiss()" aria-label="稍后再说">✕</button>
 </div>
 <!-- 站内确认弹层：替代原生 confirm -->
 <div id="cfMask" onclick="cfCancel(event)">
@@ -1896,6 +1901,8 @@ const NOTIFY_KINDS = [
   ['voices',    '语音',   () => ''],
   ['customDays','纪念日', (it) => it.name],
   ['periods',   '经期',   () => ''],
+  // 点赞/评论：单独一类，未读时也要能出摘要（以前漏掉，导致只点赞时通知没头没脑）
+  ['reactions', '互动',   (it) => it.text || ''],
 ];
 let pendingNotifySnap = null;
 // 摘要要进 commit message 第一行，不能带引号/换行（单引号会破坏 add='…' 的边界）
@@ -1903,10 +1910,12 @@ const notifySafe = (s) => String(s || '').replace(/'/g, '’').replace(/["\r\n]/
 function notifySnapshot() {
   const snap = {};
   NOTIFY_KINDS.forEach(([k, , textOf]) => {
-    snap[k] = (S[k] || []).filter((it) => it && !it.deleted).map((it) => ({
-      id: String(it.id || ''),
-      t: notifySafe(textOf(it)).slice(0, 24),
-    }));
+    snap[k] = (S[k] || []).filter((it) => it && !it.deleted).map((it) => {
+      const o = { id: String(it.id || ''), t: notifySafe(textOf(it)).slice(0, 24) };
+      // 互动需要区分点赞/评论：点赞没有正文，文案完全不同
+      if (k === 'reactions') o.k = it.kind === 'like' ? 'like' : 'reply';
+      return o;
+    });
   });
   return snap;
 }
@@ -1922,6 +1931,20 @@ function buildNotifyDigest() {
     const before = new Set((prev[k] || []).map((x) => x && x.id));
     const added = (cur[k] || []).filter((it) => !before.has(it.id));
     if (added.length) {
+      // 互动（点赞/评论）：点赞没正文，必须单独措辞，否则会成“新增了 N 条互动”
+      if (k === 'reactions') {
+        const reps = added.filter((x) => x.k === 'reply');
+        const likes = added.length - reps.length;
+        if (reps.length) {
+          const t = reps[0].t;
+          if (!t) return reps.length > 1 ? '评论了 ' + reps.length + ' 条' : '评论了你的记录';
+          return reps.length > 1
+            ? '评论了 ' + reps.length + ' 条，如：' + t
+            : '评论：' + t;
+        }
+        if (likes) return likes > 1 ? '赞了你的 ' + likes + ' 条记录' : '赞了你的记录';
+        return '';
+      }
       const t = added[0].t;
       if (!t) return '新增了 ' + added.length + ' 条' + label;
       return added.length > 1
@@ -1935,11 +1958,14 @@ function buildNotifyDigest() {
     const mod = (cur[k] || []).filter((it) => before.has(it.id) && before.get(it.id) !== it.t);
     if (mod.length) {
       const t = mod[0].t;
+      if (k === 'reactions') return t ? '修改了评论：' + t : '更新了互动';
       return t ? '更新了' + label + '：' + t : '更新了' + label;
     }
   }
   // 3) 删除：只报数量（内容已经没了，没必要带）
+  //    互动跳过：取消点赞/删评论是悄声动作，不值得惊动对方
   for (const [k, label] of NOTIFY_KINDS) {
+    if (k === 'reactions') continue;
     const after = new Set((cur[k] || []).map((x) => x && x.id));
     const gone = (prev[k] || []).filter((x) => x && !after.has(x.id));
     if (gone.length) return '删除了 ' + gone.length + ' 条' + label;
