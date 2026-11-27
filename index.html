@@ -151,8 +151,9 @@ main { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 4
 .hero::before { top: -18px; left: -14px; }
 .hero::after { bottom: -26px; right: -10px; font-size: 120px; }
 .hero .names { font-size: 16px; opacity: .95; }
-.hero .days { font-size: 44px; font-weight: 800; line-height: 1.12; margin: 4px 0 3px; }
+.hero .days { font-size: 44px; font-weight: 800; line-height: 1.12; margin: 4px 0 3px; user-select: none; -webkit-user-select: none; }
 .hero .days small { font-size: 16px; font-weight: 600; margin-left: 4px; }
+.hero .days:active { opacity: .7; }
 .hero .since { font-size: 12.5px; opacity: .85; }
 .card { background: var(--bg-card); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: 13px 14px; margin-bottom: 10px; }
 .card h2 { font-size: 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
@@ -610,6 +611,22 @@ body.wall-selecting .wall-item.sel { outline: 3px solid #e9407a; outline-offset:
 .more-item .mi-name { display: block; font-size: 14.5px; font-weight: 700; color: var(--text-main); }
 .more-item .mi-sub { display: block; font-size: 11.5px; color: var(--text-sub); margin-top: 2px; }
 .more-item .mi-arrow { color: var(--text-faint); font-size: 18px; flex-shrink: 0; }
+/* ---- 年度小结：卡片流 + 数字锚点 ---- */
+.sum-head { background: var(--hero-grad); color: #fff; border-radius: 14px; padding: 20px 18px 16px; margin-bottom: 12px; }
+.sum-head .sum-yr { font-size: 13px; font-weight: 600; opacity: .92; letter-spacing: .5px; }
+.sum-head .sum-big { font-size: 34px; font-weight: 800; line-height: 1.2; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.sum-head .sum-sub { font-size: 12px; opacity: .9; margin-top: 4px; }
+.sum-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sum-cell { background: var(--bg-card); border: 1px solid var(--border-input); border-radius: 12px; padding: 12px 12px 10px; }
+.sum-cell .sc-num { font-size: 26px; font-weight: 800; color: var(--primary); line-height: 1.15; font-variant-numeric: tabular-nums; }
+.sum-cell .sc-num small { font-size: 12px; font-weight: 600; color: var(--text-sub); margin-left: 2px; }
+.sum-cell .sc-lab { font-size: 11.5px; color: var(--text-faint); margin-top: 2px; }
+.sum-card { background: var(--bg-card); border: 1px solid var(--border-input); border-radius: 12px; padding: 12px 14px; margin-top: 10px; }
+.sum-card h3 { font-size: 13px; font-weight: 700; color: var(--text-sub); margin: 0 0 8px; }
+.sum-quote { font-size: 13px; color: var(--text-main); line-height: 1.55; padding: 8px 10px; background: var(--bg-soft); border-radius: 8px; margin-bottom: 6px; }
+.sum-quote .sq-when { display: block; font-size: 11px; color: var(--text-faint); margin-top: 3px; }
+.sum-empty { text-align: center; color: var(--text-faint); font-size: 13px; padding: 26px 10px; }
+.sum-empty .se-ico { font-size: 30px; display: block; margin-bottom: 8px; }
 /* ---- 「我们是谁」编辑 ---- */
 .who-bd-row, .who-me-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
 .who-bd-row .bd-label, .who-me-row .bd-label { font-size: 13px; color: var(--text-sub); flex: none; }
@@ -908,7 +925,7 @@ button.exam-cell { width: 100%; cursor: pointer; }
     </div>
     <div class="hero">
       <div class="names" id="hTitle">我 ♥ TA</div>
-      <div class="days"><span id="hDays">—</span><small>天</small></div>
+      <div class="days" id="hDaysWrap" title="长按分享"><span id="hDays">—</span><small>天</small></div>
       <div class="since" id="hSince">去「设置」里填上在一起的日子吧</div>
       <div class="lunar-today" id="hLunar">农历</div>
     </div>
@@ -1045,6 +1062,11 @@ button.exam-cell { width: 100%; cursor: pointer; }
     <div class="scroll-area"><div id="examRoot"></div></div>
   </section>
 
+  <!-- ============ 年度小结 ============ -->
+  <section class="page" id="page-summary">
+    <div class="scroll-area"><div id="sumRoot"></div></div>
+  </section>
+
   <!-- ============ 更多 ============ -->
   <section class="page" id="page-more">
     <div class="card">
@@ -1058,6 +1080,11 @@ button.exam-cell { width: 100%; cursor: pointer; }
         <button class="more-item" onclick="go('capsule', null, 'l')">
           <span class="mi-ico">⏳</span>
           <span class="mi-txt"><span class="mi-name">时间胶囊</span><span class="mi-sub">写一封信，封存到将来</span></span>
+          <span class="mi-arrow">›</span>
+        </button>
+        <button class="more-item" onclick="go('summary', null, 'l')">
+          <span class="mi-ico">📊</span>
+          <span class="mi-txt"><span class="mi-name">年度小结</span><span class="mi-sub">我们这一年的痕迹</span></span>
           <span class="mi-arrow">›</span>
         </button>
         <button class="more-item" onclick="go('period', null, 'l')">
@@ -1256,6 +1283,7 @@ button.exam-cell { width: 100%; cursor: pointer; }
   <div class="composer-row">
     <label class="btn small ghost" style="display:inline-block">📷 添加照片<input type="file" id="tlEditPhoto" accept="image/*" multiple hidden></label>
     <input type="date" id="tlEditDate" readonly onclick="openDatePicker('tlEditDate')">
+    <button class="btn small ghost" onclick="shareTlEdit()" title="把这条记录分享出去">分享</button>
     <button class="btn small" onclick="tlEditSave()">保存</button>
   </div>
 </div>
@@ -1675,6 +1703,18 @@ const myName = () => S.me === 1 ? (S.name1 || '我') : (S.name2 || 'TA');
 // 容错：导入外部/旧版数据时字段可能是数字或 null，统一转字符串，避免整个渲染链抛错
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const touch = (o) => { o.updatedAt = Date.now(); };
+/* 轻震动反馈：Android 生效，iOS/不支持时静默跳过。只用于「操作成功」瞬间，10–30ms 短震 */
+const buzz = (ms = 20) => { if (navigator.vibrate) { try { navigator.vibrate(ms); } catch (e) { /* 忽略 */ } } };
+/* ---- 系统分享：navigator.share 优先，不支持时退回复制。私密内容只分享用户主动选的那一条 ---- */
+const shareText = async (text, title) => {
+  if (!text) { toast('没有可分享的内容'); return; }
+  try {
+    if (navigator.share) { await navigator.share({ title, text }); buzz(15); return; }
+  } catch (e) { if (e && e.name === 'AbortError') return; /* 用户取消分享，不算失败 */ }
+  // 不支持 navigator.share 或调用失败：复制兑底
+  try { await navigator.clipboard.writeText(text); toast('已复制到剪贴板 📋'); buzz(15); }
+  catch (e) { toast('当前环境不支持分享，请手动复制 ❌'); }
+};
 /* ---- 日期工具：'YYYY-MM-DD' 解析 / 字符串日期差 / 日期加法 / 今日零点（全文件统一复用） ---- */
 const parseDay = (s) => { const d = new Date(s + 'T00:00:00'); return isNaN(d.getTime()) ? new Date(0) : d; };
 const diffDays = (a, b) => Math.round((parseDay(a) - parseDay(b)) / 86400000);
@@ -2634,8 +2674,7 @@ function renderHome() {
   $('hTitle').textContent = `${S.name1 || '我'} ♥ ${S.name2 || 'TA'}`;
   $('hSub').textContent = `${S.name1 || '我'} 和 ${S.name2 || 'TA'} 的专属空间`;
   $('hDays').textContent = ann ? Math.max(0, diffDays(fmtDay(new Date()), ann)) : '—';
-  $('hSince').textContent = ann ? `自 ${ann.replace(/-/g, ' . ')} 起，一直在一起` : '去「设置」里填上在一起的日子吧';
-  // 今日农历（含干支纪年）
+  $('hSince').textContent = ann ? `自 ${ann.replace(/-/g, ' . ')} 起，一直在一起` : '去「设置」里填上在一起的日子吧';  // 今日农历（含干支纪年）
   const lt = solarToLunar(new Date());
   $('hLunar').textContent = lt ? `农历${lunarMonthName(lt.month, lt.isLeap)}${lunarDayName(lt.day)} · ${ganzhiYear(lt.year)}年` : '';
   // 值得期待的日子
@@ -3233,6 +3272,7 @@ function toggleLike(tid) {
     else S.reactions.push({ id: rid, tid, kind: 'like', author: me, createdAt: Date.now(), updatedAt: Date.now() });
   }
   if (tlIncrementalUpdate(t)) tlSkipRender = 1;
+  if (!live) buzz(18); // 只有点赞震，取消不震
   commit('reactions', 'trash');
 }
 // 新增一条评论：每人每条记录最多 REPLY_MAX_PER_USER 条
@@ -3819,7 +3859,7 @@ async function addTimeline() {
   const first = pendingPhotos[0] || {};
   tlNewId = id;
   addListItem('timeline', { id, author: myName(), text: text || `📷 分享了 ${paths.length} 张照片`, tag: draftTag, photo: paths[0] || '', photos: paths, date: draftDate, time: hmOf(Date.now()), pw: first.w || 0, ph: first.h || 0 });
-  $('tlText').value = ''; tlTag = '日常'; renderTlTagPicker(); clearPhoto(); clearTlDraft(); toast('已记录 ❤');
+  $('tlText').value = ''; tlTag = '日常'; renderTlTagPicker(); clearPhoto(); clearTlDraft(); buzz(20); toast('已记录 ❤');
   // 日期回到今天：否则连续写第二条时会沿用上一条的日期（不报错，但记错时间）
   $('tlDate').value = fmtDay(new Date());
 }
@@ -4207,6 +4247,101 @@ function tlEditClose(e) {
   tlEditId = null; tlEditOrigPhotos = []; tlEditAdded = []; tlEditRemoved = new Set();
   ovPop('edit');
 }
+/* 分享一条时间线记录（编辑面板内）：只分享这条的文案+日期+作者，不暴露全站 */
+function shareTlEdit() {
+  if (!tlEditId) return;
+  const it = S.timeline.find(x => x.id === tlEditId && !x.deleted);
+  if (!it) { toast('这条记录不存在了'); return; }
+  const date = $('tlEditDate').value || it.date || '';
+  const text = $('tlEditText').value.trim() || (itemPhotos(it).length ? `📷 分享了 ${itemPhotos(it).length} 张照片` : (it.tag || ''));
+  if (!text) { toast('这条记录还没有内容，先写点什么吧'); return; }
+  const author = it.author ? `${it.author} · ` : '';
+  shareText(`${author}${text}\n\n— ${date || '未注明日期'} · 第 ${annDays()} 天`);
+}
+/* 分享恋爱天数（首页长按天数触发）：不带具体日期，只带天数，私密性更好 */
+function shareAnniversary() {
+  const ann = S.anniversary;
+  if (!ann) { toast('先在「设置」里填上在一起的日子'); return; }
+  const n = Math.max(0, diffDays(fmtDay(new Date()), ann));
+  const a = S.name1 || '我', b = S.name2 || 'TA';
+  shareText(`${a} ♥ ${b} · 第 ${n} 天`);
+}
+function annDays() {
+  const ann = S.anniversary;
+  return ann ? Math.max(0, diffDays(fmtDay(new Date()), ann)) : 0;
+}
+/* 天数分享入口：移动端长按 480ms，桌面右键；位移 >10px 取消（让位给滚动） */
+(function bindDaysShare() {
+  const el = document.getElementById('hDaysWrap');
+  if (!el) return;
+  let t = null, sx = 0, sy = 0;
+  el.addEventListener('touchstart', e => {
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+    t = setTimeout(() => { t = null; buzz(15); shareAnniversary(); }, 480);
+  }, { passive: true });
+  el.addEventListener('touchmove', e => {
+    if (Math.abs(e.touches[0].clientX - sx) > 10 || Math.abs(e.touches[0].clientY - sy) > 10) { if (t) clearTimeout(t); t = null; }
+  }, { passive: true });
+  el.addEventListener('touchend', () => { if (t) clearTimeout(t); t = null; });
+  el.addEventListener('contextmenu', e => { e.preventDefault(); shareAnniversary(); });
+})();
+/* ================= 年度小结：纯本地统计，不写库 ================= */
+function renderSummary() {
+  const root = $('sumRoot');
+  if (!root) return;
+  const now = new Date(), Y = now.getFullYear();
+  const inYear = (d) => d >= `${Y}-01-01` && d <= `${Y}-12-31`;
+  const tl = (S.timeline || []).filter(x => !x.deleted);
+  const voices = (S.voices || []).filter(x => !x.deleted);
+  const wall = (S.wall || []).filter(x => !x.deleted);
+  const caps = (S.capsules || []).filter(x => !x.deleted);
+  const wishes = (S.wishes || []).filter(x => !x.deleted);
+  // 时间线：按记录内的 date 字段归年；没有 date 的按 createdAt
+  const tlY = tl.filter(t => inYear(t.date) || (!t.date && t.createdAt && inYear(fmtDay(new Date(t.createdAt)))));
+  const vY = voices.filter(v => v.createdAt && inYear(fmtDay(new Date(v.createdAt))));
+  const wY = wall.filter(p => p.createdAt && inYear(fmtDay(new Date(p.createdAt))));
+  const cY = caps.filter(c => c.unlockAt && inYear(c.unlockAt));
+  const wshY = wishes.filter(w => w.createdAt && inYear(fmtDay(new Date(w.createdAt))));
+  // 连续记录天数：按 date 排序后的最长连续段（同一天多条算一天）
+  const daySet = new Set(tlY.map(t => t.date).filter(Boolean));
+  let maxStreak = 0, cur = 0, prev = null;
+  const sortedDays = [...daySet].sort();
+  for (const d of sortedDays) {
+    const dt = parseDay(d).getTime();
+    if (prev !== null && dt - prev === 86400000) cur++;
+    else cur = 1;
+    prev = dt;
+    if (cur > maxStreak) maxStreak = cur;
+  }
+  // 标签分布：全年最多用到的前 3 个
+  const tagCount = {};
+  tlY.forEach(t => { const tg = t.tag || '日常'; tagCount[tg] = (tagCount[tg] || 0) + 1; });
+  const topTags = Object.entries(tagCount).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  // 语音总时长
+  const vSec = vY.reduce((s, v) => s + (Number(v.duration) || 0), 0);
+  const vStr = vSec >= 60 ? `${Math.floor(vSec / 60)} 分 ${Math.round(vSec % 60)} 秒` : `${Math.round(vSec)} 秒`;
+  // 首末一条（按 date 排序）
+  const withDate = tlY.filter(t => t.date);
+  const first = withDate.length ? withDate.sort((a, b) => a.date < b.date ? -1 : 1)[0] : null;
+  const last = withDate.length ? withDate.sort((a, b) => a.date > b.date ? -1 : 1)[0] : null;
+  const total = annDays(); // 总天数（不分年）
+  const a = S.name1 || '我', b = S.name2 || 'TA';
+  root.innerHTML = `
+  <div class="sum-head">
+    <div class="sum-yr">${a} ♥ ${b} · ${Y} 年度小结</div>
+    <div class="sum-big">${tlY.length} 条记录</div>
+    <div class="sum-sub">最长连续 ${maxStreak} 天 · 我们在一起的总天数第 ${total} 天</div>
+  </div>
+  <div class="sum-grid">
+    <div class="sum-cell"><div class="sc-num">${vY.length}<small>段</small></div><div class="sc-lab">语音留言 · 共 ${vStr}</div></div>
+    <div class="sum-cell"><div class="sc-num">${wY.length}<small>张</small></div><div class="sc-lab">照片墙新增</div></div>
+    <div class="sum-cell"><div class="sc-num">${cY.length}<small>封</small></div><div class="sc-lab">时间胶囊（本年到期）</div></div>
+    <div class="sum-cell"><div class="sc-num">${wshY.filter(w => w.done).length}<small>/ ${wshY.length}</small></div><div class="sc-lab">心愿完成 / 新增</div></div>
+  </div>
+  ${topTags.length ? `<div class="sum-card"><h3>今年最常用的标签</h3>${topTags.map(([t, n]) => `<span class="chip on" style="margin:0 6px 4px 0">${esc(t)} ×${n}</span>`).join('')}</div>` : ''}
+  ${first || last ? `<div class="sum-card"><h3>这一年的两端</h3>${first ? `<div class="sum-quote">${esc(first.text || (itemPhotos(first).length ? `📷 ${itemPhotos(first).length} 张照片` : '（无文字）'))}<span class="sq-when">${esc(first.date)} · ${esc(first.author || '')} 写下</span></div>` : ''}${last && last.id !== first.id ? `<div class="sum-quote">${esc(last.text || (itemPhotos(last).length ? `📷 ${itemPhotos(last).length} 张照片` : '（无文字）'))}<span class="sq-when">${esc(last.date)} · ${esc(last.author || '')} 写下</span></div>` : ''}</div>` : ''}
+  ${tlY.length || vY.length || wY.length ? '' : `<div class="sum-empty"><span class="se-ico">🌱</span>${Y} 年还没有记录。<br>从今天开始，一起把这一年填满吧。</div>`}`;
+}
 async function onTlEditPhotoChange(e) {
   const files = [...(e.target.files || [])]; e.target.value = '';
   if (!files.length) return;
@@ -4494,7 +4629,7 @@ function syncWishMoreHint() {
   btn.classList.toggle('has-pick', parts.length > 0);
   btn.title = parts.length ? '已选：' + parts.join(' · ') : '更多选项';
 }
-function toggleWish(id) { const w = S.wishes.find(x => x.id === id); if (!w) return; touch(w); w.done = !w.done; commit('wishes'); if (w.done) toast('又完成一个心愿，恭喜！🎉'); }
+function toggleWish(id) { const w = S.wishes.find(x => x.id === id); if (!w) return; touch(w); w.done = !w.done; commit('wishes'); if (w.done) { buzz(25); toast('又完成一个心愿，恭喜！🎉'); } }
 const delWish = (id) => quickDel('wishes', id);
 
 /* ================= 时间胶囊 ================= */
@@ -4749,6 +4884,7 @@ async function toggleRecord() {
   recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
   recorder.onstop = onRecordStop;
   recorder.start(); recording = true; recSeconds = 0; recStartAt = performance.now();
+  buzz(30); // 开始录音：一次稍长一点，确认麦克风已开
   $('recBtn').classList.add('recording'); $('recTip').textContent = `录音中 ${fmtSec(0)} / ${fmtSec(MAX_SECONDS)}`;
   // 用真实经过时间而非整秒自增：setInterval 会漏掉不足 1 秒的零头，
   // 3.9 秒的录音会被记成 3 秒（短语音误差高达 25%，这正是 10 秒内进度条异常的主因之一）
@@ -4761,6 +4897,7 @@ async function toggleRecord() {
 function stopRecording(silent) {
   if (!recording) return;
   recording = false; clearInterval(recTimer);
+  if (!silent) buzz(15); // 停止录音：短震确认（静默丢弃不震）
   $('recBtn').classList.remove('recording'); $('recTip').textContent = `点击开始录音，最长 ${MAX_SECONDS} 秒`;
   if (recorder && recorder.state !== 'inactive') {
     if (silent) recorder.onstop = null; // 静默丢弃本次录音
@@ -4788,7 +4925,7 @@ async function onRecordStop() {
         const path = `voices/${id}.${ext}`;
         await ghPutBinary(path, dataUrl);
         addListItem('voices', { id, by: myName(), audio: path, mime: mime, duration: dur, createdAt: Date.now() });
-        toast('语音已保存 ❤');
+        buzz(20); toast('语音已保存 ❤');
       } catch (e) {
         console.error('语音上传失败：', e);
         toast('语音上传失败，请检查网络 ❌');
@@ -5841,10 +5978,10 @@ async function pushGh() {
 }
 /* ================= 路由 & 渲染 ================= */
 // 子页面（语音 / 经期 / 设置）在底部导航中归属「更多」页签
-const PAGE_TAB = { capsule: 'more', period: 'more', settings: 'more', exam: 'more' };
+const PAGE_TAB = { capsule: 'more', period: 'more', settings: 'more', exam: 'more', summary: 'more' };
 // 各页标题 + 子页集合：子页显示返回按钮，一级页恢复默认标题
-const PAGE_TITLES = { home: '情侣小站', timeline: '时间线', wishes: '心愿', capsule: '时间胶囊', more: '更多', voice: '语音留言', period: '经期记录', settings: '设置', exam: '软考高项' };
-const SUB_PAGES = { capsule: 1, period: 1, settings: 1, exam: 1 };
+const PAGE_TITLES = { home: '情侣小站', timeline: '时间线', wishes: '心愿', capsule: '时间胶囊', more: '更多', voice: '语音留言', period: '经期记录', settings: '设置', exam: '软考高项', summary: '年度小结' };
+const SUB_PAGES = { capsule: 1, period: 1, settings: 1, exam: 1, summary: 1 };
 const MAIN_PAGES = ['home', 'timeline', 'wishes', 'voice', 'more'];
 const currentPage = () => { const p = document.querySelector('.page.active'); return p ? p.id.replace('page-', '') : ''; };
 /* ---- 历史栈：子页与主干 tab 都入栈，物理返回键 = 回到上一页而不是退出应用 ---- */
@@ -5958,6 +6095,7 @@ function go(p, btn, dir, opts) {
   if (p === 'period') renderPeriods(); // 进经期页刷新日历与预测（跨月停留后数据可能已更新）
   if (p === 'exam') ensureExamLoaded().then(ok => { if (ok && typeof examEnter === 'function') examEnter(); });
   // 软考高项：脚本按需注入，加载完成后再渲染（避免自愈式白屏）
+  if (p === 'summary') renderSummary(); // 年度小结：进入时重新统计（数据可能刚同步过来）
   updateFab(p);
 }
 /* ===== 滚动容器定位 + 按页滚动记忆（display:none 会丢滚动位置，返回时恢复） ===== */
