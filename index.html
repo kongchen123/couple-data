@@ -4153,6 +4153,7 @@ function openActionSheet(id) {
   $('asTitle').textContent = (it.text || '📷 照片记录').slice(0, 30);
   $('asList').innerHTML =
     `<button class="as-item" onclick="tlEditOpen('${id}')"><span class="ico">✏️</span>编辑内容</button>` +
+    `<button class="as-item" onclick="asShare('${id}')"><span class="ico">📤</span>分享这条</button>` +
     `<button class="as-item" onclick="tlCopy('${id}')"><span class="ico">📋</span>复制文字</button>` +
     `<button class="as-item danger" onclick="asDel('${id}')"><span class="ico">🗑</span>删除记录</button>`;
   $('asMask').classList.add('show');
@@ -4166,6 +4167,18 @@ function closeActionSheet(e) {
   ovPop('sheet');
 }
 function asDel(id) { closeActionSheet(); delTimeline(id); }
+function asShare(id) { closeActionSheet(); shareTl(id); }
+/* 分享一条时间线记录（列表里直接分享，不必进编辑）：只分享这条的文案+日期+作者，不暴露全站 */
+function shareTl(id) {
+  const it = S.timeline.find(x => x.id === id && !x.deleted);
+  if (!it) { toast('这条记录不存在了'); return; }
+  const photos = itemPhotos(it);
+  const text = (it.text || '').trim() || (photos.length ? `📷 分享了 ${photos.length} 张照片` : (it.tag || ''));
+  if (!text) { toast('这条记录还没有内容'); return; }
+  const author = it.author ? `${it.author} · ` : '';
+  buzz(15);
+  shareText(`${author}${text}\n\n— ${it.date || '未注明日期'} · 第 ${annDays()} 天`);
+}
 async function tlCopy(id) {
   const it = S.timeline.find(x => x.id === id && !x.deleted);
   closeActionSheet();
@@ -4250,16 +4263,19 @@ function tlEditClose(e) {
   tlEditId = null; tlEditOrigPhotos = []; tlEditAdded = []; tlEditRemoved = new Set();
   ovPop('edit');
 }
-/* 分享一条时间线记录（编辑面板内）：只分享这条的文案+日期+作者，不暴露全站 */
+/* 编辑面板内的分享：直接复用列表分享逻辑（用编辑中的最新文案） */
 function shareTlEdit() {
   if (!tlEditId) return;
   const it = S.timeline.find(x => x.id === tlEditId && !x.deleted);
   if (!it) { toast('这条记录不存在了'); return; }
+  const text = $('tlEditText').value.trim();
+  const photos = tlEditOrigPhotos.filter(p => !tlEditRemoved.has(p)).length + tlEditAdded.length;
+  const body = text || (photos ? `📷 分享了 ${photos} 张照片` : (tlEditTag || ''));
+  if (!body) { toast('这条记录还没有内容，先写点什么吧'); return; }
   const date = $('tlEditDate').value || it.date || '';
-  const text = $('tlEditText').value.trim() || (itemPhotos(it).length ? `📷 分享了 ${itemPhotos(it).length} 张照片` : (it.tag || ''));
-  if (!text) { toast('这条记录还没有内容，先写点什么吧'); return; }
   const author = it.author ? `${it.author} · ` : '';
-  shareText(`${author}${text}\n\n— ${date || '未注明日期'} · 第 ${annDays()} 天`);
+  buzz(15);
+  shareText(`${author}${body}\n\n— ${date || '未注明日期'} · 第 ${annDays()} 天`);
 }
 /* 分享恋爱天数（首页长按天数触发）：不带具体日期，只带天数，私密性更好 */
 function shareAnniversary() {
