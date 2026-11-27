@@ -630,6 +630,30 @@ body.wall-selecting .wall-item.sel { outline: 3px solid #e9407a; outline-offset:
 .sum-quote .sq-when { display: block; font-size: 11px; color: var(--text-faint); margin-top: 3px; }
 .sum-empty { text-align: center; color: var(--text-faint); font-size: 13px; padding: 26px 10px; }
 .sum-empty .se-ico { font-size: 30px; display: block; margin-bottom: 8px; }
+/* ---- 回收站：最近删除 ---- */
+.bin-tip { font-size: 11.5px; color: var(--text-faint); line-height: 1.55; padding: 9px 11px; background: var(--bg-soft); border-radius: 9px; margin-bottom: 10px; }
+.bin-group { margin-bottom: 12px; }
+.bin-group h3 { font-size: 12.5px; font-weight: 700; color: var(--text-sub); margin: 0 0 7px 2px; display: flex; align-items: center; gap: 6px; }
+.bin-group h3 .bg-n { font-size: 11px; font-weight: 600; color: var(--text-faint); background: var(--bg-soft); border-radius: 9px; padding: 1px 7px; }
+.bin-item { background: var(--bg-card); border: 1px solid var(--border-input); border-radius: 11px; padding: 10px 11px; margin-bottom: 7px; }
+.bin-item .bi-top { display: flex; align-items: baseline; gap: 7px; margin-bottom: 3px; }
+.bin-item .bi-who { font-size: 11.5px; font-weight: 700; color: var(--primary); flex: none; }
+.bin-item .bi-when { font-size: 11px; color: var(--text-faint); flex: 1; min-width: 0; }
+.bin-item .bi-del { font-size: 10.5px; color: var(--text-faint); flex: none; }
+.bin-item .bi-text { font-size: 13px; color: var(--text-main); line-height: 1.5; word-break: break-word; }
+.bin-item .bi-text.clamp2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.bin-item .bi-media { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-sub); margin-top: 5px; }
+.bin-item .bi-media img { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; flex: none; background: var(--bg-soft); }
+.bin-item .bi-media .bm-warn { color: #e08b3a; font-size: 10.5px; }
+.bin-item .bi-act { display: flex; gap: 7px; margin-top: 8px; }
+.bin-item .bi-act button { flex: 1; border: none; border-radius: 9px; padding: 7px 0; font-size: 12.5px; font-weight: 700; cursor: pointer; transition: transform .15s, opacity .2s; }
+.bin-item .bi-act button:active { transform: scale(.97); }
+.bin-item .bi-act .ba-restore { background: var(--primary); color: #fff; }
+.bin-item .bi-act .ba-purge { background: var(--bg-soft); color: var(--text-sub); border: 1px solid var(--border-input); }
+.bin-foot { padding: 4px 0 10px; }
+.bin-foot .btn { width: 100%; }
+.bin-empty { text-align: center; color: var(--text-faint); font-size: 13px; padding: 34px 12px; }
+.bin-empty .be-ico { font-size: 32px; display: block; margin-bottom: 9px; opacity: .7; }
 /* ---- 「我们是谁」编辑 ---- */
 .who-bd-row, .who-me-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
 .who-bd-row .bd-label, .who-me-row .bd-label { font-size: 13px; color: var(--text-sub); flex: none; }
@@ -1070,6 +1094,11 @@ button.exam-cell { width: 100%; cursor: pointer; }
     <div class="scroll-area"><div id="sumRoot"></div></div>
   </section>
 
+  <!-- ============ 回收站（最近删除） ============ -->
+  <section class="page" id="page-bin">
+    <div class="scroll-area"><div id="binRoot"></div></div>
+  </section>
+
   <!-- ============ 更多 ============ -->
   <section class="page" id="page-more">
     <div class="card">
@@ -1093,6 +1122,11 @@ button.exam-cell { width: 100%; cursor: pointer; }
         <button class="more-item" onclick="go('period', null, 'l')">
           <span class="mi-ico">🌹</span>
           <span class="mi-txt"><span class="mi-name">经期记录</span><span class="mi-sub">周期预测与贴心提醒</span></span>
+          <span class="mi-arrow">›</span>
+        </button>
+        <button class="more-item" onclick="go('bin', null, 'l')">
+          <span class="mi-ico">🗑</span>
+          <span class="mi-txt"><span class="mi-name">回收站</span><span class="mi-sub">最近删除 · 30 天内可恢复</span></span>
           <span class="mi-arrow">›</span>
         </button>
         <button class="more-item" onclick="go('settings', null, 'l')">
@@ -2423,6 +2457,7 @@ async function gcOrphans(opts) {
   const now = Date.now();
   const due = (Array.isArray(S.trash) ? S.trash : [])
     .filter(t => t && t.path && !t.deleted && now - (t.at || 0) >= ORPHAN_GRACE_MS)
+    .filter(t => !t.hold || !tombAlive('timeline', t.hold) && !tombAlive('wall', t.hold)) // 记录还在回收站就别删照片
     .slice(0, ORPHAN_BATCH);
   // 顺手清掉超过 7 天的"已回收"墓碑，避免队列无限增长
   const before = S.trash.length;
@@ -2526,7 +2561,9 @@ function restoreItemReactions(tid) {
   });
 }
 // 释放一条记录名下的全部照片（时间线一条最多 9 张，旧数据是单张 photo）
-function releaseItemPhotos(it) {
+// hold：记录本身被删除时传入，照片要跟着墓碑一起多留几天，否则 3 天后云端文件被回收，
+// 而记录的墓碑还在 30 天窗口内——就会恢复出一条「照片全丢」的空壳
+function releaseItemPhotos(it, hold) {
   const all = itemPhotos(it);
   all.forEach(p => {
     if (!p) return;
@@ -2535,14 +2572,33 @@ function releaseItemPhotos(it) {
     photoStore.del(p);
     // 云端文件不立即删（误删/撤销期间还要能看），登记进回收队列，宽限期后由 gcOrphans 清理
     if (!Array.isArray(S.trash)) S.trash = [];
-    if (!S.trash.some(t => t.path === p)) S.trash.push({ id: uid(), path: p, at: Date.now(), updatedAt: Date.now() });
+    const ex = S.trash.find(t => t.path === p);
+    if (!ex) {
+      const rec = { id: uid(), path: p, at: Date.now(), updatedAt: Date.now() };
+      if (hold) rec.hold = it.id; // 等这条记录的墓碑被清掉后才允许回收
+      S.trash.push(rec);
+    } else if (hold) {
+      ex.hold = it.id; ex.updatedAt = Date.now();
+    }
   });
   return all;
+}
+// 墓碑是否还在（决定 hold 的照片要不要继续留着）
+function tombAlive(key, id) {
+  const arr = S[key];
+  if (!Array.isArray(arr)) return false;
+  const now = Date.now();
+  return arr.some(x => x && x.id === id && x.deleted === true && now - (x.updatedAt || 0) < TOMB_TTL);
+}
+// 不限列表地查一条 id 的墓碑是否还在（id 全局唯一）
+function tombAliveAnywhere(id) {
+  const now = Date.now();
+  return LIST_FIELDS.some(k => Array.isArray(S[k]) && S[k].some(x => x && x.id === id && x.deleted === true && now - (x.updatedAt || 0) < TOMB_TTL));
 }
 function delListItem(key, id) {
   const it = S[key].find(x => x.id === id); if (!it) return;
   // 时间线/照片墙：照片可能有多张，必须逐张释放，否则第 2 张起会变成永不回收的孤儿文件
-  if (key === 'timeline' || key === 'wall') releaseItemPhotos(it);
+  if (key === 'timeline' || key === 'wall') releaseItemPhotos(it, true); // hold：墓碑活着时别回收照片
   // 时间线：连同这条记录的互动一起标墓碑，否则会变成挂不到任何记录的孤儿
   if (key === 'timeline') releaseItemReactions(id);
   touch(it); it.deleted = true;
@@ -3937,7 +3993,11 @@ function quickDel(key, id) {
     const cur = (S[key] || []).find(x => x.id === id);
     if (!cur) return;
     touch(cur); cur.deleted = false;
-    if (cur.photo && Array.isArray(S.trash)) S.trash = S.trash.filter(t => t.path !== cur.photo);
+    // 撤销时把这条记录的所有照片从回收队列里撤出，避免宽限期后把还在用的文件删掉
+    if (Array.isArray(S.trash)) {
+      const keep = new Set(key === 'wall' && cur.photo ? [cur.photo] : itemPhotos(cur));
+      if (keep.size) S.trash = S.trash.filter(t => !keep.has(t.path));
+    }
     if (key === 'timeline') restoreItemReactions(id);
     // 撤销时若节点已被摘掉，同样只插回一个节点，不重建整表
     if (key === 'timeline' && tlIncrementalInsert(cur)) tlSkipRender = 1;
@@ -4360,6 +4420,160 @@ function renderSummary() {
   ${topTags.length ? `<div class="sum-card"><h3>今年最常用的标签</h3>${topTags.map(([t, n]) => `<span class="chip on" style="margin:0 6px 4px 0">${esc(t)} ×${n}</span>`).join('')}</div>` : ''}
   ${first || last ? `<div class="sum-card"><h3>这一年的两端</h3>${first ? `<div class="sum-quote">${esc(first.text || (itemPhotos(first).length ? `📷 ${itemPhotos(first).length} 张照片` : '（无文字）'))}<span class="sq-when">${esc(first.date)} · ${esc(first.author || '')} 写下</span></div>` : ''}${last && last.id !== first.id ? `<div class="sum-quote">${esc(last.text || (itemPhotos(last).length ? `📷 ${itemPhotos(last).length} 张照片` : '（无文字）'))}<span class="sq-when">${esc(last.date)} · ${esc(last.author || '')} 写下</span></div>` : ''}</div>` : ''}
   ${tlY.length || vY.length || wY.length ? '' : `<div class="sum-empty"><span class="se-ico">🌱</span>${Y} 年还没有记录。<br>从今天开始，一起把这一年填满吧。</div>`}`;
+}
+/* ================= 回收站（最近删除） =================
+   删除一律是打墓碑（deleted=true）且保留 30 天，所以回收站不另建数据结构，
+   直接扫各列表里的墓碑。恢复 = 墓碑反标记，与「5 秒撤销」完全同一条路径。 */
+const BIN_KEYS = [
+  { k: 'timeline', label: '时间线', ico: '📖', text: (x) => x.text || (itemPhotos(x).length ? `📷 ${itemPhotos(x).length} 张照片` : '（无文字）'), who: (x) => x.author, when: (x) => x.date || fmtTs(x.createdAt) },
+  { k: 'wishes', label: '心愿', ico: '💫', text: (x) => x.text || '（未填写）', who: () => '', when: (x) => fmtTs(x.createdAt) },
+  { k: 'voices', label: '语音', ico: '🎙', text: (x) => `语音留言 ${fmtSec(x.duration || 0)}`, who: (x) => x.by, when: (x) => fmtTs(x.createdAt) },
+  { k: 'capsules', label: '时间胶囊', ico: '⏳', text: (x) => x.text || '（未填写）', who: (x) => x.author, when: (x) => x.unlockAt || fmtTs(x.createdAt) },
+  { k: 'wall', label: '照片墙', ico: '📷', text: () => '一张照片', who: () => '', when: (x) => fmtTs(x.createdAt) },
+  { k: 'periods', label: '经期记录', ico: '🌹', text: (x) => `${x.start || '?'} ~ ${x.end || '进行中'}`, who: () => '', when: (x) => x.start || fmtTs(x.createdAt) },
+  { k: 'customDays', label: '纪念日', ico: '🎂', text: (x) => x.name || '（未命名）', who: () => '', when: (x) => x.date || fmtTs(x.createdAt) },
+];
+// 扫出所有还在 30 天窗口内的墓碑，按删除时间倒序
+function binItems() {
+  const now = Date.now(), out = [];
+  BIN_KEYS.forEach(g => {
+    (S[g.k] || []).forEach(x => {
+      if (!x || x.deleted !== true) return;
+      const age = now - (x.updatedAt || 0);
+      if (age >= TOMB_TTL) return; // 已过保留期，等 pruneTombstones 清掉
+      out.push({ key: g.k, g, item: x, age, leftMs: TOMB_TTL - age });
+    });
+  });
+  out.sort((a, b) => (b.item.updatedAt || 0) - (a.item.updatedAt || 0));
+  return out;
+}
+const binCount = () => binItems().length;
+function fmtLeft(ms) {
+  const d = Math.floor(ms / 86400000), h = Math.floor((ms % 86400000) / 3600000);
+  if (d >= 1) return `剩 ${d} 天`;
+  if (h >= 1) return `剩 ${h} 小时`;
+  return '即将清掉';
+}
+function fmtAgo(ms) {
+  const m = Math.floor(ms / 60000), h = Math.floor(m / 60), d = Math.floor(h / 24);
+  if (d >= 1) return `${d} 天前删除`;
+  if (h >= 1) return `${h} 小时前删除`;
+  if (m >= 1) return `${m} 分钟前删除`;
+  return '刚刚删除';
+}
+function renderBin() {
+  const root = $('binRoot');
+  if (!root) return;
+  const list = binItems();
+  if (!list.length) {
+    root.innerHTML = `<div class="card"><div class="bin-empty"><span class="be-ico">🍃</span>回收站是空的。<br><span style="font-size:12px;color:var(--text-faint)">删除的记录会在这里保留 30 天，随时可以恢复</span></div></div>`;
+    return;
+  }
+  // 按列表分组（保持 BIN_KEYS 顺序）
+  const groups = BIN_KEYS.map(g => ({ g, rows: list.filter(x => x.key === g.k) })).filter(x => x.rows.length);
+  const html = groups.map(({ g, rows }) => `
+    <div class="bin-group">
+      <h3>${g.ico} ${g.label}<span class="bg-n">${rows.length}</span></h3>
+      ${rows.map(r => {
+        const x = r.item;
+        const photos = (r.key === 'timeline') ? itemPhotos(x) : [];
+        const media = photos.length
+          ? `<div class="bi-media"><img data-photo="${esc(photos[0])}" alt="" loading="lazy" decoding="async"><span>${photos.length} 张照片</span></div>`
+          : (r.key === 'wall' && x.photo ? `<div class="bi-media"><img data-photo="${esc(x.photo)}" alt="" loading="lazy" decoding="async"><span>1 张照片</span></div>` : '');
+        return `<div class="bin-item">
+          <div class="bi-top">
+            ${g.who(x) ? `<span class="bi-who">${esc(g.who(x))}</span>` : ''}
+            <span class="bi-when">${esc(g.when(x))}</span>
+            <span class="bi-del" title="${esc(fmtAgo(r.age))}">${esc(fmtLeft(r.leftMs))}</span>
+          </div>
+          <div class="bi-text clamp2">${esc(g.text(x))}</div>
+          ${media}
+          <div class="bi-act">
+            <button class="ba-restore" onclick="restoreBinItem('${r.key}','${esc(x.id)}')">↩ 恢复</button>
+            <button class="ba-purge" onclick="purgeBinItem('${r.key}','${esc(x.id)}')">彻底删除</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+  root.innerHTML = html +
+    `<div class="card"><div class="bin-tip">删除的内容在这里保留 30 天（照片另按 3 天宽限回收）。恢复后会重新同步到另一台设备。</div>
+     <div class="bin-foot"><button class="btn ghost small danger" onclick="askEmptyBin()">清空回收站</button></div></div>`;
+  // 缩略图按需从缓存/云端取（不阻塞渲染）
+  root.querySelectorAll('img[data-photo]').forEach(el => {
+    const p = el.dataset.photo;
+    if (!p) return;
+    getPhotoCached(p).then(u => { if (u) el.src = u; }).catch(() => {});
+  });
+}
+// 恢复一条：墓碑反标记 + 把照片移出回收队列（否则 3 天后被当孤儿删掉）
+function restoreBinItem(key, id) {
+  const arr = S[key];
+  if (!Array.isArray(arr)) return;
+  const it = arr.find(x => x && x.id === id && x.deleted === true);
+  if (!it) { toast('这条已经不在回收站了'); renderBin(); return; }
+  touch(it); it.deleted = false;
+  // 照片重新归位：从孤儿队列里移除
+  if (Array.isArray(S.trash)) {
+    const keep = new Set(key === 'timeline' ? itemPhotos(it) : (key === 'wall' && it.photo ? [it.photo] : []));
+    if (keep.size) S.trash = S.trash.filter(t => !keep.has(t.path));
+  }
+  if (key === 'timeline') restoreItemReactions(id);
+  if (key === 'voices' && it.audio) voiceStore.del(it.audio); // 清掉本地缓存，下次按需重下
+  if (key === 'timeline' && tlIncrementalInsert(it)) tlSkipRender = 1;
+  commit(key, 'trash');
+  buzz(20);
+  toast('已恢复 ✅');
+  renderBin();
+}
+// 彻底删除一条：从数组里真的摘掉（不再等 30 天），照片立即进孤儿队列
+function purgeBinItem(key, id) {
+  askConfirm('彻底删除后无法恢复，确定吗？', () => {
+    const arr = S[key];
+    if (!Array.isArray(arr)) return;
+    const idx = arr.findIndex(x => x && x.id === id && x.deleted === true);
+    if (idx < 0) { toast('这条已经不在回收站了'); renderBin(); return; }
+    const it = arr[idx];
+    // 照片：去掉 hold，让 gcOrphans 正常按 3 天回收
+    if (Array.isArray(S.trash)) {
+      S.trash.forEach(t => { if (t && t.hold === id) { delete t.hold; t.at = 0; t.updatedAt = Date.now(); } });
+    }
+    if (key === 'voices' && it.audio) {
+      const u = voiceUrlCache.get(it.audio);
+      if (u) { try { URL.revokeObjectURL(u); } catch (e) { /* 忽略 */ } voiceUrlCache.delete(it.audio); }
+      voiceStore.del(it.audio);
+    }
+    arr.splice(idx, 1);
+    commit(key, 'trash');
+    buzz(25);
+    toast('已彻底删除');
+    renderBin();
+  }, '彻底删除');
+}
+function askEmptyBin() {
+  const list = binItems();
+  if (!list.length) { toast('回收站已经是空的'); return; }
+  askConfirm(`清空回收站？这 ${list.length} 条将无法恢复`, () => {
+    const gone = new Set(list.map(r => r.key + '|' + r.item.id));
+    BIN_KEYS.forEach(g => {
+      const arr = S[g.k];
+      if (!Array.isArray(arr)) return;
+      for (let i = arr.length - 1; i >= 0; i--) {
+        const x = arr[i];
+        if (x && x.deleted === true && gone.has(g.k + '|' + x.id)) arr.splice(i, 1);
+      }
+    });
+    if (Array.isArray(S.trash)) {
+      // 被清掉的那些记录的 hold 一并解除，照片交给正常 3 天回收
+      S.trash.forEach(t => {
+        if (!t || !t.hold) return;
+        if (gone.has(t.hold) || !tombAliveAnywhere(t.hold)) { delete t.hold; t.at = 0; t.updatedAt = Date.now(); }
+      });
+    }
+    commit(...BIN_KEYS.map(g => g.k), 'trash');
+    buzz(30);
+    toast('回收站已清空');
+    renderBin();
+  }, '清空');
 }
 async function onTlEditPhotoChange(e) {
   const files = [...(e.target.files || [])]; e.target.value = '';
@@ -6095,10 +6309,10 @@ async function pushGh() {
 }
 /* ================= 路由 & 渲染 ================= */
 // 子页面（语音 / 经期 / 设置）在底部导航中归属「更多」页签
-const PAGE_TAB = { capsule: 'more', period: 'more', settings: 'more', exam: 'more', summary: 'more' };
+const PAGE_TAB = { capsule: 'more', period: 'more', settings: 'more', exam: 'more', summary: 'more', bin: 'more' };
 // 各页标题 + 子页集合：子页显示返回按钮，一级页恢复默认标题
-const PAGE_TITLES = { home: '情侣小站', timeline: '时间线', wishes: '心愿', capsule: '时间胶囊', more: '更多', voice: '语音留言', period: '经期记录', settings: '设置', exam: '软考高项', summary: '年度小结' };
-const SUB_PAGES = { capsule: 1, period: 1, settings: 1, exam: 1, summary: 1 };
+const PAGE_TITLES = { home: '情侣小站', timeline: '时间线', wishes: '心愿', capsule: '时间胶囊', more: '更多', voice: '语音留言', period: '经期记录', settings: '设置', exam: '软考高项', summary: '年度小结', bin: '回收站' };
+const SUB_PAGES = { capsule: 1, period: 1, settings: 1, exam: 1, summary: 1, bin: 1 };
 const MAIN_PAGES = ['home', 'timeline', 'wishes', 'voice', 'more'];
 const currentPage = () => { const p = document.querySelector('.page.active'); return p ? p.id.replace('page-', '') : ''; };
 /* ---- 历史栈：子页与主干 tab 都入栈，物理返回键 = 回到上一页而不是退出应用 ---- */
@@ -6213,6 +6427,7 @@ function go(p, btn, dir, opts) {
   if (p === 'exam') ensureExamLoaded().then(ok => { if (ok && typeof examEnter === 'function') examEnter(); });
   // 软考高项：脚本按需注入，加载完成后再渲染（避免自愈式白屏）
   if (p === 'summary') renderSummary(); // 年度小结：进入时重新统计（数据可能刚同步过来）
+  if (p === 'bin') renderBin(); // 回收站：进入时重新扫墓碑（删除时间可能已过期）
   updateFab(p);
 }
 /* ===== 滚动容器定位 + 按页滚动记忆（display:none 会丢滚动位置，返回时恢复） ===== */
