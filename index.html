@@ -474,10 +474,13 @@ body.wall-selecting .wall-sel-fab { background: #e9407a; color: #fff; border-col
 .cal-confirm.show { display: flex; }
 .cal-confirm .txt { flex: 1; min-width: 0; font-size: 12px; font-weight: 600; color: #e9407a; line-height: 1.4; }
 .cal-confirm .btn { padding: 6px 12px; font-size: 12px; }
+.cal-confirm.conflict { background: rgba(224,80,112,.10); }
+.cal-confirm.conflict .txt { color: #d0405c; }
 @keyframes cfIn { from { opacity: 0; transform: translateY(-4px); } }
 .cal-hint { font-size: 11.5px; color: var(--text-faint); margin-top: 9px; line-height: 1.6; text-align: center; }
 .period-item { display: flex; align-items: center; gap: 8px; background: var(--bg-soft); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; font-size: 13px; }
 .period-item.ongoing { background: var(--pred-grad); }
+.period-item.ongoing .per-badge { background: rgba(224,80,112,.18); }
 .period-item .info { flex: 1; min-width: 0; }
 .period-item .range { font-weight: 700; color: #e9407a; }
 .period-item .sub { font-size: 11px; color: var(--text-sub); margin-top: 3px; line-height: 1.5; }
@@ -5125,9 +5128,20 @@ function nextPeriod() {
   return nx;
 }
 // 某天的状态：'on' = 经期记录中，'pred' = 预测经期
+// 进行中（无结束日）的记录最多标到开始日 + ONGOING_MAX 天：
+// 否则 !p.end 会让「所有未来日期」都变成经期中——日历整片标红、预测全失效，
+// 用户会误以为数据错了而反复删建（实测已因此产生 29 条墓碑）
+const ONGOING_MAX = 10;
+// 进行中的记录是否已超期未补结束日（用于在页面上提示，而不是默默染红日历）
+function ongoingOverdue(ds) {
+  const today = ds || fmtDay(new Date());
+  return validPeriods().some(p => !p.end && diffDays(today, p.start) >= ONGOING_MAX);
+}
 function dayState(ds) {
   for (const p of validPeriods()) {
-    if (ds >= p.start && (!p.end || ds <= p.end)) return 'on';
+    if (ds < p.start) continue;                    // 早于开始日的日期不属于本次
+    if (p.end) { if (ds <= p.end) return 'on'; }   // 有结束日：区间内
+    else if (diffDays(ds, p.start) < ONGOING_MAX) return 'on'; // 进行中：最多 10 天
   }
   const nx = nextPeriod();
   if (nx) {
@@ -5141,7 +5155,8 @@ function dayState(ds) {
 /* ---- 日历点选 / 拖选记录经期（替代原表单） ---- */
 let calDrag = null;   // 按住拖选中的范围 { start, end }
 let calPending = '';  // 两步点选：已选的开始日，等待第二次点击
-let calPick = null;   // 拖选后待确认的区间 { start, end }（不点保存不会写入）
+let calPendingAt = 0; // 第一次点击的时间戳：超过 2 分钟未点第二下就作废，避免隔一阵再点时连成一个大区间
+let calPick = null;   // 待确认的区间 { start, end }（拖选/两步点选都走这里，不点保存不会写入）
 // 高亮当前点选/拖选范围（日历重渲染 / 跨月导航后保持）
 function paintCalPick() {
   const src = calPick || calDrag || (calPending ? { start: calPending, end: '' } : null);
@@ -5155,10 +5170,33 @@ function paintCalPick() {
     c.classList.toggle('pick', on);
   });
 }
+// 查重：新区间与已有有效记录是否重叠/重复。经期不可能同时有两段，重叠几乎必然是手滑
+// 返回 null = 无冲突；否则返回 { type, rec }：'same' 完全相同 / 'overlap' 有交叠 / 'cover' 被包含
+function checkPeriodConflict(start, end) {
+  const s = start, e = end || start;
+  for (const p of validPeriods()) {
+    const ps = p.start, pe = p.end || p.start;
+    if (s === ps && e === pe) return { type: 'same', rec: p };
+    if (s <= pe && e >= ps) return { type: 'overlap', rec: p };
+  }
+  return null;
+}
 // 提交一段经期：开始 = 结束（同一天两次）视为「进行中」，end 留空
 function commitCalPeriod(start, end) {
+  const e2 = start === end ? '' : end;
+  // 写入前最后一道闸：重叠/重复一律拦下，交用户自己判断（重叠可能是补填结束日）
+  const cf = checkPeriodConflict(start, e2);
+  if (cf) {
+    const range = cf.rec.start + (cf.rec.end ? ' ~ ' + cf.rec.end : ' 起');
+    const msg = cf.type === 'same'
+      ? `已经有一段完全相同的记录（${range}），无需重复添加`
+      : `这段时间与已有记录（${range}）重叠了`;
+    toast('❌ ' + msg);
+    buzz && buzz(40);
+    return;
+  }
   const id = uid();
-  addListItem('periods', { id, start, end: start === end ? '' : end });
+  addListItem('periods', { id, start, end: e2 });
   toast(start === end ? `已记录 🌹 ${start} 起，进行中` : `已记录 🌹 ${start} ~ ${end}`);
   // 记错了不必先删：给一次撤销机会
   showUndo('已记录经期', () => {
@@ -5167,35 +5205,62 @@ function commitCalPeriod(start, end) {
   });
 }
 // 两步点选：第一次点 = 开始日；第二次点 = 结束日（同一天 = 进行中）
+// 改成与拖选一致：第二下只出确认条，点「保存」才写入，避免手滑多出一条
 function handleCalTap(d) {
+  // 上次第一下点得太久没跟第二下（>2 分钟），直接作废，避免隔一阵回来点成跨天大区间
+  if (calPending && Date.now() - calPendingAt > 120000) {
+    calPending = '';
+    toast('已选开始日过期，请重新点选第一下');
+    paintCalPick();
+  }
   if (!calPending) {
     calPick = null; hideCalConfirm();
-    calPending = d;
+    calPending = d; calPendingAt = Date.now();
     paintCalPick();
     toast('已选开始日，再点结束日（同一天 = 进行中）');
+  } else if (calPending === d) {
+    // 同一天点两下 = 一整天，仍走确认条，不再直接落库
+    calPick = { start: d, end: d };
+    calPending = ''; calPendingAt = 0;
+    showCalConfirm();
   } else {
     const s = calPending < d ? calPending : d;
     const e = calPending < d ? d : calPending;
-    calPending = ''; hideCalConfirm();
-    commitCalPeriod(s, e);
+    calPick = { start: s, end: e };
+    calPending = ''; calPendingAt = 0;
+    showCalConfirm();
   }
+  paintCalPick();
 }
-// 拖选确认条：拖动只产生预览区间，必须点「保存」才写入，避免手滑多出一条记录
+// 拖选确认条：拖动/两步点选都只产生预览区间，必须点「保存」才写入，避免手滑多出一条记录
 function showCalConfirm() {
   const bar = $('calConfirm'); if (!bar || !calPick) return;
-  const n = diffDays(calPick.end, calPick.start) + 1;
-  $('calConfirmTxt').textContent = `${mdLabel(calPick.start)} ~ ${mdLabel(calPick.end)} · 共 ${n} 天`;
+  const oneDay = calPick.start === calPick.end;
+  const n = oneDay ? 1 : diffDays(calPick.end, calPick.start) + 1;
+  const txt = oneDay
+    ? `${mdLabel(calPick.start)} · 进行中（只有开始日）`
+    : `${mdLabel(calPick.start)} ~ ${mdLabel(calPick.end)} · 共 ${n} 天`;
+  // 提前提示冲突：能保存但会拦住，把原因写在确认条上，比点保存完才报错可读
+  const cf = checkPeriodConflict(calPick.start, oneDay ? '' : calPick.end);
+  $('calConfirmTxt').textContent = cf ? '⚠️ 与已有记录重叠，无法保存' : txt;
+  bar.classList.toggle('conflict', !!cf);
+  // 冲突时把保存按钮置灰，避免用户反复点
+  const saveBtn = bar.querySelector('.btn.small');
+  if (saveBtn) { saveBtn.disabled = !!cf; saveBtn.textContent = cf ? '重叠' : '保存'; }
   bar.classList.add('show');
 }
 function hideCalConfirm() { const bar = $('calConfirm'); if (bar) bar.classList.remove('show'); }
 function calConfirmSave() {
   if (!calPick) return;
   const s = calPick.start, e = calPick.end;
-  calPick = null; hideCalConfirm(); paintCalPick();
+  // 双重保险：确认条虽然置灰了保存按钮，但键盘回车/外部调用仍可能进来
+  const cf = checkPeriodConflict(s, e === s ? '' : e);
+  if (cf) { toast('❌ 与已有记录重叠，已取消'); return; }
+  calPick = null; calPending = ''; calPendingAt = 0; hideCalConfirm(); paintCalPick();
   commitCalPeriod(s, e);
 }
 function calCancelPick() {
-  calPick = null; calPending = ''; hideCalConfirm(); paintCalPick();
+  calPick = null; calPending = ''; calPendingAt = 0; hideCalConfirm(); paintCalPick();
   toast('已取消');
 }
 (() => {
@@ -5249,7 +5314,7 @@ function calCancelPick() {
   }, true);
 })();
 const delPeriod = (id) => quickDel('periods', id);
-function calShift(n) { calM += n; if (calM < 0) { calM = 11; calY--; } else if (calM > 11) { calM = 0; calY++; } calPending = ''; calPick = null; hideCalConfirm(); renderCalendar(); }
+function calShift(n) { calM += n; if (calM < 0) { calM = 11; calY--; } else if (calM > 11) { calM = 0; calY++; } calPending = ''; calPendingAt = 0; calPick = null; hideCalConfirm(); renderCalendar(); }
 function renderCalendar() {
   $('calYm').textContent = `${calY}年${calM + 1}月`;
   const startWd = (new Date(calY, calM, 1).getDay() + 6) % 7; // 周一开头，与日期选择面板统一
@@ -5271,11 +5336,18 @@ function renderPeriods() {
   const today = fmtDay(new Date());
   const st = dayState(today);
   let head = '还没有经期记录', sub = '记录一次经期的开始/结束日期，就会自动计算周期并预测下次经期';
+  const todayDs0 = fmtDay(new Date());
+  // 超期未补结束日：明确提示去补填，而不是把日历整片染红让人以为数据错了
+  const overdue = (S.periods || []).find(x => x && !x.deleted && x.start && !x.end && diffDays(todayDs0, x.start) >= ONGOING_MAX);
   if (st === 'on') {
     const p = ps.find(x => today >= x.start && (!x.end || today <= x.end));
     const dayN = diffDays(today, p.start) + 1;
     head = `🌹 经期第 ${dayN} 天`;
     sub = p.end ? `本次记录到 ${p.end} 结束 · 多喝热水，好好休息` : '结束后记得补填结束日期，预测会更准 💕';
+  } else if (overdue) {
+    const dayN = diffDays(todayDs0, overdue.start) + 1;
+    head = '⚠️ 有一次经期还没填结束日';
+    sub = `${mdLabel(overdue.start)} 起已 ${dayN} 天 · 点下方「今天结束」补上，预测才会准`;
   } else if (ps.length) {
     const nx = nextPeriod();
     const days = daysTo(nx);
@@ -5287,15 +5359,18 @@ function renderPeriods() {
   const todayDs = fmtDay(new Date());
   $('perList').innerHTML = ps.length ? ps.map((p, i) => {
     const ongoing = !p.end;
-    const len = diffDays(ongoing ? todayDs : p.end, p.start) + 1;
+    const rawLen = diffDays(ongoing ? todayDs : p.end, p.start) + 1;
+    // 进行中的天数封顶：否则忘了填结束日会显示「已 300 天」这种吓人的数字
+    const len = ongoing ? Math.min(rawLen, ONGOING_MAX) : rawLen;
+    const isOverdue = ongoing && rawLen > ONGOING_MAX;
     const prev = ps[i + 1];
     const gap = prev ? diffDays(p.start, prev.start) : 0;
-    const bits = [ongoing ? `进行中 · 已 ${len} 天` : `共 ${len} 天`];
+    const bits = [ongoing ? (isOverdue ? `未填结束日 · 已 ${rawLen} 天` : `进行中 · 已 ${len} 天`) : `共 ${len} 天`];
     if (gap > 0) bits.push(`距上次 ${gap} 天`);
     if (p.createdAt) bits.push(`记录于 ${mdLabel(fmtDay(new Date(p.createdAt)))}`);
     return `<div class="period-item${ongoing ? ' ongoing' : ''}">
       <div class="info">
-        <div class="range">${esc(mdLabel(p.start))}${p.end ? ' ~ ' + esc(mdLabel(p.end)) : ' 起'}<span class="per-badge">${ongoing ? '进行中' : len + ' 天'}</span></div>
+        <div class="range">${esc(mdLabel(p.start))}${p.end ? ' ~ ' + esc(mdLabel(p.end)) : ' 起'}<span class="per-badge">${ongoing ? (isOverdue ? '待补结束日' : '进行中') : len + ' 天'}</span></div>
         <div class="sub">${esc(bits.join(' · '))}</div>
       </div>
       ${ongoing ? `<button class="per-act" onclick="endPeriodToday('${p.id}')">今天结束</button>` : ''}
